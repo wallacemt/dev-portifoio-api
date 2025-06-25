@@ -32,7 +32,7 @@ export class AuthService {
    * @throws Exception if the owner is not found or if the password is invalid.
    */
   public async login(email: string, password: string): Promise<OwnerDataResponse> {
-    const owner = await this.ownerRepository.findByEmail(email);
+    const owner = await this.ownerRepository.findByEmailOrId(email);
 
     if (!owner) throw new Exception("Owner não encontrado!", 404);
 

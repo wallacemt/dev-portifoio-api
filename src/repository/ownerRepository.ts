@@ -3,13 +3,18 @@ import { OwnerDataOptionalRequest, OwnerDataRequest } from "../types/owner";
 
 export class OwnerRepository {
   /**
-   * Finds an owner by their email.
-   * @param email The email of the owner to find.
+   * Finds an owner by their email or id.
+   * @param id or email The email of the owner to find.
    * @returns The found owner, or null if not found.
    */
-   async findByEmail(email: string) {
+   async findByEmailOrId(email: string) {
     return await prisma.owner.findFirst({
-      where: { email },
+      where: {
+        OR: [
+          { email: email },
+          { id: email },
+        ],
+      },
     });
   }
 
