@@ -7,8 +7,19 @@ datasource db {
   url      = env("MONGODB_URI")
 }
 
-model Project {
-  id           String   @id @default(uuid()) @map("_id") @db.ObjectId
+model owner {
+  id         String  @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  email      String  @unique
+  password   String
+  avatar     String?
+  about     String
+  occupation String
+  birthDate  String
+}
+
+model project {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
   title        String
   description  String
   techs        String[]
@@ -17,5 +28,28 @@ model Project {
   backend      String
   frontend     String
   previewImage String
-  createdAt    DateTime
+  activate     Boolean   @default(true)
+  lastUpdate   DateTime?
+}
+
+model skill {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  title    String
+  image    String
+  stack    String
+  type     String
+  subSkils String[]
+}
+
+model formation {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  title            String
+  institution      String
+  image            String
+  workload         Int
+  initialDate      DateTime
+  endDate          DateTime
+  description      String
+  type             String
+  certificationUrl String?
 }

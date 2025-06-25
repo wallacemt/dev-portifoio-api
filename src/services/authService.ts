@@ -1,0 +1,47 @@
+import { OwnerRepository } from "../repository/ownerRepository";
+import { OwnerDataRequest, OwnerDataResponse } from "../types/owner";
+import { Exception } from "../utils/exception";
+import jwt from "jsonwebtoken";
+import { hashPassword, verifyPassword } from "../utils/hash";
+const jwtSecret = process.env.JWT_SECRET;
+
+export class AuthService {
+  private ownerRepository = new OwnerRepository();
+
+  /**
+   * Registers a new owner by hashing the provided password and storing the owner data.
+   * @param ownerData - The data for the new owner, including the password to hash.
+   * @returns The created owner data with a hashed password.
+   * @throws Exception if the owner data is not provided.
+   */
+
+  public async registerOwner(ownerData: OwnerDataRequest): Promise<OwnerDataResponse> {
+    if (!ownerData) throw new Exception("Owner data e requerido!", 400);
+
+    const hashedPassword = await hashPassword(ownerData.password);
+
+    ownerData.password = hashedPassword;
+
+    return await this.ownerRepository.createOwner(ownerData);
+  }
+  /**
+   * Authenticates an existing owner by verifying the provided password and returning the owner's data with a JWT token.
+   * @param email - The email of the owner to authenticate.
+   * @param password - The password to verify.
+   * @returns The authenticated owner data with a JWT token.
+   * @throws Exception if the owner is not found or if the password is invalid.
+   */
+  public async login(email: string, password: string): Promise<OwnerDataResponse> {
+    const owner = await this.ownerRepository.findByEmail(email);
+
+    if (!owner) throw new Exception("Owner não encontrado!", 404);
+
+    const isValidPassowrd = await verifyPassword(owner.password, password);
+
+    if (!isValidPassowrd) throw new Exception("Senha inválida!", 401);
+
+    const token = jwt.sign({ id: owner.id, email: owner.email }, jwtSecret as string, { expiresIn: "7d" });
+
+    return { ...owner, token };
+  }
+}

@@ -1,0 +1,47 @@
+import { Request, Response, Router } from "express";
+import { AuthService } from "../services/authService";
+
+import { OwnerDataRequest, OwnerDataResponse } from "../types/owner";
+import isCustomException from "../utils/isCustomError";
+export class AuthController {
+  public router: Router;
+  private authService: AuthService = new AuthService();
+  constructor() {
+    this.router = Router();
+    this.routes();
+  }
+
+  private routes() {
+    this.router.post("/register", this.registerOwner.bind(this));
+    this.router.post("/login", this.login.bind(this));
+    this.router.get("/", (_req, res) => {
+      res.json({ message: "Bem vindo(a)!" });
+    });
+  }
+
+  private async registerOwner(req: Request, res: Response) {
+    try {
+      const owner: OwnerDataRequest = req.body;
+      const data: OwnerDataResponse = await this.authService.registerOwner(owner);
+      res.status(201).json({ message: "Owner cadastrado com sucesso!", data });
+    } catch (error: unknown) {
+      if (isCustomException(error)) {
+        res.status(error.status).json({ error: error.message });
+      }
+      res.status(500).json({ error: error });
+    }
+  }
+
+  private async login(req: Request, res: Response) {
+    try {
+      const { email, password } = req.body;
+      const owner = await this.authService.login(email, password);
+      res.status(200).json({ message: `Bem vindo(a) ${owner.name.split(" ")[0]}!`, token: owner.token });
+    } catch (error: unknown) {
+      if (isCustomException(error)) {
+        res.status(error.status).json({ error: error.message });
+      }
+      res.status(500).json({ error: { message: "Error interno so servidor", detail: error } });
+    }
+  }
+}
