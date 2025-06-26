@@ -2,7 +2,7 @@ import { Request, Response, Router } from "express";
 import { AuthService } from "../services/authService";
 
 import { OwnerDataRequest, OwnerDataResponse } from "../types/owner";
-import isCustomException from "../utils/isCustomError";
+import errorFilter from "../utils/isCustomError";
 export class AuthController {
   public router: Router;
   private authService: AuthService = new AuthService();
@@ -41,10 +41,7 @@ export class AuthController {
       const data: OwnerDataResponse = await this.authService.registerOwner(owner);
       res.status(201).json({ message: "Owner cadastrado com sucesso!", data });
     } catch (error: unknown) {
-      if (isCustomException(error)) {
-        res.status(error.status).json({ error: error.message });
-      }
-      res.status(500).json({ error: error });
+      errorFilter(error, res);
     }
   }
 
@@ -65,10 +62,7 @@ export class AuthController {
       const owner = await this.authService.login(email, password);
       res.status(200).json({ message: `Bem vindo(a) ${owner.name.split(" ")[0]}!`, token: owner.token });
     } catch (error: unknown) {
-      if (isCustomException(error)) {
-        res.status(error.status).json({ error: error.message });
-      }
-      res.status(500).json({ error: { message: "Error interno so servidor", detail: error } });
+      errorFilter(error, res);
     }
   }
 }

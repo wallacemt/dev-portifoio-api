@@ -14,9 +14,8 @@ declare global {
 
 export default async function AuthPolice(request: Request, response: Response, next: NextFunction) {
     const authHeader = request.headers.authorization;
-
     if(!authHeader) {
-        response.status(401).json({ message: "Nao autorizado!" });
+        response.status(401).json({ error: "Token de autenticação não encontrado" });
         return;
     }else {
         const token = authHeader.replace("Bearer ", "");

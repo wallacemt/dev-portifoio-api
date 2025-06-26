@@ -7,13 +7,10 @@ export class OwnerRepository {
    * @param id or email The email of the owner to find.
    * @returns The found owner, or null if not found.
    */
-   async findByEmailOrId(email: string) {
+  async findByEmailOrId(email?: string, id?: string) {
     return await prisma.owner.findFirst({
       where: {
-        OR: [
-          { email: email },
-          { id: email },
-        ],
+        OR: [{ email: email }, { id: id }],
       },
     });
   }
@@ -24,8 +21,8 @@ export class OwnerRepository {
    * @returns The created owner.
    */
   async createOwner(owner: OwnerDataRequest) {
-    return prisma.owner.create({
-      data: {...owner},
+    return await prisma.owner.create({
+      data: { ...owner },
     });
   }
 
@@ -35,10 +32,10 @@ export class OwnerRepository {
    * @returns The updated owner.
    */
 
-  async updateOwner(owner: OwnerDataOptionalRequest) {
-    return prisma.owner.update({
-      where: { email: owner.email },
-      data: owner,
+  async updateOwner(owner: OwnerDataOptionalRequest, ownerId: string) {
+    return await prisma.owner.update({
+      where: { id: ownerId },
+      data: { ...owner },
     });
   }
 }

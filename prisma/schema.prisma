@@ -13,7 +13,7 @@ model owner {
   email      String  @unique
   password   String
   avatar     String?
-  about     String
+  about      String
   occupation String
   birthDate  String
 }
@@ -30,6 +30,7 @@ model project {
   previewImage String
   activate     Boolean   @default(true)
   lastUpdate   DateTime?
+  ownerId        String
 }
 
 model skill {
