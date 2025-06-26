@@ -48,6 +48,7 @@ export class ProjectController {
       const project: CreateProject = req.body;
       project.ownerId = req.userId;
       project.lastUpdate = new Date();
+      project.techs = project.techs.map((tech) => tech.toLowerCase());
       const projectCreated = await this.projectService.createProject(project);
       res.status(201).json({ message: "Projeto criado com sucesso", projectCreated });
     } catch (error) {

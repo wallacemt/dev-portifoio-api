@@ -30,7 +30,7 @@ model project {
   previewImage String
   activate     Boolean   @default(true)
   lastUpdate   DateTime?
-  ownerId        String
+  ownerId      String
 }
 
 model skill {
@@ -40,6 +40,7 @@ model skill {
   stack    String
   type     String
   subSkils String[]
+  ownerId  String
 }
 
 model formation {
@@ -53,4 +54,5 @@ model formation {
   description      String
   type             String
   certificationUrl String?
+  ownerId          String
 }
