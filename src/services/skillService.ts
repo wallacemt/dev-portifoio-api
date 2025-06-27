@@ -12,12 +12,10 @@ export class SkillService {
     return await this.skillRepository.findAllSkills(ownerId);
   }
 
-
-
   public async getAllTypes() {
     const skillTypes = Object.values(SkillType) as string[];
     const stackTypes = Object.values(StackType) as string[];
-    const types = {skillTypes, stackTypes};
+    const types = { skillTypes, stackTypes };
     return types;
   }
 
