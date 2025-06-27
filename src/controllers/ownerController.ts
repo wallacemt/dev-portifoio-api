@@ -4,11 +4,13 @@ import { OwnerDataOptionalRequest, OwnerDataResponse } from "../types/owner";
 import AuthPolice from "../middleware/authPolice";
 import isCustomException from "../utils/isCustomError";
 import errorFilter from "../utils/isCustomError";
+import { TranslationService } from "../services/geminiService";
 
 export class OwnerController {
   public routerPrivate: Router;
   public routerPublic: Router;
   private ownerService: OwnerService = new OwnerService();
+  private translationService = new TranslationService();
   constructor() {
     this.routerPrivate = Router();
     this.routerPublic = Router();
@@ -31,9 +33,19 @@ export class OwnerController {
    * @throws Exception if the owner is not found.
    */
   public async getOwner(req: Request, res: Response) {
+    const { lenguage } = req.query as { lenguage?: string };
     try {
       const owner = await this.ownerService.getOwner(req.params.ownerId);
-      res.status(200).json(owner);
+      if (lenguage && lenguage != "pt") {
+        try {
+          const translated = await this.translationService.translateObject(owner, lenguage, "pt");
+          res.status(200).json(translated);
+        } catch (e) {
+          errorFilter(e, res);
+        }
+      } else {
+        res.status(200).json(owner);
+      }
     } catch (error) {
       errorFilter(error, res);
     }

@@ -3,11 +3,13 @@ import { SkillService } from "../services/skillService";
 import AuthPolice from "../middleware/authPolice";
 import errorFilter from "../utils/isCustomError";
 import { SkillAddRequest, SkillUpdateRequest } from "../types/skills";
+import { TranslationService } from "../services/geminiService";
 
 export class SkillController {
   public routerPrivate: Router;
   public routerPublic: Router;
   private skillService = new SkillService();
+  private translationService = new TranslationService();
   constructor() {
     this.routerPrivate = Router();
     this.routerPublic = Router();
@@ -25,9 +27,10 @@ export class SkillController {
     this.routerPrivate.delete("/:id/delete", this.delete.bind(this));
   }
 
-  public async getAllTypes(_req: Request, res: Response) {
+  public async getAllTypes(req: Request, res: Response) {
     try {
       const result = await this.skillService.getAllTypes();
+
       res.status(200).json(result);
     } catch (error) {
       errorFilter(error, res);
@@ -35,9 +38,19 @@ export class SkillController {
   }
 
   public async getAllSkill(req: Request, res: Response) {
+    const { lenguage } = req.query as { lenguage?: string };
     try {
       const result = await this.skillService.findAllSkill(req.params.ownerId);
-      res.status(200).json(result);
+      if (lenguage && lenguage != "pt") {
+        try {
+          const translated = await this.translationService.translateObject(result, lenguage, "pt");
+          res.status(200).json(translated);
+        } catch (e) {
+          errorFilter(e, res);
+        }
+      } else {
+        res.status(200).json(result);
+      }
     } catch (error) {
       errorFilter(error, res);
     }

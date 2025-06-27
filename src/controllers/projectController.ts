@@ -5,11 +5,13 @@ import isCustomException from "../utils/isCustomError";
 import { CreateProject, ProjectFilter, UpdateProjec } from "../types/projects";
 import errorFilter from "../utils/isCustomError";
 import { projectFilterSchema } from "../validations/projectValidation";
+import { TranslationService } from "../services/geminiService";
 
 export class ProjectController {
   public routerPrivate: Router;
   public routerPublic: Router;
   private projectService = new ProjectService();
+  private translationService = new TranslationService();
   constructor() {
     this.routerPrivate = Router();
     this.routerPublic = Router();
@@ -29,6 +31,8 @@ export class ProjectController {
   }
 
   public async getAllProject(req: Request, res: Response) {
+    const { lenguage } = req.query as { lenguage?: string };
+
     const parseResult = projectFilterSchema.safeParse(req.query);
 
     if (!parseResult.success) {
@@ -37,7 +41,17 @@ export class ProjectController {
       const filters: ProjectFilter = parseResult.data;
       try {
         const result = await this.projectService.findAllProjects(req.params.ownerId, filters);
-        res.status(200).json(result);
+
+        if (lenguage && lenguage != "pt") {
+          try {
+            const translated = await this.translationService.translateObject(result, lenguage, "pt");
+            res.status(200).json(translated);
+          } catch (e) {
+            errorFilter(e, res);
+          }
+        } else {
+          res.status(200).json(result);
+        }
       } catch (error) {
         errorFilter(error, res);
       }

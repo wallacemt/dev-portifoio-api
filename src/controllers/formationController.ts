@@ -3,11 +3,13 @@ import { FormationService } from "../services/formationService";
 import AuthPolice from "../middleware/authPolice";
 import errorFilter from "../utils/isCustomError";
 import { FormationAddRequest, FormationUpdate } from "../types/formation";
+import { TranslationService } from "../services/geminiService";
 
 export class FormationController {
   public routerPrivate: Router;
   public routerPublic: Router;
   private formationService = new FormationService();
+  private translationService = new TranslationService();
   constructor() {
     this.routerPrivate = Router();
     this.routerPublic = Router();
@@ -35,9 +37,20 @@ export class FormationController {
   }
 
   public async getAllFormation(req: Request, res: Response) {
+    const { lenguage } = req.query as { lenguage?: string };
+
     try {
       const result = await this.formationService.findAllFormations(req.params.ownerId);
-      res.status(200).json(result);
+      if (lenguage && lenguage != "pt") {
+        try {
+          const translated = await this.translationService.translateObject(result, lenguage, "pt");
+          res.status(200).json(translated);
+        } catch (e) {
+          errorFilter(e, res);
+        }
+      } else {
+        res.status(200).json(result);
+      }
     } catch (error) {
       errorFilter(error, res);
     }
