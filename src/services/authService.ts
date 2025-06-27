@@ -3,6 +3,8 @@ import { OwnerDataRequest, OwnerDataResponse } from "../types/owner";
 import { Exception } from "../utils/exception";
 import jwt from "jsonwebtoken";
 import { hashPassword, verifyPassword } from "../utils/hash";
+import { ZodError } from "zod";
+import { ownerSchema } from "../validations/ownerValidations";
 const jwtSecret = process.env.JWT_SECRET;
 
 export class AuthService {
@@ -18,11 +20,17 @@ export class AuthService {
   public async registerOwner(ownerData: OwnerDataRequest): Promise<OwnerDataResponse> {
     if (!ownerData) throw new Exception("Owner data e requerido!", 400);
 
-    const hashedPassword = await hashPassword(ownerData.password);
-
-    ownerData.password = hashedPassword;
-
-    return await this.ownerRepository.createOwner(ownerData);
+    try {
+      ownerSchema.parse(ownerData);
+      const hashedPassword = await hashPassword(ownerData.password);
+      ownerData.password = hashedPassword;
+      return await this.ownerRepository.createOwner(ownerData);
+    } catch (e) {
+      if (e instanceof ZodError) {
+        throw new Exception(e.issues[0].message, 400);
+      }
+      throw new Exception("Informe os dados corretamente", 400);
+    }
   }
   /**
    * Authenticates an existing owner by verifying the provided password and returning the owner's data with a JWT token.

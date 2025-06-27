@@ -1,12 +1,15 @@
+import { ZodError } from "zod";
 import { OwnerRepository } from "../repository/ownerRepository";
-import { OwnerDataResponse } from "../types/owner";
+import { OwnerDataOptionalRequest, OwnerDataResponse } from "../types/owner";
 import { Exception } from "../utils/exception";
+import { ownerSchemaOptional } from "../validations/ownerValidations";
 
 export class OwnerService {
   private ownerRepository = new OwnerRepository();
-  public async getOwner(id: string): Promise<OwnerDataResponse> {
-    const owner = await this.ownerRepository.findByEmailOrId(id);
-    if (!owner) throw new Exception("Owner not found", 404);
+  public async getOwner(ownerId: string): Promise<OwnerDataResponse> {
+    if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
+    const owner = await this.ownerRepository.findByEmailOrId(ownerId);
+    if (!owner) throw new Exception("Owner não  Encontrado!", 404);
     return {
       id: owner.id,
       name: owner.name,
@@ -16,5 +19,17 @@ export class OwnerService {
       occupation: owner.occupation,
       birthDate: owner.birthDate,
     };
+  }
+
+  public async updateOwner(ownerUpdateData: OwnerDataOptionalRequest, ownerId: string) {
+    try {
+      ownerSchemaOptional.parse(ownerUpdateData);
+      return await this.ownerRepository.updateOwner(ownerUpdateData, ownerId);
+    } catch (e) {
+      if (e instanceof ZodError) {
+        throw new Exception(e.issues[0].message, 400);
+      }
+      throw new Exception("Informe os dados corretamente", 400);
+    }
   }
 }

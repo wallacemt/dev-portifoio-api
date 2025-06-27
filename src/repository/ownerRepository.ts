@@ -7,10 +7,10 @@ export class OwnerRepository {
    * @param id or email The email of the owner to find.
    * @returns The found owner, or null if not found.
    */
-  async findByEmailOrId(email?: string, id?: string) {
+  async findByEmailOrId(id?: string) {
     return await prisma.owner.findFirst({
       where: {
-        OR: [{ email: email }, { id: id }],
+        OR: [{ email: id }, { id: id }],
       },
     });
   }

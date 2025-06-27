@@ -5,7 +5,7 @@ export interface OwnerDataRequest {
   avatar?: string;
   about: string;
   occupation: string;
-  birthDate: string;
+  birthDate: Date;
 }
 
 export type OwnerDataOptionalRequest = Partial<OwnerDataRequest>;
@@ -18,6 +18,6 @@ export interface OwnerDataResponse {
   avatar: string | null;
   about: string;
   occupation: string;
-  birthDate: string;
+  birthDate: Date;
   token?: string
 }

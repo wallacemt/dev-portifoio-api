@@ -15,7 +15,7 @@ model owner {
   avatar     String?
   about      String
   occupation String
-  birthDate  String
+  birthDate  DateTime
 }
 
 model project {

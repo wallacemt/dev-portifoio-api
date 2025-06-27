@@ -8,9 +8,11 @@ export const routes = (app: Express) => {
   const projectController = new ProjectController();
   const skillController = new SkillController();
   const formationController = new FormationController();
+  const ownerController = new OwnerController();
 
   app.use("/auth", new AuthController().router);
-  app.use("/owner", new OwnerController().router);
+  app.use("/owner", ownerController.routerPublic);
+  app.use("/owner/private", ownerController.routerPrivate);
   app.use("/projects/private", projectController.routerPrivate);
   app.use("/projects", projectController.routerPublic);
   app.use("/skills/private", skillController.routerPrivate);

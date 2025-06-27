@@ -38,6 +38,7 @@ export class AuthController {
   private async registerOwner(req: Request, res: Response) {
     try {
       const owner: OwnerDataRequest = req.body;
+      owner.birthDate = new Date(owner.birthDate);
       const data: OwnerDataResponse = await this.authService.registerOwner(owner);
       res.status(201).json({ message: "Owner cadastrado com sucesso!", data });
     } catch (error: unknown) {
