@@ -1,0 +1,7 @@
+services:
+  mongo:
+    image: mongo
+    ports:
+      - "27018:27018"
+    command: ["--replSet", "rs0"]
+

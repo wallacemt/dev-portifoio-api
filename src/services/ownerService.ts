@@ -8,7 +8,7 @@ export class OwnerService {
   private ownerRepository = new OwnerRepository();
   public async getOwner(ownerId: string): Promise<OwnerDataResponse> {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
-    const owner = await this.ownerRepository.findByEmailOrId(ownerId);
+    const owner = await this.ownerRepository.findById(ownerId);
     if (!owner) throw new Exception("Owner não  Encontrado!", 404);
     return {
       id: owner.id,

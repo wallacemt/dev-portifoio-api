@@ -19,6 +19,8 @@ export class AuthService {
 
   public async registerOwner(ownerData: OwnerDataRequest): Promise<OwnerDataResponse> {
     if (!ownerData) throw new Exception("Owner data e requerido!", 400);
+    const owner = await this.ownerRepository.findByEmail(ownerData.email);
+    if (owner) throw new Exception("Email ja cadastrado!", 409);
 
     try {
       ownerSchema.parse(ownerData);
@@ -29,7 +31,7 @@ export class AuthService {
       if (e instanceof ZodError) {
         throw new Exception(e.issues[0].message, 400);
       }
-      throw new Exception("Informe os dados corretamente", 400);
+      throw new Exception(`Informe os dados corretamente: ${e}`, 400);
     }
   }
   /**
@@ -40,7 +42,7 @@ export class AuthService {
    * @throws Exception if the owner is not found or if the password is invalid.
    */
   public async login(email: string, password: string): Promise<OwnerDataResponse> {
-    const owner = await this.ownerRepository.findByEmailOrId(email);
+    const owner = await this.ownerRepository.findByEmail(email);
 
     if (!owner) throw new Exception("Owner não encontrado!", 404);
 

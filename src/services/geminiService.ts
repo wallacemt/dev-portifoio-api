@@ -1,4 +1,4 @@
-import { Gemini } from "gemini-ai-sdk";
+import Gemini from "gemini-ai-sdk";
 import { Exception } from "../utils/exception";
 import { GeminiResponse } from "../types/aiTypes";
 const gemini = new Gemini(process.env.GEMINI_API_KEY || "");
@@ -13,8 +13,6 @@ export class TranslationService {
     Translate the following JSON object's  string values from ${sourceLeng} to ${lenguage}, preserving keys and structure. Do NOT translate keys or non-text values:
     ${jsonString}
     `;
-
-    let translatedResponse: string;
     try {
       const resp = await gemini.ask(prompt, { model: "gemini-2.0-flash" });
 

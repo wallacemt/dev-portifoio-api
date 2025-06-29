@@ -1,0 +1,12 @@
+{
+  "preset": "ts-jest",
+  "testEnvirounment": "node",
+  "setupFiles": ["./jest.setup.ts"],
+  "extensionsToTreatAsEsm": [".ts"],
+  "transform": {
+    "^.+\\.ts$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^(\\.{1,2}/.*)\\.js$": "$1"
+  }
+}
