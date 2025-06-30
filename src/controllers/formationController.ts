@@ -5,6 +5,12 @@ import errorFilter from "../utils/isCustomError";
 import { FormationAddRequest, FormationUpdate } from "../types/formation";
 import { TranslationService } from "../services/geminiService";
 
+/**
+ * @swagger
+ * tags:
+ *   name: Formations
+ *   description: Operações de CRUD para formação do Owner
+*/
 export class FormationController {
   public routerPrivate: Router;
   public routerPublic: Router;

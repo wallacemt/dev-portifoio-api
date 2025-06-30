@@ -1,0 +1,208 @@
+components:
+  schemas:
+    Project:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - ownerId
+      properties:
+        id:
+          type: string
+          example: "64f123abc456def789012345"
+          description: "ID único do projeto"
+        title:
+          type: string
+          example: "E-commerce Full Stack"
+          description: "Título do projeto"
+        description:
+          type: string
+          example: "Aplicação completa de e-commerce com React, Node.js e PostgreSQL"
+          description: "Descrição detalhada do projeto"
+        techs:
+          type: array
+          items:
+            type: string
+          example: ["react", "nodejs", "postgresql", "typescript"]
+          description: "Tecnologias utilizadas (sempre em lowercase)"
+        screenshots:
+          type: array
+          items:
+            type: string
+          example: ["https://exemplo.com/screenshot1.jpg", "https://exemplo.com/screenshot2.jpg"]
+          description: "URLs das capturas de tela do projeto"
+        deployment:
+          type: string
+          example: "https://meu-projeto.vercel.app"
+          description: "URL do projeto em produção"
+        backend:
+          type: string
+          example: "https://github.com/usuario/projeto-backend"
+          description: "URL do repositório do backend"
+        frontend:
+          type: string
+          example: "https://github.com/usuario/projeto-frontend"
+          description: "URL do repositório do frontend"
+        previewImage:
+          type: string
+          example: "https://exemplo.com/preview.jpg"
+          description: "URL da imagem de preview principal do projeto"
+        lastUpdate:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+          description: "Data da última atualização do projeto"
+        ownerId:
+          type: string
+          example: "64f123abc456def789012345"
+          description: "ID do proprietário do projeto"
+
+    CreateProject:
+      type: object
+      required:
+        - title
+        - description
+        - techs
+      properties:
+        title:
+          type: string
+          example: "E-commerce Full Stack"
+          description: "Título do projeto"
+        description:
+          type: string
+          example: "Aplicação completa de e-commerce com React, Node.js e PostgreSQL"
+          description: "Descrição detalhada do projeto"
+        techs:
+          type: array
+          items:
+            type: string
+          example: ["React", "Node.js", "PostgreSQL", "TypeScript"]
+          description: "Tecnologias utilizadas (serão convertidas para lowercase automaticamente)"
+        screenshots:
+          type: array
+          items:
+            type: string
+          example: ["https://exemplo.com/screenshot1.jpg", "https://exemplo.com/screenshot2.jpg"]
+          description: "URLs das capturas de tela do projeto"
+        deployment:
+          type: string
+          example: "https://meu-projeto.vercel.app"
+          description: "URL do projeto em produção"
+        backend:
+          type: string
+          example: "https://github.com/usuario/projeto-backend"
+          description: "URL do repositório do backend"
+        frontend:
+          type: string
+          example: "https://github.com/usuario/projeto-frontend"
+          description: "URL do repositório do frontend"
+        previewImage:
+          type: string
+          example: "https://exemplo.com/preview.jpg"
+          description: "URL da imagem de preview principal do projeto"
+
+    UpdateProject:
+      type: object
+      description: "Todos os campos são opcionais para atualização"
+      properties:
+        title:
+          type: string
+          example: "E-commerce Full Stack - Atualizado"
+        description:
+          type: string
+          example: "Aplicação completa de e-commerce com novas funcionalidades"
+        techs:
+          type: array
+          items:
+            type: string
+          example: ["react", "nodejs", "postgresql", "typescript", "redux"]
+        screenshots:
+          type: array
+          items:
+            type: string
+          example: ["https://exemplo.com/new-screenshot1.jpg"]
+        deployment:
+          type: string
+          example: "https://meu-projeto-v2.vercel.app"
+        backend:
+          type: string
+          example: "https://github.com/usuario/projeto-backend-v2"
+        frontend:
+          type: string
+          example: "https://github.com/usuario/projeto-frontend-v2"
+        previewImage:
+          type: string
+          example: "https://exemplo.com/new-preview.jpg"
+
+    ProjectFilter:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+          example: 1
+          description: "Número da página para paginação"
+        limit:
+          type: integer
+          minimum: 1
+          default: 10
+          example: 10
+          description: "Quantidade de itens por página"
+        tech:
+          type: string
+          example: "react"
+          description: "Filtrar por tecnologia específica"
+        activate:
+          type: boolean
+          example: true
+          description: "Filtrar apenas projetos ativos (true) ou inativos (false)"
+        orderBy:
+          type: string
+          enum: ["asc", "desc"]
+          default: "desc"
+          example: "desc"
+          description: "Ordenação por data de atualização"
+        search:
+          type: string
+          example: "e-commerce"
+          description: "Buscar por título ou descrição"
+        language:
+          type: string
+          example: "en"
+          description: "Idioma para tradução automática (pt é o padrão)"
+
+    ProjectResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Projeto criado com sucesso"
+        projectCreated:
+          $ref: "#/components/schemas/Project"
+
+    ProjectUpdateResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Projeto atualizado com sucesso"
+        projectUpdated:
+          $ref: "#/components/schemas/Project"
+
+    ProjectDeleteResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Projeto deletado com sucesso"
+
+    ProjectActivateResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Projeto atualizado com sucesso"
+        project:
+          $ref: "#/components/schemas/Project"

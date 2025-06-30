@@ -5,6 +5,12 @@ import errorFilter from "../utils/isCustomError";
 import { SkillAddRequest, SkillUpdateRequest } from "../types/skills";
 import { TranslationService } from "../services/geminiService";
 
+/**
+ * @swagger
+ * tags:
+ *   name: Skills
+ *   description: Operações de CRUD para as Skills do Owner
+*/
 export class SkillController {
   public routerPrivate: Router;
   public routerPublic: Router;

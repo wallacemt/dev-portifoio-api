@@ -1,0 +1,282 @@
+paths:
+  /skills/owner/{ownerId}:
+    get:
+      tags:
+        - Skills
+      summary: Buscar todas as skills de um owner
+      description: Retorna todas as skills associadas a um owner específico, com opção de tradução
+      security: []
+      parameters:
+        - name: ownerId
+          in: path
+          required: true
+          description: ID do owner
+          schema:
+            type: string
+        - name: lenguage
+          in: query
+          required: false
+          description: Idioma para tradução (padrão é 'pt')
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: Lista de skills retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Skill'
+        '400':
+          description: Erro na requisição
+        '500':
+          description: Erro interno do servidor
+
+  /skills/types:
+    get:
+      tags:
+        - Skills
+      summary: Buscar todos os tipos de skills
+      description: Retorna todos os tipos de stack e skill disponíveis
+      security: []
+      responses:
+        '200':
+          description: Tipos de skills retornados com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stackTypes:
+                    type: array
+                    items:
+                      type: string
+                      enum: [frontend, backend, mobile, design, devOps, other]
+                  skillTypes:
+                    type: array
+                    items:
+                      type: string
+                      enum: [framework, progamationLenguage, technology]
+        '500':
+          description: Erro interno do servidor
+
+  /skills/create:
+    post:
+      tags:
+        - Skills
+      summary: Criar uma nova skill
+      description: Cria uma nova skill para o owner autenticado
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SkillAddRequest'
+      responses:
+        '201':
+          description: Skill criada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Skill adicionada com sucesso"
+                  skillCreated:
+                    $ref: '#/components/schemas/Skill'
+        '400':
+          description: Dados inválidos
+        '401':
+          description: Não autorizado
+        '500':
+          description: Erro interno do servidor
+
+  /skills/{id}/update:
+    put:
+      tags:
+        - Skills
+      summary: Atualizar uma skill
+      description: Atualiza uma skill existente
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID da skill
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SkillUpdateRequest'
+      responses:
+        '200':
+          description: Skill atualizada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Skill atualizada com sucesso"
+                  projectUpdated:
+                    $ref: '#/components/schemas/Skill'
+        '400':
+          description: Dados inválidos
+        '401':
+          description: Não autorizado
+        '404':
+          description: Skill não encontrada
+        '500':
+          description: Erro interno do servidor
+
+  /skills/{id}/delete:
+    delete:
+      tags:
+        - Skills
+      summary: Deletar uma skill
+      description: Remove uma skill existente
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID da skill
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Skill deletada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Skill deletada com sucesso"
+        '401':
+          description: Não autorizado
+        '404':
+          description: Skill não encontrada
+        '500':
+          description: Erro interno do servidor
+
+components:
+  schemas:
+    StackType:
+      type: string
+      enum:
+        - frontend
+        - backend
+        - mobile
+        - design
+        - devOps
+        - other
+
+    SkillType:
+      type: string
+      enum:
+        - framework
+        - progamationLenguage
+        - technology
+
+    SkillAddRequest:
+      type: object
+      required:
+        - title
+        - image
+        - stack
+        - type
+        - subSkils
+      properties:
+        title:
+          type: string
+          description: Nome da skill
+          example: "React"
+        image:
+          type: string
+          description: URL da imagem da skill
+          example: "https://example.com/react-logo.png"
+        stack:
+          $ref: '#/components/schemas/StackType'
+        type:
+          $ref: '#/components/schemas/SkillType'
+        subSkils:
+          type: array
+          items:
+            type: string
+          description: Lista de sub-skills relacionadas
+          example: ["Hooks", "Context API", "Redux"]
+
+    SkillUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Nome da skill
+          example: "React"
+        image:
+          type: string
+          description: URL da imagem da skill
+          example: "https://example.com/react-logo.png"
+        stack:
+          $ref: '#/components/schemas/StackType'
+        type:
+          $ref: '#/components/schemas/SkillType'
+        subSkils:
+          type: array
+          items:
+            type: string
+          description: Lista de sub-skills relacionadas
+          example: ["Hooks", "Context API", "Redux"]
+
+    Skill:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID único da skill
+          example: "60f1b2b3c9a0b3001f4a5c8d"
+        title:
+          type: string
+          description: Nome da skill
+          example: "React"
+        image:
+          type: string
+          description: URL da imagem da skill
+          example: "https://example.com/react-logo.png"
+        stack:
+          type: string
+          description: Tipo de stack
+          example: "frontend"
+        type:
+          type: string
+          description: Tipo de skill
+          example: "framework"
+        subSkils:
+          type: array
+          items:
+            type: string
+          description: Lista de sub-skills relacionadas
+          example: ["Hooks", "Context API", "Redux"]
+        ownerId:
+          type: string
+          description: ID do proprietário da skill
+          example: "60f1b2b3c9a0b3001f4a5c8e"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

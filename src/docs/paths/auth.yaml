@@ -1,0 +1,195 @@
+paths:
+  /auth:
+    get:
+      tags:
+        - Auth
+      summary: Mensagem de boas-vindas
+      description: Retorna uma mensagem de boas-vindas da API
+      security: []
+      responses:
+        "200":
+          description: Mensagem de boas-vindas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Bem vindo(a)!"
+
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Registrar novo owner
+      description: Cria uma nova conta de owner no sistema
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+                - about
+                - occupation
+                - birthDate
+              properties:
+                name:
+                  type: string
+                  example: "João Silva"
+                  description: "Nome completo do owner"
+                email:
+                  type: string
+                  format: email
+                  example: "joao@email.com"
+                  description: "Email único do owner"
+                password:
+                  type: string
+                  minLength: 6
+                  example: "123456"
+                  description: "Senha para acesso"
+                avatar:
+                  type: string
+                  format: uri
+                  example: "https://example.com/avatar.jpg"
+                  description: "URL do avatar (opcional)"
+                about:
+                  type: string
+                  example: "Desenvolvedor Full Stack apaixonado por tecnologia"
+                  description: "Descrição sobre o owner"
+                occupation:
+                  type: string
+                  example: "Desenvolvedor Full Stack"
+                  description: "Ocupação profissional"
+                birthDate:
+                  type: string
+                  format: date
+                  example: "1990-05-15"
+                  description: "Data de nascimento"
+      responses:
+        "201":
+          description: Owner cadastrado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Owner cadastrado com sucesso!"
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "uuid-generated-id"
+                      name:
+                        type: string
+                        example: "João Silva"
+                      email:
+                        type: string
+                        example: "joao@email.com"
+                      avatar:
+                        type: string
+                        nullable: true
+                        example: "https://example.com/avatar.jpg"
+                      about:
+                        type: string
+                        example: "Desenvolvedor Full Stack apaixonado por tecnologia"
+                      occupation:
+                        type: string
+                        example: "Desenvolvedor Full Stack"
+                      birthDate:
+                        type: string
+                        format: date-time
+                        example: "1990-05-15T00:00:00.000Z"
+                      token:
+                        type: string
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        "400":
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Email já está em uso"
+        "500":
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Erro interno do servidor"
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Fazer login
+      description: Autentica um owner e retorna token de acesso
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "joao@email.com"
+                  description: "Email do owner"
+                password:
+                  type: string
+                  example: "123456"
+                  description: "Senha do owner"
+      responses:
+        "200":
+          description: Login realizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Bem vindo(a) João!"
+                  token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    description: "JWT token para autenticação"
+        "401":
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Owner não encontrado!"
+        "500":
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Erro interno do servidor"

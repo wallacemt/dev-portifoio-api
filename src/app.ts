@@ -7,6 +7,8 @@ import { ProjectController } from "./controllers/projectController";
 import { SkillController } from "./controllers/skillController";
 import { FormationController } from "./controllers/formationController";
 import express, { Application, Express } from "express";
+import { swaggerSpec } from "./docs/swaggerConfiguration";
+import swaggerUi from "swagger-ui-express";
 
 dotenv.config();
 class App {
@@ -32,6 +34,17 @@ class App {
     this.app.use("/skills", skillController.routerPublic);
     this.app.use("/formations/private", formationController.routerPrivate);
     this.app.use("/formations", formationController.routerPublic);
+    this.app.use(
+      "/docs",
+      swaggerUi.serve,
+      swaggerUi.setup(swaggerSpec, {
+        swaggerOptions: {
+          validatorUrl: null,
+          tryItOutEnabled: true,
+          displayRequestDuration: true,
+        },
+      })
+    );
   }
   config() {
     this.app.use(cors({ origin: process.env.FRONTEND_URL }));

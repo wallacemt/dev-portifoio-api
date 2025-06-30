@@ -6,6 +6,12 @@ import isCustomException from "../utils/isCustomError";
 import errorFilter from "../utils/isCustomError";
 import { TranslationService } from "../services/geminiService";
 
+/**
+ * @swagger
+ * tags:
+ *   name: Owner
+ *   description: Operações de atualização de informação do Owner
+ */
 export class OwnerController {
   public routerPrivate: Router;
   public routerPublic: Router;
@@ -26,12 +32,7 @@ export class OwnerController {
     this.routerPrivate.put("/update", this.update.bind(this));
   }
 
-  /**
-   * Returns the owner data of the logged in user.
-   * @param req - The request object containing the user id.
-   * @param res - The response object used to send back the HTTP response.
-   * @throws Exception if the owner is not found.
-   */
+  
   public async getOwner(req: Request, res: Response) {
     const { lenguage } = req.query as { lenguage?: string };
     try {

@@ -23,6 +23,8 @@
     "express": "^5.1.0",
     "gemini-ai-sdk": "^1.0.2",
     "jsonwebtoken": "^9.0.2",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^11.1.0",
     "zod": "^3.25.67"
   },
@@ -34,6 +36,8 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.0.4",
     "@types/supertest": "^6.0.3",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "jest": "^30.0.3",
     "jest-mock-extended": "^4.0.0",
     "nodemon": "^3.1.10",

@@ -1,0 +1,64 @@
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - name
+        - email
+      properties:
+        id:
+          type: string
+          example: "64f123abc456def789012345"
+        name:
+          type: string
+          example: "João Silva"
+        email:
+          type: string
+          format: email
+          example: "joao@email.com"
+        bio:
+          type: string
+          example: "Desenvolvedor Full Stack apaixonado por tecnologia"
+        avatar_url:
+          type: string
+          format: uri
+          example: "https://exemplo.com/avatar.jpg"
+        linkedin_url:
+          type: string
+          format: uri
+          example: "https://linkedin.com/in/joao-silva"
+        github_url:
+          type: string
+          format: uri
+          example: "https://github.com/joaosilva"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AuthLogin:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "admin@portfolio.com"
+        password:
+          type: string
+          format: password
+          example: "senha123"
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          $ref: "#/components/schemas/User"

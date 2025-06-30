@@ -1,0 +1,31 @@
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: array
+          items:
+            type: string
+          example: ["Page deve ser um número positivo"]
+          description: "Lista de mensagens de erro"
+
+    ValidationError:
+      type: object
+      properties:
+        error:
+          type: array
+          items:
+            type: string
+          example: ["Title é obrigatório", "Description deve ter pelo menos 10 caracteres"]
+          description: "Erros de validação dos campos"
+
+    Success:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Operação realizada com sucesso"
+        data:
+          type: object
+          description: "Dados retornados pela operação"

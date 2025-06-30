@@ -7,6 +7,13 @@ import errorFilter from "../utils/isCustomError";
 import { projectFilterSchema } from "../validations/projectValidation";
 import { TranslationService } from "../services/geminiService";
 
+/**
+ * @swagger
+ * tags:
+ *   name: Projects
+ *   description: Operações de CRUD para projetos do portfólio com funcionalidades de filtro, paginação e tradução automática
+*/
+
 export class ProjectController {
   public routerPrivate: Router;
   public routerPublic: Router;

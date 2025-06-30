@@ -1,0 +1,326 @@
+paths:
+  /projects/owner/{ownerId}:
+    get:
+      tags:
+        - Projects
+      summary: "Listar projetos de um proprietário pelo ID"
+      description: |
+        Retorna uma lista paginada de projetos de um proprietário específico.
+
+        **Funcionalidades:**
+        - Paginação com `page` e `limit`
+        - Filtros por tecnologia, status ativo e busca
+        - Ordenação por data de atualização
+        - Tradução automática para diferentes idiomas
+
+        **Tradução:**
+        - Use o parâmetro `language` para traduzir automaticamente o conteúdo utilizando a API da GeminiAI
+        - Idiomas suportados: en, es, fr, etc. (pt é o padrão)
+      security: []
+      parameters:
+        - name: ownerId
+          in: path
+          required: true
+          description: "ID do proprietário dos projetos"
+          schema:
+            type: string
+            example: "64f123abc456def789012345"
+        - name: page
+          in: query
+          required: false
+          description: "Número da página (padrão: 1)"
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: limit
+          in: query
+          required: false
+          description: "Itens por página (padrão: 10)"
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+            example: 10
+        - name: tech
+          in: query
+          required: false
+          description: "Filtrar por tecnologia específica"
+          schema:
+            type: string
+            example: "react"
+        - name: activate
+          in: query
+          required: false
+          description: "Filtrar por status ativo"
+          schema:
+            type: boolean
+            example: true
+        - name: orderBy
+          in: query
+          required: false
+          description: "Ordenação por data (padrão: desc)"
+          schema:
+            type: string
+            enum: ["asc", "desc"]
+            default: "desc"
+            example: "desc"
+        - name: search
+          in: query
+          required: false
+          description: "Buscar por título ou descrição"
+          schema:
+            type: string
+            example: "e-commerce"
+        - name: language
+          in: query
+          required: false
+          description: "Idioma para tradução automática (padrão: pt)"
+          schema:
+            type: string
+            example: "en"
+      responses:
+        200:
+          description: "Lista de projetos retornada com sucesso"
+          content:
+            application/json:
+              schema:
+                type: array
+              examples:
+                success:
+                  summary: "Resposta de sucesso"
+                  value:
+                    - id: "64f123abc456def789012345"
+                      title: "E-commerce Full Stack"
+                      description: "Aplicação completa de e-commerce"
+                      techs: ["react", "nodejs", "postgresql"]
+                      screenshots: ["https://exemplo.com/screenshot1.jpg"]
+                      deployment: "https://projeto.vercel.app"
+                      backend: "https://github.com/user/backend"
+                      frontend: "https://github.com/user/frontend"
+                      previewImage: "https://exemplo.com/preview.jpg"
+                      lastUpdate: "2024-01-15T10:30:00Z"
+                      ownerId: "64f123abc456def789012345"
+                translated:
+                  summary: "Resposta traduzida (language=en)"
+                  value:
+                    - id: "64f123abc456def789012345"
+                      title: "Full Stack E-commerce"
+                      description: "Complete e-commerce application"
+                      techs: ["react", "nodejs", "postgresql"]
+                      screenshots: ["https://exemplo.com/screenshot1.jpg"]
+                      deployment: "https://projeto.vercel.app"
+                      backend: "https://github.com/user/backend"
+                      frontend: "https://github.com/user/frontend"
+                      previewImage: "https://exemplo.com/preview.jpg"
+                      lastUpdate: "2024-01-15T10:30:00Z"
+                      ownerId: "64f123abc456def789012345"
+        400:
+          description: "Parâmetros de consulta inválidos"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: ["Page deve ser um número positivo"]
+        500:
+          description: "Erro interno do servidor"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: ["Erro interno do servidor"]
+
+  /projects/private/create:
+    post:
+      tags:
+        - Projects
+      summary: "Criar novo projeto"
+      description: |
+        Cria um novo projeto no portfólio do usuário autenticado.
+
+        **Observações:**
+        - O `ownerId` será automaticamente definido pelo token JWT
+        - O campo `lastUpdate` será definido automaticamente
+        - As tecnologias em `techs` serão convertidas para lowercase
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProject"
+            example:
+              title: "E-commerce Full Stack"
+              description: "Aplicação completa de e-commerce com React, Node.js e PostgreSQL"
+              techs: ["React", "Node.js", "PostgreSQL", "TypeScript"]
+              screenshots: ["https://exemplo.com/screenshot1.jpg", "https://exemplo.com/screenshot2.jpg"]
+              deployment: "https://meu-projeto.vercel.app"
+              backend: "https://github.com/usuario/projeto-backend"
+              frontend: "https://github.com/usuario/projeto-frontend"
+              previewImage: "https://exemplo.com/preview.jpg"
+      responses:
+        201:
+          description: "Projeto criado com sucesso"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectResponse"
+              example:
+                message: "Projeto criado com sucesso"
+                projectCreated:
+                  id: "64f123abc456def789012345"
+                  title: "E-commerce Full Stack"
+                  description: "Aplicação completa de e-commerce com React, Node.js e PostgreSQL"
+                  techs: ["react", "nodejs", "postgresql", "typescript"]
+                  screenshots: ["https://exemplo.com/screenshot1.jpg"]
+                  deployment: "https://meu-projeto.vercel.app"
+                  backend: "https://github.com/usuario/projeto-backend"
+                  frontend: "https://github.com/usuario/projeto-frontend"
+                  previewImage: "https://exemplo.com/preview.jpg"
+                  lastUpdate: "2024-01-15T10:30:00Z"
+                  ownerId: "64f123abc456def789012345"
+        400:
+          description: "Dados de entrada inválidos"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        401:
+          description: "Token de autenticação inválido ou ausente"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: "Erro interno do servidor"
+
+  /projects/private/{id}/update:
+    put:
+      tags:
+        - Projects
+      summary: "Atualizar projeto existente"
+      description: |
+        Atualiza um projeto existente do usuário autenticado.
+
+        **Observações:**
+        - Todos os campos são opcionais
+        - Apenas o proprietário do projeto pode atualizá-lo
+        - O campo `lastUpdate` será atualizado automaticamente
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "ID do projeto a ser atualizado"
+          schema:
+            type: string
+            example: "64f123abc456def789012345"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProject"
+            example:
+              title: "E-commerce Full Stack - Versão 2.0"
+              description: "Aplicação de e-commerce com novas funcionalidades e melhorias"
+              techs: ["react", "nodejs", "postgresql", "typescript", "redux"]
+      responses:
+        200:
+          description: "Projeto atualizado com sucesso"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectUpdateResponse"
+        400:
+          description: "Dados de entrada inválidos"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        401:
+          description: "Token de autenticação inválido ou usuário não autorizado"
+        404:
+          description: "Projeto não encontrado"
+        500:
+          description: "Erro interno do servidor"
+
+  /projects/private/{id}/delete:
+    delete:
+      tags:
+        - Projects
+      summary: "Deletar projeto"
+      description: |
+        Remove permanentemente um projeto do portfólio.
+
+        **Atenção:** Esta ação é irreversível!
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "ID do projeto a ser deletado"
+          schema:
+            type: string
+            example: "64f123abc456def789012345"
+      responses:
+        200:
+          description: "Projeto deletado com sucesso"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectDeleteResponse"
+              example:
+                message: "Projeto deletado com sucesso"
+        401:
+          description: "Token de autenticação inválido ou usuário não autorizado"
+        404:
+          description: "Projeto não encontrado"
+        500:
+          description: "Erro interno do servidor"
+
+  /projects/{id}/handle-activate:
+    put:
+      tags:
+        - Projects
+      summary: "Ativar/Desativar projeto"
+      description: |
+        Alterna o status de ativação de um projeto (ativo/inativo).
+
+        **Funcionalidade:**
+        - Se o projeto estiver ativo, será desativado
+        - Se o projeto estiver inativo, será ativado
+        - Projetos inativos não aparecem nas listagens públicas
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "ID do projeto"
+          schema:
+            type: string
+            example: "64f123abc456def789012345"
+      responses:
+        200:
+          description: "Status do projeto alterado com sucesso"
+          content:
+            application/json:
+              example:
+                message: "Projeto atualizado com sucesso"
+                project:
+                  id: "64f123abc456def789012345"
+                  title: "E-commerce Full Stack"
+                  description: "Aplicação completa de e-commerce"
+        401:
+          description: "Token de autenticação inválido ou usuário não autorizado"
+        404:
+          description: "Projeto não encontrado"
+        500:
+          description: "Erro interno do servidor"

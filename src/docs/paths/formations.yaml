@@ -1,0 +1,473 @@
+paths:
+  /formations/owner/{ownerId}:
+    get:
+      tags:
+        - Formations
+      summary: Buscar todas as formações de um owner
+      description: Retorna todas as formações de um owner específico, com opção de tradução
+      security: [] 
+      parameters:
+        - name: ownerId
+          in: path
+          required: true
+          description: ID do owner
+          schema:
+            type: string
+            example: "uuid-owner-id"
+        - name: lenguage
+          in: query
+          required: false
+          description: Idioma para tradução (padrão é 'pt')
+          schema:
+            type: string
+            example: "en"
+            enum: ["en", "es", "fr", "de", "it"]
+      responses:
+        "200":
+          description: Lista de formações encontradas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: "uuid-formation-id"
+                    title:
+                      type: string
+                      example: "Desenvolvimento Web Full Stack"
+                    institution:
+                      type: string
+                      example: "Universidade Federal de São Paulo"
+                    image:
+                      type: string
+                      example: "https://example.com/certificate.jpg"
+                    workload:
+                      type: number
+                      example: 320
+                      description: "Carga horária em horas"
+                    initialDate:
+                      type: string
+                      format: date-time
+                      example: "2022-01-15T00:00:00.000Z"
+                    endDate:
+                      type: string
+                      format: date-time
+                      example: "2023-06-30T00:00:00.000Z"
+                    description:
+                      type: string
+                      example: "Curso completo de desenvolvimento web com foco em tecnologias modernas"
+                    type:
+                      type: string
+                      enum: ["tecnologo", "tecnico", "bootcamp", "curso", "certificado", "pos-graduacao", "outro"]
+                      example: "curso"
+                    certificationUrl:
+                      type: string
+                      nullable: true
+                      example: "https://certificates.example.com/abc123"
+                    ownerId:
+                      type: string
+                      example: "uuid-owner-id"
+        "404":
+          description: Owner não encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Owner não encontrado"
+        "500":
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Erro interno do servidor"
+
+  /formations/types:
+    get:
+      tags:
+        - Formations
+      summary: Buscar todos os tipos de formação
+      description: Retorna todos os tipos de formação disponíveis
+      security: [] 
+      responses:
+        "200":
+          description: Lista de tipos de formação
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  enum: ["tecnologo", "tecnico", "bootcamp", "curso", "certificado", "pos-graduacao", "outro"]
+                example: ["tecnologo", "tecnico", "bootcamp", "curso", "certificado", "pos-graduacao", "outro"]
+        "500":
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Erro interno do servidor"
+
+  /formations/create:
+    post:
+      tags:
+        - Formations
+      summary: Criar nova formação
+      description: Cria uma nova formação para o owner autenticado
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - institution
+                - image
+                - workload
+                - initialDate
+                - endDate
+                - description
+                - type
+              properties:
+                title:
+                  type: string
+                  example: "Desenvolvimento Web Full Stack"
+                  description: "Título da formação"
+                institution:
+                  type: string
+                  example: "Universidade Federal de São Paulo"
+                  description: "Instituição de ensino"
+                image:
+                  type: string
+                  format: uri
+                  example: "https://example.com/certificate.jpg"
+                  description: "URL da imagem do certificado"
+                workload:
+                  type: number
+                  minimum: 1
+                  example: 320
+                  description: "Carga horária em horas"
+                initialDate:
+                  type: string
+                  format: date
+                  example: "2022-01-15"
+                  description: "Data de início"
+                endDate:
+                  type: string
+                  format: date
+                  example: "2023-06-30"
+                  description: "Data de término"
+                description:
+                  type: string
+                  example: "Curso completo de desenvolvimento web com foco em tecnologias modernas"
+                  description: "Descrição da formação"
+                type:
+                  type: string
+                  enum: ["tecnologo", "tecnico", "bootcamp", "curso", "certificado", "pos-graduacao", "outro"]
+                  example: "curso"
+                  description: "Tipo da formação"
+                certificationUrl:
+                  type: string
+                  format: uri
+                  example: "https://certificates.example.com/abc123"
+                  description: "URL do certificado (opcional)"
+      responses:
+        "201":
+          description: Formação criada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Formação adicionada com sucesso"
+                  FormationCreated:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "uuid-formation-id"
+                      title:
+                        type: string
+                        example: "Desenvolvimento Web Full Stack"
+                      institution:
+                        type: string
+                        example: "Universidade Federal de São Paulo"
+                      image:
+                        type: string
+                        example: "https://example.com/certificate.jpg"
+                      workload:
+                        type: number
+                        example: 320
+                      initialDate:
+                        type: string
+                        format: date-time
+                        example: "2022-01-15T00:00:00.000Z"
+                      endDate:
+                        type: string
+                        format: date-time
+                        example: "2023-06-30T00:00:00.000Z"
+                      description:
+                        type: string
+                        example: "Curso completo de desenvolvimento web com foco em tecnologias modernas"
+                      type:
+                        type: string
+                        example: "curso"
+                      certificationUrl:
+                        type: string
+                        nullable: true
+                        example: "https://certificates.example.com/abc123"
+                      ownerId:
+                        type: string
+                        example: "uuid-owner-id"
+        "400":
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Dados obrigatórios não fornecidos"
+        "401":
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Token não fornecido ou inválido"
+        "500":
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Erro interno do servidor"
+
+  /formations/{id}/update:
+    put:
+      tags:
+        - Formations
+      summary: Atualizar formação
+      description: Atualiza uma formação existente do owner autenticado
+      security:
+        - bearerAuth: [] 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID da formação
+          schema:
+            type: string
+            example: "uuid-formation-id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Desenvolvimento Web Full Stack - Atualizado"
+                institution:
+                  type: string
+                  example: "Universidade Federal de São Paulo"
+                image:
+                  type: string
+                  format: uri
+                  example: "https://example.com/certificate-updated.jpg"
+                workload:
+                  type: number
+                  minimum: 1
+                  example: 400
+                initialDate:
+                  type: string
+                  format: date
+                  example: "2022-01-15"
+                endDate:
+                  type: string
+                  format: date
+                  example: "2023-08-30"
+                description:
+                  type: string
+                  example: "Curso completo e atualizado de desenvolvimento web"
+                type:
+                  type: string
+                  enum: ["tecnologo", "tecnico", "bootcamp", "curso", "certificado", "pos-graduacao", "outro"]
+                  example: "curso"
+                certificationUrl:
+                  type: string
+                  format: uri
+                  example: "https://certificates.example.com/xyz789"
+      responses:
+        "200":
+          description: Formação atualizada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Formation atualizada com sucesso"
+                  formationUpdated:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "uuid-formation-id"
+                      title:
+                        type: string
+                        example: "Desenvolvimento Web Full Stack - Atualizado"
+                      institution:
+                        type: string
+                        example: "Universidade Federal de São Paulo"
+                      image:
+                        type: string
+                        example: "https://example.com/certificate-updated.jpg"
+                      workload:
+                        type: number
+                        example: 400
+                      initialDate:
+                        type: string
+                        format: date-time
+                        example: "2022-01-15T00:00:00.000Z"
+                      endDate:
+                        type: string
+                        format: date-time
+                        example: "2023-08-30T00:00:00.000Z"
+                      description:
+                        type: string
+                        example: "Curso completo e atualizado de desenvolvimento web"
+                      type:
+                        type: string
+                        example: "curso"
+                      certificationUrl:
+                        type: string
+                        nullable: true
+                        example: "https://certificates.example.com/xyz789"
+                      ownerId:
+                        type: string
+                        example: "uuid-owner-id"
+        "400":
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "ID da formação inválido"
+        "401":
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Token não fornecido ou inválido"
+        "404":
+          description: Formação não encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Formação não encontrada"
+        "500":
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Erro interno do servidor"
+
+  /formations/{id}/delete:
+    delete:
+      tags:
+        - Formations
+      summary: Deletar formação
+      description: Remove uma formação do owner autenticado
+      security:
+        - bearerAuth: 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID da formação
+          schema:
+            type: string
+            example: "uuid-formation-id"
+      responses:
+        "200":
+          description: Formação deletada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Formation deletada com sucesso"
+        "401":
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Token não fornecido ou inválido"
+        "404":
+          description: Formação não encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Formação não encontrada"
+        "500":
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Erro interno do servidor"

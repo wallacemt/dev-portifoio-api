@@ -1,0 +1,219 @@
+
+paths:
+  /owner/{ownerId}:
+    get:
+      tags:
+        - Owner
+      summary: Buscar informações do owner
+      description: Retorna as informações de um owner específico, com opção de tradução
+      security: [] 
+      parameters:
+        - name: ownerId
+          in: path
+          required: true
+          description: ID do owner
+          schema:
+            type: string
+            example: "uuid-owner-id"
+        - name: lenguage
+          in: query
+          required: false
+          description: Idioma para tradução (padrão é 'pt')
+          schema:
+            type: string
+            example: "en"
+            enum: ["en", "es", "fr", "de", "it"]
+      responses:
+        '200':
+          description: Informações do owner encontradas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: "uuid-owner-id"
+                    description: "ID único do owner"
+                  name:
+                    type: string
+                    example: "João Silva"
+                    description: "Nome completo do owner"
+                  email:
+                    type: string
+                    format: email
+                    example: "joao@email.com"
+                    description: "Email do owner"
+                  avatar:
+                    type: string
+                    nullable: true
+                    example: "https://example.com/avatar.jpg"
+                    description: "URL do avatar do owner"
+                  about:
+                    type: string
+                    example: "Desenvolvedor Full Stack apaixonado por tecnologia"
+                    description: "Descrição sobre o owner"
+                  occupation:
+                    type: string
+                    example: "Desenvolvedor Full Stack"
+                    description: "Ocupação profissional do owner"
+                  birthDate:
+                    type: string
+                    format: date-time
+                    example: "1990-05-15T00:00:00.000Z"
+                    description: "Data de nascimento do owner"
+        '404':
+          description: Owner não encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Owner não encontrado"
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Erro interno do servidor"
+
+  /owner/update:
+    put:
+      tags:
+        - Owner
+      summary: Atualizar informações do owner
+      description: Atualiza as informações do owner autenticado (todos os campos são opcionais)
+      security:
+        - bearerAuth: [] 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "João Silva Santos"
+                  description: "Nome completo do owner (opcional)"
+                email:
+                  type: string
+                  format: email
+                  example: "joao.novo@email.com"
+                  description: "Email do owner (opcional)"
+                password:
+                  type: string
+                  minLength: 6
+                  example: "nova123456"
+                  description: "Nova senha do owner (opcional)"
+                avatar:
+                  type: string
+                  format: uri
+                  example: "https://example.com/novo-avatar.jpg"
+                  description: "URL do novo avatar (opcional)"
+                about:
+                  type: string
+                  example: "Desenvolvedor Full Stack sênior com foco em React e Node.js"
+                  description: "Nova descrição sobre o owner (opcional)"
+                occupation:
+                  type: string
+                  example: "Senior Full Stack Developer"
+                  description: "Nova ocupação profissional (opcional)"
+                birthDate:
+                  type: string
+                  format: date
+                  example: "1990-05-15"
+                  description: "Nova data de nascimento (opcional)"
+              additionalProperties: false
+              minProperties: 1
+      responses:
+        '200':
+          description: Owner atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Owner atualizado com sucesso"
+                  ownerUpdated:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "uuid-owner-id"
+                        description: "ID único do owner"
+                      name:
+                        type: string
+                        example: "João Silva Santos"
+                        description: "Nome atualizado do owner"
+                      email:
+                        type: string
+                        format: email
+                        example: "joao.novo@email.com"
+                        description: "Email atualizado do owner"
+                      avatar:
+                        type: string
+                        nullable: true
+                        example: "https://example.com/novo-avatar.jpg"
+                        description: "URL do avatar atualizado"
+                      about:
+                        type: string
+                        example: "Desenvolvedor Full Stack sênior com foco em React e Node.js"
+                        description: "Descrição atualizada do owner"
+                      occupation:
+                        type: string
+                        example: "Senior Full Stack Developer"
+                        description: "Ocupação atualizada do owner"
+                      birthDate:
+                        type: string
+                        format: date-time
+                        example: "1990-05-15T00:00:00.000Z"
+                        description: "Data de nascimento atualizada"
+        '400':
+          description: Dados inválidos ou nenhum campo fornecido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Email já está em uso por outro usuário"
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Token não fornecido ou inválido"
+        '404':
+          description: Owner não encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Owner não encontrado"
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Erro interno do servidor"

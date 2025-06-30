@@ -1,7 +1,7 @@
 {
   "preset": "ts-jest",
   "testEnvirounment": "node",
-  "setupFiles": ["./jest.setup.ts"],
+  "setupFiles": ["./src/jest.setup.ts"],
   "extensionsToTreatAsEsm": [".ts"],
   "transform": {
     "^.+\\.ts$": "ts-jest"
