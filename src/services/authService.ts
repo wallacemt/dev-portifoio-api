@@ -5,8 +5,18 @@ import jwt from "jsonwebtoken";
 import { hashPassword, verifyPassword } from "../utils/hash";
 import { ZodError } from "zod";
 import { ownerSchema } from "../validations/ownerValidations";
+
 const jwtSecret = process.env.JWT_SECRET;
 
+const MAX_ATTEMPTS = 3;
+const LOCK_TIME = 30 * 60 * 1000;
+
+interface AttemptData {
+  attempts: number;
+  lastAttempt: number;
+}
+
+const attemptsCache: Record<string, AttemptData> = {};
 export class AuthService {
   private ownerRepository = new OwnerRepository();
 
@@ -45,11 +55,26 @@ export class AuthService {
     const owner = await this.ownerRepository.findByEmail(email);
 
     if (!owner) throw new Exception("Owner não encontrado!", 404);
+    const data = attemptsCache[email] || { attempts: 0, lastAttempt: Date.now() };
+    if (data.attempts >= MAX_ATTEMPTS && Date.now() - data.lastAttempt < LOCK_TIME) {
+      throw new Exception(
+        `Número máximo de tentativas excedido. Tente novamente em ${Math.ceil((LOCK_TIME - Date.now() + data.lastAttempt) / 1000 / 60)} minutos`,
+        429
+      );
+    }
 
-    const isValidPassowrd = await verifyPassword(owner.password, password);
+    const isValidPassword = await verifyPassword(owner.password, password);
 
-    if (!isValidPassowrd) throw new Exception("Senha inválida!", 401);
+    if (!isValidPassword) {
+      attemptsCache[email] = {
+        attempts: data.attempts + 1,
+        lastAttempt: Date.now(),
+      };
 
+      throw new Exception(`Senha inválida, tentativas restantes: ${MAX_ATTEMPTS - data.attempts}`, 401);
+    }
+
+    delete attemptsCache[email];
     const token = jwt.sign({ id: owner.id, email: owner.email }, jwtSecret as string, { expiresIn: "7d" });
 
     return { ...owner, token };

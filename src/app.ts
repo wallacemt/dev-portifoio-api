@@ -24,7 +24,7 @@ class App {
     const skillController = new SkillController();
     const formationController = new FormationController();
     const ownerController = new OwnerController();
-
+    this.app.get("/", (_req, res) => res.redirect("/docs"));
     this.app.use("/auth", new AuthController().router);
     this.app.use("/owner", ownerController.routerPublic);
     this.app.use("/owner/private", ownerController.routerPrivate);
