@@ -18,6 +18,8 @@ export class OwnerService {
       about: owner.about,
       occupation: owner.occupation,
       birthDate: owner.birthDate,
+      cvLinkPT: owner.cvLinkPT || null,
+      cvLinkEN: owner.cvLinkEN || null,
     };
   }
 

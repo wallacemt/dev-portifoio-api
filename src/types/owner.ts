@@ -6,10 +6,11 @@ export interface OwnerDataRequest {
   about: string;
   occupation: string;
   birthDate: Date;
+  cvLinkPT?: string;
+  cvLinkEN?: string;
 }
 
 export type OwnerDataOptionalRequest = Partial<OwnerDataRequest>;
-
 
 export interface OwnerDataResponse {
   id: string;
@@ -19,5 +20,7 @@ export interface OwnerDataResponse {
   about: string;
   occupation: string;
   birthDate: Date;
-  token?: string
+  cvLinkPT: string | null;
+  cvLinkEN: string | null;
+  token?: string;
 }
