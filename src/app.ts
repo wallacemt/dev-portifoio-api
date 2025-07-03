@@ -9,6 +9,7 @@ import { FormationController } from "./controllers/formationController";
 import express, { Application, Express } from "express";
 import { swaggerSpec } from "./docs/swaggerConfiguration";
 import swaggerUi from "swagger-ui-express";
+import { UtilisController } from "./controllers/utilisController";
 
 dotenv.config();
 class App {
@@ -24,6 +25,7 @@ class App {
     const skillController = new SkillController();
     const formationController = new FormationController();
     const ownerController = new OwnerController();
+    const utilisController = new UtilisController();
     this.app.get("/", (_req, res) => res.redirect("/docs"));
     this.app.use("/auth", new AuthController().router);
     this.app.use("/owner", ownerController.routerPublic);
@@ -34,6 +36,7 @@ class App {
     this.app.use("/skills", skillController.routerPublic);
     this.app.use("/formations/private", formationController.routerPrivate);
     this.app.use("/formations", formationController.routerPublic);
+    this.app.use("/utilis", utilisController.routerPublic);
     this.app.use(
       "/docs",
       swaggerUi.serve,

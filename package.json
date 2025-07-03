@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/app.ts",
-    "prod": "docker run -p 8081:8081 --env-file .env dev-portifolio-backend",
-    "prod:build": "docker build -t dev-portifolio-backend .",
+    "prod:up": "docker compose up -d",
+    "prod:down": "docker compose down",
     "db": "prisma db push",
     "build": "tsc",
     "start": "prisma migrate dev && node ./dist/app.js",
