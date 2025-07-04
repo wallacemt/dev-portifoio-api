@@ -7,10 +7,6 @@ const navbarItems = [
     path: "/",
   },
   {
-    name: "Sobre",
-    path: "/about",
-  },
-  {
     name: "Contato",
     path: "/contact",
   },

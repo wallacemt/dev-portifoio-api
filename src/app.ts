@@ -10,6 +10,7 @@ import express, { Application, Express } from "express";
 import { swaggerSpec } from "./docs/swaggerConfiguration";
 import swaggerUi from "swagger-ui-express";
 import { UtilisController } from "./controllers/utilisController";
+import { StatusController } from "./controllers/statusController";
 
 dotenv.config();
 class App {
@@ -27,6 +28,7 @@ class App {
     const ownerController = new OwnerController();
     const utilisController = new UtilisController();
     this.app.get("/", (_req, res) => res.redirect("/docs"));
+    this.app.use("/status", new StatusController().router);
     this.app.use("/auth", new AuthController().router);
     this.app.use("/owner", ownerController.routerPublic);
     this.app.use("/owner/private", ownerController.routerPrivate);
