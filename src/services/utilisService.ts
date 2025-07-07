@@ -1,32 +1,42 @@
 import { LanguageApiResponse } from "../types/utils";
-import { Exception } from "../utils/exception";
 
-const navbarItems = [
-  {
-    name: "Home",
-    path: "/",
-  },
-  {
-    name: "Contato",
-    path: "/contact",
-  },
-  {
-    name: "Projetos",
-    path: "/projects",
-  },
-  {
-    name: "Habilidades",
-    path: "/skills",
-  },
-  {
-    name: "Serviços",
-    path: "/services",
-  },
-  {
-    name: "Formação",
-    path: "/formation",
-  },
-];
+interface NavbarItem {
+  name: string;
+  path: string;
+}
+interface NavbarItens {
+  itens: NavbarItem[];
+  callText: string;
+}
+const navbarItems: NavbarItens = {
+  itens: [
+    {
+      name: "Home",
+      path: "/",
+    },
+    {
+      name: "Contato",
+      path: "/contact",
+    },
+    {
+      name: "Projetos",
+      path: "/projects",
+    },
+    {
+      name: "Habilidades",
+      path: "/skills",
+    },
+    {
+      name: "Serviços",
+      path: "/services",
+    },
+    {
+      name: "Formação",
+      path: "/formation",
+    },
+  ],
+  callText: "Disponível para novos projetos",
+};
 
 const servicesItems = {
   desenvolvimento_aplicacoes_web: {
@@ -115,7 +125,7 @@ const defaultLenguages: LanguageApiResponse = {
   ],
 };
 export class UtilisService {
-  public getNavbarItems(): { name: string; path: string }[] {
+  public getNavbarItems(): NavbarItens {
     return navbarItems;
   }
   public getServicesItems(): Record<string, { name: string; description: string; details: string }> {

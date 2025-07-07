@@ -6,7 +6,7 @@ import { ownerSchemaOptional } from "../validations/ownerValidations";
 
 export class OwnerService {
   private ownerRepository = new OwnerRepository();
-  public async getOwner(ownerId: string): Promise<OwnerDataResponse> {
+  public async getOwner(ownerId: string): Promise<OwnerDataResponse & { welcomeMessage: string, buttons: { project: string, curriculo: string }}> {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
     const owner = await this.ownerRepository.findById(ownerId);
     if (!owner) throw new Exception("Owner não  Encontrado!", 404);
@@ -20,6 +20,11 @@ export class OwnerService {
       birthDate: owner.birthDate,
       cvLinkPT: owner.cvLinkPT || null,
       cvLinkEN: owner.cvLinkEN || null,
+      welcomeMessage: `Olá, eu sou ${owner.name}!`,
+      buttons: {
+        project: "Ver Projetos",
+        curriculo: "Curriculo",
+      }
     };
   }
 

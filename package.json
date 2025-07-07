@@ -9,7 +9,7 @@
     "prod:down": "docker compose down",
     "db": "prisma db push",
     "build": "tsc",
-    "start": "prisma migrate dev && node ./dist/app.js",
+    "start": "prisma migrate dev && node ./public/app.js",
     "test": "jest",
     "test:watch": "jest --watch"
   },
