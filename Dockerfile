@@ -21,7 +21,6 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/src/docs ./src/docs
 
-COPY .env .
 RUN npx prisma generate
 ENV NODE_ENV=production
 ENV PORT=8081
