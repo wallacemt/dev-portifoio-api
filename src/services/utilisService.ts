@@ -15,10 +15,6 @@ const navbarItems: NavbarItens = {
       path: "/",
     },
     {
-      name: "Contato",
-      path: "/contact",
-    },
-    {
       name: "Projetos",
       path: "/projects",
     },

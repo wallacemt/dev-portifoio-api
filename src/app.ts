@@ -53,7 +53,7 @@ class App {
   }
   config() {
     this.app.use(cors({ origin: process.env.FRONTEND_URL }));
-    this.app.use(requestLogger);
+    if (process.env.NODE_ENV !== "production") this.app.use(requestLogger);
     this.app.use(express.json());
   }
   listen(port: number | string) {
