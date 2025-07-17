@@ -14,7 +14,7 @@ export const swaggerOptions = {
         description: "Servidor de Desenvolvimento",
       },
       {
-        url: "https://vercel-api.com",
+        url: "https://dev-portifoio-api.onrender.com",
         description: "Servidor de Produção",
       },
     ],
