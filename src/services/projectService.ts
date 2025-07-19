@@ -37,7 +37,7 @@ export class ProjectService {
     ]);
 
     const projectsWithSkills = await Promise.all(
-      projects.map(async (project) => {
+      projects.map(async (project: Project) => {
         const skills = await this.projectRepository.findHabilitiesWhereProject(project.id, ownerId);
         return { ...project, skills };
       })

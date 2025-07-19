@@ -8,7 +8,7 @@
     "prod:up": "docker compose up -d",
     "prod:down": "docker compose down",
     "db": "prisma db push",
-    "build": "tsc && npx prisma generate",
+    "build": "tsc &&  npx prisma generate",
     "start": "node ./dist/app.js",
     "test": "jest",
     "test:watch": "jest --watch"

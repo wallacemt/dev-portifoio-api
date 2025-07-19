@@ -1,5 +1,6 @@
 import { prisma } from "../prisma/prismaClient";
 import { CreateProject, UpdateProjec } from "../types/projects";
+import { Skill } from "../types/skills";
 import { SkillRepository } from "./skillRepository";
 
 export class ProjectRepository {
@@ -38,8 +39,6 @@ export class ProjectRepository {
 
   async handleActivateOrDesactivate(projectId: string) {
     const projectFind = await prisma.project.findUnique({ where: { id: projectId } });
-    projectFind;
-
     return await prisma.project.update({
       where: { id: projectId },
       data: { activate: !projectFind?.activate },
@@ -50,8 +49,8 @@ export class ProjectRepository {
     const project = await this.findProjectById(projectId);
     const habilities = await this.skillRepo.findAllSkills(ownerId);
     const relatedHabilities = habilities
-      .filter((skill) => project?.techs.some((tech) => skill.title.toLowerCase() === tech.toLowerCase()))
-      .map(({ id, image }) => ({ id, image }));
+      .filter((skill: Skill) => project?.techs.some((tech: string) => skill.title.toLowerCase() === tech.toLowerCase()))
+      .map(({ id, image }: Skill) => ({ id, image }));
     return relatedHabilities;
   }
 
@@ -65,8 +64,8 @@ export class ProjectRepository {
 
     const uniqueTechs = new Set<string>();
 
-    projects.forEach((project) => {
-      project.techs.forEach((tech) => {
+    projects.forEach((project: { techs: string[] }) => {
+      project.techs.forEach((tech: string) => {
         uniqueTechs.add(tech.toLowerCase());
       });
     });
