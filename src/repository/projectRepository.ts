@@ -1,7 +1,9 @@
 import { prisma } from "../prisma/prismaClient";
 import { CreateProject, UpdateProjec } from "../types/projects";
+import { SkillRepository } from "./skillRepository";
 
 export class ProjectRepository {
+  private skillRepo = new SkillRepository();
   async findAllProjects(where: any, skip: number, take: number, orderBy: "asc" | "desc") {
     return prisma.project.findMany({
       where,
@@ -42,5 +44,33 @@ export class ProjectRepository {
       where: { id: projectId },
       data: { activate: !projectFind?.activate },
     });
+  }
+
+  async findHabilitiesWhereProject(projectId: string, ownerId: string) {
+    const project = await this.findProjectById(projectId);
+    const habilities = await this.skillRepo.findAllSkills(ownerId);
+    const relatedHabilities = habilities
+      .filter((skill) => project?.techs.some((tech) => skill.title.toLowerCase() === tech.toLowerCase()))
+      .map(({ id, image }) => ({ id, image }));
+    return relatedHabilities;
+  }
+
+  async getAllTechsProjects(ownerId: string) {
+    const projects = await prisma.project.findMany({
+      where: { ownerId },
+      select: {
+        techs: true,
+      },
+    });
+
+    const uniqueTechs = new Set<string>();
+
+    projects.forEach((project) => {
+      project.techs.forEach((tech) => {
+        uniqueTechs.add(tech.toLowerCase());
+      });
+    });
+
+    return Array.from(uniqueTechs);
   }
 }

@@ -12,7 +12,7 @@ import { TranslationService } from "../services/geminiService";
  * tags:
  *   name: Projects
  *   description: Operações de CRUD para projetos do portfólio com funcionalidades de filtro, paginação e tradução automática
-*/
+ */
 
 export class ProjectController {
   public routerPrivate: Router;
@@ -28,6 +28,7 @@ export class ProjectController {
 
   private routesPublic() {
     this.routerPublic.get("/owner/:ownerId", this.getAllProject.bind(this));
+    this.routerPublic.get("/owner/:ownerId/techs", this.getAllTechs.bind(this));
   }
   private routesPrivate() {
     this.routerPrivate.use(AuthPolice);
@@ -38,7 +39,7 @@ export class ProjectController {
   }
 
   public async getAllProject(req: Request, res: Response) {
-    const { lenguage } = req.query as { lenguage?: string };
+    const { language } = req.query as { language?: string };
 
     const parseResult = projectFilterSchema.safeParse(req.query);
 
@@ -49,9 +50,9 @@ export class ProjectController {
       try {
         const result = await this.projectService.findAllProjects(req.params.ownerId, filters);
 
-        if (lenguage && lenguage != "pt") {
+        if (language && language != "pt") {
           try {
-            const translated = await this.translationService.translateObject(result, lenguage, "pt");
+            const translated = await this.translationService.translateObject(result, language, "pt");
             res.status(200).json(translated);
           } catch (e) {
             errorFilter(e, res);
@@ -97,6 +98,14 @@ export class ProjectController {
     try {
       const project = await this.projectService.handleActivateOrDesactivateProject(req.params.id);
       res.status(200).json({ message: "Projeto atualizado com sucesso", project });
+    } catch (error) {
+      errorFilter(error, res);
+    }
+  }
+  public async getAllTechs(req: Request, res: Response) {
+    try {
+      const result = await this.projectService.getAllTechs(req.params.ownerId);
+      res.status(200).json(result);
     } catch (error) {
       errorFilter(error, res);
     }

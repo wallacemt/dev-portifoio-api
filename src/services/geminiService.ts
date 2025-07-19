@@ -10,7 +10,7 @@ export class TranslationService {
     const jsonString = JSON.stringify(obj);
 
     const prompt = `
-    Translate the following JSON object's  string values from ${sourceLeng} to ${lenguage}, preserving keys and structure. Do NOT translate keys or non-text values:
+    Translate the following JSON object's  string values from ${sourceLeng} to ${lenguage}, preserving keys and structure. Do NOT translate keys or non-text values, if key for title translate it to ${lenguage}.:
     ${jsonString}
     `;
     try {
@@ -19,7 +19,6 @@ export class TranslationService {
       const response = resp as GeminiResponse;
       const text = response.response.candidates![0].content.parts[0].text;
       const jsonText = text.replace(/```json|```/g, "").trim();
-      console.log(jsonText);
       try {
         return JSON.parse(jsonText);
       } catch (e) {

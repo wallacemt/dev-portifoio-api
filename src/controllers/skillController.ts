@@ -44,12 +44,12 @@ export class SkillController {
   }
 
   public async getAllSkill(req: Request, res: Response) {
-    const { lenguage } = req.query as { lenguage?: string };
+    const { language } = req.query as { language?: string };
     try {
       const result = await this.skillService.findAllSkill(req.params.ownerId);
-      if (lenguage && lenguage != "pt") {
+      if (language && language != "pt") {
         try {
-          const translated = await this.translationService.translateObject(result, lenguage, "pt");
+          const translated = await this.translationService.translateObject(result, language, "pt");
           res.status(200).json(translated);
         } catch (e) {
           errorFilter(e, res);

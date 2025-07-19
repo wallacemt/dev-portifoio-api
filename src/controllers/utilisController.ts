@@ -1,7 +1,5 @@
 import { Router, Request, Response } from "express";
-import AuthPolice from "../middleware/authPolice";
 import errorFilter from "../utils/isCustomError";
-import { SkillAddRequest, SkillUpdateRequest } from "../types/skills";
 import { TranslationService } from "../services/geminiService";
 import { UtilisService } from "../services/utilisService";
 
@@ -22,16 +20,16 @@ export class UtilisController {
   private routesPublic() {
     this.routerPublic.get("/navbar", this.getNavbarItens.bind(this));
     this.routerPublic.get("/services", this.getServicesItens.bind(this));
-    this.routerPublic.get("/lenguages", this.getLenguageOptions.bind(this));
+    this.routerPublic.get("/languages", this.getlanguageOptions.bind(this));
   }
 
   public async getNavbarItens(req: Request, res: Response) {
-    const { lenguage } = req.query as { lenguage?: string };
+    const { language } = req.query as { language?: string };
     try {
       const navbar = this.utilisService.getNavbarItems();
-      if (lenguage && lenguage != "pt") {
+      if (language && language != "pt") {
         try {
-          const translated = await this.translationService.translateObject(navbar, lenguage, "pt");
+          const translated = await this.translationService.translateObject(navbar, language, "pt");
           res.status(200).json(translated);
         } catch (e) {
           errorFilter(e, res);
@@ -44,12 +42,12 @@ export class UtilisController {
     }
   }
   public async getServicesItens(req: Request, res: Response) {
-    const { lenguage } = req.query as { lenguage?: string };
+    const { language } = req.query as { language?: string };
     try {
       const services = this.utilisService.getServicesItems();
-      if (lenguage && lenguage != "pt") {
+      if (language && language != "pt") {
         try {
-          const translated = await this.translationService.translateObject(services, lenguage, "pt");
+          const translated = await this.translationService.translateObject(services, language, "pt");
           res.status(200).json(translated);
         } catch (e) {
           errorFilter(e, res);
@@ -61,10 +59,10 @@ export class UtilisController {
       errorFilter(error, res);
     }
   }
-  public async getLenguageOptions(req: Request, res: Response) {
+  public async getlanguageOptions(req: Request, res: Response) {
     try {
-      const lenguages = await this.utilisService.getLeguageApiReferenceUrl();
-      res.status(200).json(lenguages);
+      const languages = await this.utilisService.getLeguageApiReferenceUrl();
+      res.status(200).json(languages);
     } catch (error) {
       errorFilter(error, res);
     }

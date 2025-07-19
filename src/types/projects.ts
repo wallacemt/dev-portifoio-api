@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { projectFilterSchema } from "../validations/projectValidation";
+import { Skill } from "./skills";
 
 export interface CreateProject {
   title: string;
@@ -28,6 +29,10 @@ export interface Project {
   backend: string;
   frontend: string;
   previewImage: string;
+}
+
+export interface ProjectWithSkills extends Project {
+  skills: Skill[];
 }
 
 export type ProjectFilter = z.infer<typeof projectFilterSchema>;

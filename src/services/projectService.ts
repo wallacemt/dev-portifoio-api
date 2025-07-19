@@ -1,6 +1,6 @@
 import { ZodError } from "zod";
 import { ProjectRepository } from "../repository/projectRepository";
-import { CreateProject, Project, ProjectFilter, UpdateProjec } from "../types/projects";
+import { CreateProject, Project, ProjectFilter, ProjectWithSkills, UpdateProjec } from "../types/projects";
 import { Exception } from "../utils/exception";
 import { projectSchema, projectSchemaOptional } from "../validations/projectValidation";
 
@@ -19,11 +19,10 @@ export class ProjectService {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
     const { page, limit, tech, activate, orderBy, search } = filters;
     const skip = (page - 1) * limit;
-
     const where: any = {
       ownerId: ownerId,
       ...(activate !== undefined && { activate }),
-      ...(tech && { techs: { has: tech } }),
+      ...(tech && { techs: { has: tech.toLowerCase() } }),
       ...(search && {
         OR: [
           { title: { contains: search, mode: "insensitive" } },
@@ -37,8 +36,15 @@ export class ProjectService {
       this.projectRepository.countProjects(where),
     ]);
 
+    const projectsWithSkills = await Promise.all(
+      projects.map(async (project) => {
+        const skills = await this.projectRepository.findHabilitiesWhereProject(project.id, ownerId);
+        return { ...project, skills };
+      })
+    );
+
     return {
-      projects,
+      projects: projectsWithSkills,
       meta: {
         page,
         limit,
@@ -92,5 +98,11 @@ export class ProjectService {
     if (!projectId || projectId === ":id") throw new Exception("ID do projeto invalido", 400);
     if (!(await this.projectRepository.findProjectById(projectId))) throw new Exception("Projeto não encontrado", 404);
     return await this.projectRepository.handleActivateOrDesactivate(projectId);
+  }
+
+  public async getAllTechs(ownerId: string) {
+    if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
+
+    return await this.projectRepository.getAllTechsProjects(ownerId);
   }
 }

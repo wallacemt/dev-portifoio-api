@@ -34,12 +34,12 @@ export class OwnerController {
 
   
   public async getOwner(req: Request, res: Response) {
-    const { lenguage } = req.query as { lenguage?: string };
+    const { language } = req.query as { language?: string };
     try {
       const owner = await this.ownerService.getOwner(req.params.ownerId);
-      if (lenguage && lenguage != "pt") {
+      if (language && language != "pt") {
         try {
-          const translated = await this.translationService.translateObject(owner, lenguage, "pt");
+          const translated = await this.translationService.translateObject(owner, language, "pt");
           res.status(200).json(translated);
         } catch (e) {
           errorFilter(e, res);
@@ -57,7 +57,6 @@ export class OwnerController {
       const ownerData: OwnerDataOptionalRequest = req.body;
       if (ownerData.birthDate) {
         ownerData.birthDate = new Date(ownerData.birthDate);
-        console.log(ownerData.birthDate);
       }
       const ownerUpdated = await this.ownerService.updateOwner(ownerData, req.userId);
       res.status(200).json({ message: "Owner atualizado com sucesso", ownerUpdated });
