@@ -1,5 +1,6 @@
 import git from "git-rev-sync";
 import { prisma } from "../prisma/prismaClient";
+import { env } from "../env";
 
 export class StatusService {
   async getStatus() {
@@ -24,11 +25,11 @@ export class StatusService {
     }
 
     server.status = "healthy";
-    server.ambiente = process.env.NODE_ENV || "development";
+    server.ambiente = env.NODE_ENV || "development";
     server.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     server.versão_node = process.version;
     server.plataforma = process.platform;
-    server.região = process.env.RENDER_REGION || "desconhecida";
+    server.região = "oregon-us-west";
 
     try {
       gitInfo.sha_commit = git.short();

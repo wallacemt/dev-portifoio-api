@@ -8,6 +8,8 @@
     "prod:up": "docker compose up -d",
     "prod:down": "docker compose down",
     "db": "prisma db push",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio",
     "build": "tsc &&  npx prisma generate",
     "start": "node ./dist/app.js",
     "test": "jest",

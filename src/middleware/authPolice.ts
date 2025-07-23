@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken"
-import { Exception } from "../utils/exception";
-const jwtSecret = process.env.JWT_SECRET;
+import { env } from "../env";
+const jwtSecret = env.JWT_SECRET;
 
 declare global {
   namespace Express {

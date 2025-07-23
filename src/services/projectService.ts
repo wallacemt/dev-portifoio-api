@@ -42,7 +42,13 @@ export class ProjectService {
         return { ...project, skills };
       })
     );
-
+    projectsWithSkills.map((project) => {
+      project.screenshots = [
+        project.previewImage,
+        ...project.screenshots.filter((img) => img !== project.previewImage),
+      ];
+      return project;
+    });
     return {
       projects: projectsWithSkills,
       meta: {

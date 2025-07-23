@@ -11,6 +11,7 @@ import { swaggerSpec } from "./docs/swaggerConfiguration";
 import swaggerUi from "swagger-ui-express";
 import { UtilisController } from "./controllers/utilisController";
 import { StatusController } from "./controllers/statusController";
+import { env } from "./env";
 
 dotenv.config();
 class App {
@@ -19,7 +20,7 @@ class App {
     this.app = express();
     this.config();
     this.routes();
-    this.listen(process.env.PORT || 3000);
+    this.listen(env.PORT || 3000);
   }
   routes() {
     const projectController = new ProjectController();
@@ -52,8 +53,8 @@ class App {
     );
   }
   config() {
-    this.app.use(cors({ origin: process.env.FRONTEND_URL }));
-    if (process.env.NODE_ENV !== "production") this.app.use(requestLogger);
+    this.app.use(cors({ origin: env.FRONTEND_URL }));
+    if (env.NODE_ENV !== "production") this.app.use(requestLogger);
     this.app.use(express.json());
   }
   listen(port: number | string) {

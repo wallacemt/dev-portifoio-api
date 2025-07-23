@@ -5,8 +5,9 @@ import jwt from "jsonwebtoken";
 import { hashPassword, verifyPassword } from "../utils/hash";
 import { ZodError } from "zod";
 import { ownerSchema } from "../validations/ownerValidations";
+import { env } from "../env";
 
-const jwtSecret = process.env.JWT_SECRET;
+const jwtSecret = env.JWT_SECRET ;
 
 const MAX_ATTEMPTS = 3;
 const LOCK_TIME = 30 * 60 * 1000;
