@@ -50,7 +50,7 @@ export class ProjectRepository {
     const habilities = await this.skillRepo.findAllSkills(ownerId);
     const relatedHabilities = habilities
       .filter((skill: Skill) => project?.techs.some((tech: string) => skill.title.toLowerCase() === tech.toLowerCase()))
-      .map(({ id, image }: Skill) => ({ id, image }));
+      .map(({ id, image, title }: Skill) => ({ id, image, title }));
     return relatedHabilities;
   }
 

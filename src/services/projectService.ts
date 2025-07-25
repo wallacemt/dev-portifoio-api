@@ -3,6 +3,7 @@ import { ProjectRepository } from "../repository/projectRepository";
 import { CreateProject, Project, ProjectFilter, ProjectWithSkills, UpdateProjec } from "../types/projects";
 import { Exception } from "../utils/exception";
 import { projectSchema, projectSchemaOptional } from "../validations/projectValidation";
+import { title } from "process";
 
 export class ProjectService {
   private projectRepository = new ProjectRepository();
@@ -36,21 +37,40 @@ export class ProjectService {
       this.projectRepository.countProjects(where),
     ]);
 
-    const projectsWithSkills = await Promise.all(
+    const projectsFinalForm = await Promise.all(
       projects.map(async (project: Project) => {
         const skills = await this.projectRepository.findHabilitiesWhereProject(project.id, ownerId);
-        return { ...project, skills };
+        const reorderedScreenshots = [
+          project.previewImage,
+          ...project.screenshots.filter((img) => img !== project.previewImage),
+        ];
+
+        return {
+          ...project,
+          screenshots: reorderedScreenshots,
+          description: {
+            title: "Descrição",
+            content: project.description,
+          },
+          techs: {
+            title: "Tecnologias",
+            content: project.techs,
+          },
+          links: {
+            title: "Links do Projeto",
+            content: { backend: project.backend, frontend: project.frontend, deployment: project.deployment },
+          },
+          skills: {
+            title: "Habilidades Utilizadas",
+            content: skills,
+          },
+          cta: "Ver Projeto",
+        };
       })
     );
-    projectsWithSkills.map((project) => {
-      project.screenshots = [
-        project.previewImage,
-        ...project.screenshots.filter((img) => img !== project.previewImage),
-      ];
-      return project;
-    });
     return {
-      projects: projectsWithSkills,
+      projects: projectsFinalForm,
+
       meta: {
         page,
         limit,
