@@ -58,13 +58,24 @@ export class ProjectService {
           },
           links: {
             title: "Links do Projeto",
-            content: { backend: project.backend, frontend: project.frontend, deployment: project.deployment },
+            content: {
+              backend: { title: "Backend", url: project.backend },
+              frontend: { title: "Frontend", url: project.frontend },
+              deployment: { title: "Deployment", url: project.deployment },
+            },
           },
           skills: {
             title: "Habilidades Utilizadas",
             content: skills,
           },
           cta: "Ver Projeto",
+          lastUpdateText:
+            "Ultima Atualização " +
+            new Date(project.lastUpdate!).toLocaleDateString("pt-BR", {
+              day: "2-digit",
+              month: "long",
+              year: "numeric",
+            }),
         };
       })
     );

@@ -11,7 +11,7 @@ export class TranslationService {
     const jsonString = JSON.stringify(obj);
 
     const prompt = `
-    Translate the following JSON object's  string values from ${sourceLeng} to ${lenguage}, preserving keys and structure. Do NOT translate keys or non-text values, if key for title translate it to ${lenguage}.:
+    Translate the following JSON object's  string values from ${sourceLeng} to ${lenguage}, preserving keys and structure. Do NOT translate keys or non-text values, if key for title translate value it to ${lenguage} (Translate all text values only the text inside the quotes).:
     ${jsonString}
     `;
     try {
