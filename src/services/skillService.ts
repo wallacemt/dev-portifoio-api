@@ -7,9 +7,10 @@ import { skillSchema, skillSchemaOptional } from "../validations/skillValidation
 export class SkillService {
   private skillRepository = new SkillRepository();
 
-  public async findAllSkill(ownerId: string): Promise<Skill[]> {
+  public async findAllSkill(ownerId: string): Promise<{ skills: Skill[]; chooseText: string }> {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
-    return await this.skillRepository.findAllSkills(ownerId);
+    const res = await this.skillRepository.findAllSkills(ownerId);
+    return { skills: res, chooseText: "Escolha uma habilidade" };
   }
 
   public async getAllTypes() {

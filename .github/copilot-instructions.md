@@ -29,7 +29,9 @@ This is a TypeScript backend API for a portfolio application, organized with cle
 - **Error Handling**: Centralized in `src/utils/exception.ts` and custom error type guards in `src/utils/isCustomError.ts`.
 - **Authentication**: Managed via middleware (`authPolice.ts`) and controller/service patterns.
 - **Logging**: Request logging via `middleware/requestLogger.ts`.
-- **External APIs**: Example integration in `services/geminiService.ts`.
+- **External APIs**: Gemini AI integration in `services/geminiService.ts` with quota management, caching, and retry logic.
+- **Quota Management**: `utils/quotaManager.ts` tracks API usage, implements rate limiting, and prevents quota exhaustion.
+- **Translation Caching**: 24-hour cache for translations to minimize API calls and respect quota limits.
 - **Testing**: Use `src/tests/mocks/prismaMock.ts` for mocking Prisma in tests.
 
 ## Integration Points
@@ -43,6 +45,8 @@ This is a TypeScript backend API for a portfolio application, organized with cle
 - To add a new domain, create corresponding files in `controllers/`, `services/`, `repository/`, `validations/`, and `types/`.
 - For new API endpoints, update the relevant controller and service, add validation, and document in Swagger YAML files.
 - For database changes, update `prisma/schema.prisma` and run Prisma migrations.
+- **Gemini API Usage**: Always use `TranslationService` which includes automatic caching, quota management, and graceful fallbacks. Check quota status via `/api/utils/quota-status` endpoint.
+- **Rate Limiting**: The system automatically throttles requests when approaching daily quota limits (180/200 requests) and implements exponential backoff on errors.
 
 ---
 

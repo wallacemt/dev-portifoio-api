@@ -11,7 +11,7 @@ interface NavbarItens {
 const navbarItems: NavbarItens = {
   itens: [
     {
-      name: "Home",
+      name: "Início",
       path: "/",
     },
     {
