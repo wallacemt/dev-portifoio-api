@@ -16,8 +16,8 @@ model owner {
   about      String
   occupation String
   birthDate  DateTime
-  cvLinkPT     String?
-  cvLinkEN     String?
+  cvLinkPT   String?
+  cvLinkEN   String?
 }
 
 model project {
@@ -57,4 +57,32 @@ model formation {
   type             String
   certificationUrl String?
   ownerId          String
+}
+
+model service {
+  id              String       @id @default(auto()) @map("_id") @db.ObjectId
+  sId             String       @unique
+  title           String
+  description     String
+  icon            String
+  technologies    String[]
+  category        String
+  complexity      String
+  deliveryTime    String
+  priceMin        Int
+  priceMax        Int
+  currency        String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  connectionsFrom connection[] @relation("ServiceFrom")
+  connectionsTo   connection[] @relation("ServiceTo")
+}
+
+model connection {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  fromId      String  @db.ObjectId
+  toId        String  @db.ObjectId
+  type        String
+  serviceFrom service @relation("ServiceFrom", fields: [fromId], references: [id])
+  serviceTo   service @relation("ServiceTo", fields: [toId], references: [id])
 }

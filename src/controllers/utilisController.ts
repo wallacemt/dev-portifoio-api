@@ -48,7 +48,7 @@ export class UtilisController {
   public async getServicesItens(req: Request, res: Response) {
     const { language } = req.query as { language?: string };
     try {
-      const services = this.utilisService.getServicesItems();
+      const services = await this.utilisService.getServicesItems();
       if (language && language != "pt") {
         try {
           const translated = await this.translationService.translateObject(services, language, "pt");
