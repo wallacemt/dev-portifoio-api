@@ -3,7 +3,7 @@ export enum StackType {
   Backend = "backend",
   Mobile = "mobile",
   Design = "design",
-  DevOps = "devOps",
+  DevOps = "devops",
   Other = "other",
 }
 

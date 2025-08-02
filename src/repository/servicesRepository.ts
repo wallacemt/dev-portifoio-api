@@ -1,8 +1,11 @@
 import { prisma } from "../prisma/prismaClient";
 
 export class ServicesRepository {
-  async getAllServices() {
+  async getAllServices(ownerId: string) {
     return await prisma.service.findMany({
+      where: {
+        ownerId,
+      },
       orderBy: {
         title: "asc",
       },
@@ -14,5 +17,20 @@ export class ServicesRepository {
         type: "asc",
       },
     });
+  }
+
+  async getTechByCategory(category?: string) {
+    const data = await prisma.skill.findMany({
+      where: {
+        stack: category,
+      },
+      orderBy: {
+        title: "asc",
+      },
+    });
+    if (data.length === 0) {
+      return [];
+    }
+    return [...data.map((skill) => ({ title: skill.title, id: skill.id }))];
   }
 }

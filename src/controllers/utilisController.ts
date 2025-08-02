@@ -20,7 +20,6 @@ export class UtilisController {
   }
   private routesPublic() {
     this.routerPublic.get("/navbar", this.getNavbarItens.bind(this));
-    this.routerPublic.get("/services", this.getServicesItens.bind(this));
     this.routerPublic.get("/languages", this.getlanguageOptions.bind(this));
     this.routerPublic.get("/quota-status", this.getQuotaStatus.bind(this));
     this.routerPublic.post("/clear-cache", this.clearCache.bind(this));
@@ -45,24 +44,7 @@ export class UtilisController {
       errorFilter(error, res);
     }
   }
-  public async getServicesItens(req: Request, res: Response) {
-    const { language } = req.query as { language?: string };
-    try {
-      const services = await this.utilisService.getServicesItems();
-      if (language && language != "pt") {
-        try {
-          const translated = await this.translationService.translateObject(services, language, "pt");
-          res.status(200).json(translated);
-        } catch (e) {
-          errorFilter(e, res);
-        }
-      } else {
-        res.status(200).json(services);
-      }
-    } catch (error) {
-      errorFilter(error, res);
-    }
-  }
+
   public async getlanguageOptions(req: Request, res: Response) {
     try {
       const languages = await this.utilisService.getLeguageApiReferenceUrl();

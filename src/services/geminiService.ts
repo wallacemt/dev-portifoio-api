@@ -16,7 +16,7 @@ export class TranslationService {
   private static cache = new Map<string, CacheItem>();
   private static readonly CACHE_DURATION = 24 * 60 * 60 * 1000;
   private static readonly MAX_RETRIES = 3;
-  private static readonly BASE_DELAY = 1000; 
+  private static readonly BASE_DELAY = 1000;
 
   private static getCacheKey(obj: Object, language: string, sourceLang: string): string {
     return `${JSON.stringify(obj)}_${sourceLang}_${language}`;
@@ -42,13 +42,13 @@ export class TranslationService {
         );
         if (retryInfo?.retryDelay) {
           const delayStr = retryInfo.retryDelay.replace("s", "");
-          return parseInt(delayStr) * 1000; 
+          return parseInt(delayStr) * 1000;
         }
       }
     } catch (e) {
       console.warn("Could not extract retry delay from error:", e);
     }
-    return 60000; 
+    return 60000;
   }
 
   public async translateObject(obj: Object, lenguage: string, sourceLeng = "pt"): Promise<Object> {
@@ -69,7 +69,7 @@ export class TranslationService {
 
     const jsonString = JSON.stringify(obj);
     const prompt = `
-    Translate the following JSON object's string values from ${sourceLeng} to ${lenguage}, preserving keys and structure. Do NOT translate keys or non-text values, if key for title translate value it to ${lenguage} (Translate all text values only the text inside the quotes).:
+    Traduza as seguintes cadeias de caracteres JSON do objeto de ${sourceLeng} para ${lenguage}, preservando as chaves e a estrutura. Não traduza as chaves ou valores não-textuais, se a chave for título, traduza o valor para ${lenguage} (Traduza todos os valores de texto somente o texto dentro das aspas, se forem valores monetários, números ou chave de moeda, aplique a conversão do tipo para USD ex: caso for R$100,00, converta para $100.00) REGRA: retorne json, sem texto adicional:
     ${jsonString}
     `;
 
@@ -141,11 +141,12 @@ export class TranslationService {
   public static clearCache(): void {
     TranslationService.cache.clear();
     console.log("Translation cache cleared");
-  }  public static getCacheStats(): { size: number; entries: Array<{ key: string; age: number }> } {
+  }
+  public static getCacheStats(): { size: number; entries: Array<{ key: string; age: number }> } {
     const now = Date.now();
     const entries = Array.from(TranslationService.cache.entries()).map(([key, item]) => ({
-      key: key.substring(0, 50) + "...", 
-      age: Math.round((now - item.timestamp) / 1000 / 60), 
+      key: key.substring(0, 50) + "...",
+      age: Math.round((now - item.timestamp) / 1000 / 60),
     }));
 
     return {

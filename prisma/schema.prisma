@@ -64,8 +64,6 @@ model service {
   sId             String       @unique
   title           String
   description     String
-  icon            String
-  technologies    String[]
   category        String
   complexity      String
   deliveryTime    String
@@ -74,6 +72,7 @@ model service {
   currency        String
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
+  ownerId         String
   connectionsFrom connection[] @relation("ServiceFrom")
   connectionsTo   connection[] @relation("ServiceTo")
 }

@@ -7,88 +7,85 @@ const servicesData = [
     sId: "frontend-dev",
     title: "Desenvolvimento Frontend",
     description: "Criação de interfaces modernas e responsivas com React, Next.js e tecnologias atuais.",
-    icon: "🎨",
-    technologies: ["React", "Next.js", "TypeScript", "Tailwind CSS"],
+    // technologies: ["React", "Next.js", "TypeScript", "Tailwind CSS"],
     category: "frontend",
-    complexity: "intermediate",
+    complexity: "intermediario",
     deliveryTime: "2-4 semanas",
     priceMin: 800,
     priceMax: 2500,
+    ownerId: "685b41be6ba068f5fbe56d71",
     currency: "R$",
   },
   {
     sId: "backend-dev",
     title: "Desenvolvimento Backend",
     description: "APIs robustas e escaláveis com Node.js, Express, e bancos de dados modernos.",
-    icon: "⚙️",
-    technologies: ["Node.js", "Express", "MongoDB", "PostgreSQL"],
+    // technologies: ["Node.js", "Express", "MongoDB", "PostgreSQL"],
     category: "backend",
-    complexity: "advanced",
+    complexity: "avançado",
     deliveryTime: "3-6 semanas",
     priceMin: 1200,
     priceMax: 3500,
+    ownerId: "685b41be6ba068f5fbe56d71",
     currency: "R$",
   },
   {
     sId: "fullstack-app",
     title: "Aplicação Full Stack",
     description: "Desenvolvimento completo de aplicações web com frontend e backend integrados.",
-    icon: "🚀",
-    technologies: ["React", "Node.js", "MongoDB", "Docker"],
+    // technologies: ["React", "Node.js", "MongoDB", "Docker"],
     category: "fullstack",
-    complexity: "advanced",
+    complexity: "avançado",
     deliveryTime: "6-12 semanas",
     priceMin: 2500,
     priceMax: 8000,
+    ownerId: "685b41be6ba068f5fbe56d71",
     currency: "R$",
   },
   {
     sId: "mobile-app",
     title: "Aplicativo Mobile",
     description: "Desenvolvimento de aplicativos mobile nativos e híbridos para iOS e Android.",
-    icon: "📱",
-    technologies: ["React Native", "Expo", "Firebase", "TypeScript"],
+    // technologies: ["React Native", "Expo", "Firebase", "TypeScript"],
     category: "mobile",
-    complexity: "advanced",
+    complexity: "avançado",
     deliveryTime: "8-16 semanas",
     priceMin: 3000,
     priceMax: 10000,
+    ownerId: "685b41be6ba068f5fbe56d71",
     currency: "R$",
   },
   {
     sId: "devops-setup",
     title: "Configuração DevOps",
     description: "Configuração de pipelines CI/CD, containerização e deployment automatizado.",
-    icon: "🔧",
-    technologies: ["Docker", "AWS", "GitHub Actions", "Nginx"],
+    // technologies: ["Docker", "AWS", "GitHub Actions", "Nginx"],
     category: "devops",
-    complexity: "intermediate",
+    complexity: "intermediario",
     deliveryTime: "1-3 semanas",
     priceMin: 600,
     priceMax: 2000,
+    ownerId: "685b41be6ba068f5fbe56d71",
     currency: "R$",
   },
   {
     sId: "api-integration",
     title: "Integração de APIs",
     description: "Integração com APIs externas, pagamentos, autenticação e serviços terceirizados.",
-    icon: "🔗",
-    technologies: ["REST API", "GraphQL", "OAuth", "Stripe"],
+    // technologies: ["REST API", "GraphQL", "OAuth", "Stripe"],
     category: "backend",
-    complexity: "intermediate",
+    complexity: "intermediario",
     deliveryTime: "1-2 semanas",
     priceMin: 400,
     priceMax: 1500,
+    ownerId: "685b41be6ba068f5fbe56d71",
     currency: "R$",
   },
 ];
 
 async function main() {
-  // Limpar dados existentes
   await prisma.connection.deleteMany({});
   await prisma.service.deleteMany({});
-
-  // Criação dos serviços
   const services = await Promise.all(
     servicesData.map(async (service) => {
       return await prisma.service.create({
@@ -96,8 +93,6 @@ async function main() {
       });
     })
   );
-
-  // Criar mapeamento de IDs personalizados para ObjectIds reais
   const serviceMap = services.reduce((map, service) => {
     const originalData = servicesData.find((s) => s.title === service.title);
     if (originalData) {
@@ -105,8 +100,6 @@ async function main() {
     }
     return map;
   }, {} as Record<string, string>);
-
-  // Criando as conexões entre os serviços usando os IDs reais
   await prisma.connection.createMany({
     data: [
       { fromId: serviceMap["frontend-dev"], toId: serviceMap["fullstack-app"], type: "integration" },
@@ -122,7 +115,7 @@ async function main() {
   console.log(`Created ${services.length} services`);
   console.log("Service mapping:", serviceMap);
 }
-
+export const seed = async () => await main();
 main()
   .catch((e) => {
     console.error(e);

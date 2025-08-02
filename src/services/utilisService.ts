@@ -1,6 +1,5 @@
 import { ServicesRepository } from "../repository/servicesRepository";
 import { LanguageApiResponse } from "../types/utils";
-import { servicesData } from "../utils/servicesData";
 
 interface NavbarItem {
   name: string;
@@ -36,7 +35,6 @@ const navbarItems: NavbarItens = {
   callText: "Disponível para novos projetos",
 };
 
-const leguageApiReferenceUrl = "https://api.cognitive.microsofttranslator.com/languages?api-version=3.0";
 
 const defaultLenguages: LanguageApiResponse = {
   translation: [
@@ -83,13 +81,6 @@ export class UtilisService {
   private servicesRepository = new ServicesRepository();
   public getNavbarItems(): NavbarItens {
     return navbarItems;
-  }
-  public async getServicesItems() {
-    const [services, connections] = await Promise.all([
-      this.servicesRepository.getAllServices(),
-      this.servicesRepository.getAllConnections(),
-    ]);
-    return { services, connections };
   }
 
   public async getLeguageApiReferenceUrl(): Promise<LanguageApiResponse> {

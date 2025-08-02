@@ -12,6 +12,7 @@ import swaggerUi from "swagger-ui-express";
 import { UtilisController } from "./controllers/utilisController";
 import { StatusController } from "./controllers/statusController";
 import { env } from "./env";
+import { ServicesOwnerController } from "./controllers/servicesController";
 
 dotenv.config();
 class App {
@@ -23,23 +24,19 @@ class App {
     this.listen(env.PORT || 3000);
   }
   routes() {
-    const projectController = new ProjectController();
-    const skillController = new SkillController();
-    const formationController = new FormationController();
-    const ownerController = new OwnerController();
-    const utilisController = new UtilisController();
     this.app.get("/", (_req, res) => res.redirect("/docs"));
     this.app.use("/status", new StatusController().router);
     this.app.use("/auth", new AuthController().router);
-    this.app.use("/owner", ownerController.routerPublic);
-    this.app.use("/owner/private", ownerController.routerPrivate);
-    this.app.use("/projects/private", projectController.routerPrivate);
-    this.app.use("/projects", projectController.routerPublic);
-    this.app.use("/skills/private", skillController.routerPrivate);
-    this.app.use("/skills", skillController.routerPublic);
-    this.app.use("/formations/private", formationController.routerPrivate);
-    this.app.use("/formations", formationController.routerPublic);
-    this.app.use("/utilis", utilisController.routerPublic);
+    this.app.use("/owner", new OwnerController().routerPublic);
+    this.app.use("/owner/private", new OwnerController().routerPrivate);
+    this.app.use("/projects/private", new ProjectController().routerPrivate);
+    this.app.use("/projects", new ProjectController().routerPublic);
+    this.app.use("/skills/private", new SkillController().routerPrivate);
+    this.app.use("/skills", new SkillController().routerPublic);
+    this.app.use("/formations/private", new FormationController().routerPrivate);
+    this.app.use("/formations", new FormationController().routerPublic);
+    this.app.use("/services", new ServicesOwnerController().routerPublic);
+    this.app.use("/utilis", new UtilisController().routerPublic);
     this.app.use(
       "/docs",
       swaggerUi.serve,
