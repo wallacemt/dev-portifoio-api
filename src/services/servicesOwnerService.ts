@@ -1,4 +1,3 @@
-import { service } from "@prisma/client";
 import { ServicesRepository } from "../repository/servicesRepository";
 import { Exception } from "../utils/exception";
 import { Service } from "../types/services";
