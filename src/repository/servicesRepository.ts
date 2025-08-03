@@ -1,3 +1,4 @@
+import { skill } from "@prisma/client";
 import { prisma } from "../prisma/prismaClient";
 
 export class ServicesRepository {
@@ -31,6 +32,6 @@ export class ServicesRepository {
     if (data.length === 0) {
       return [];
     }
-    return [...data.map((skill) => ({ title: skill.title, id: skill.id }))];
+    return [...data.map((skill: skill) => ({ title: skill.title, id: skill.id }))];
   }
 }
