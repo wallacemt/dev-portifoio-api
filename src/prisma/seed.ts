@@ -104,6 +104,7 @@ async function main() {
     data: [
       { fromId: serviceMap["frontend-dev"], toId: serviceMap["fullstack-app"], type: "integration" },
       { fromId: serviceMap["backend-dev"], toId: serviceMap["fullstack-app"], type: "integration" },
+      { fromId: serviceMap["api-integration"], toId: serviceMap["fullstack-app"], type: "dependency" },
       { fromId: serviceMap["fullstack-app"], toId: serviceMap["mobile-app"], type: "data-flow" },
       { fromId: serviceMap["backend-dev"], toId: serviceMap["api-integration"], type: "dependency" },
       { fromId: serviceMap["fullstack-app"], toId: serviceMap["devops-setup"], type: "dependency" },

@@ -1,4 +1,3 @@
-import { seed } from "../prisma/seed";
 import { ServicesRepository } from "../repository/servicesRepository";
 import { Exception } from "../utils/exception";
 
@@ -26,6 +25,7 @@ export class ServicesOwnerService {
             : await this.servicesRepository.getTechByCategory(s.category),
       }))
     );
+
     const texts = {
       title: "Meus Serviços",
       description:

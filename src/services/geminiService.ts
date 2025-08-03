@@ -69,7 +69,7 @@ export class TranslationService {
 
     const jsonString = JSON.stringify(obj);
     const prompt = `
-    Traduza as seguintes cadeias de caracteres JSON do objeto de ${sourceLeng} para ${lenguage}, preservando as chaves e a estrutura. Não traduza as chaves ou valores não-textuais, se a chave for título, traduza o valor para ${lenguage} (Traduza todos os valores de texto somente o texto dentro das aspas, se forem valores monetários, números ou chave de moeda, aplique a conversão do tipo para USD ex: caso for R$100,00, converta para $100.00) REGRA: retorne json, sem texto adicional:
+    Traduza as seguintes cadeias de caracteres JSON do objeto de ${sourceLeng} para ${lenguage}, preservando as chaves e a estrutura. Não traduza as chaves ou valores não-textuais, se a chave for título ou descrição ou qualquer outro tipo que contenha bastente texto ou informaçao relevante, traduza o valor para ${lenguage} (Traduza todos os valores de texto somente o texto dentro das aspas, se forem valores monetários, números ou chave de moeda, aplique a conversão da moeda para ${lenguage}). REGRA: retorne json, sem texto adicional:
     ${jsonString}
     `;
 
