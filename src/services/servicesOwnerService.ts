@@ -1,6 +1,7 @@
 import { service } from "@prisma/client";
 import { ServicesRepository } from "../repository/servicesRepository";
 import { Exception } from "../utils/exception";
+import { Service } from "../types/services";
 
 export class ServicesOwnerService {
   private servicesRepository = new ServicesRepository();
@@ -12,7 +13,7 @@ export class ServicesOwnerService {
     ]);
 
     const serviceWithTech = await Promise.all(
-      services.map(async (s:service) => ({
+      services.map(async (s: Service) => ({
         ...s,
         price: {
           min: s.priceMin,
