@@ -7,9 +7,23 @@ import { formationSchema, formationSchemaOptional } from "../validations/formati
 export class FormationService {
   private formationRepository = new FormationRepository();
 
-  public findAllFormations(ownerId: string) {
+  public async findAllFormations(ownerId: string) {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
-    return this.formationRepository.findAllFormations(ownerId);
+
+    const formations = await this.formationRepository.findAllFormations(ownerId);
+    const texts = {
+      title: "Formação Acadêmica",
+      description:
+        "Minha jornada de aprendizado contínuo atravéz de cursos, certificações e formações que moldam minha expertise técnica.",
+      certificationText: "Ver certificado",
+      stats: {
+        formations: "Formações",
+        studyHours: "Horas de Estudo",
+        institution: "Instituição",
+        certificaos: "Certificados",
+      },
+    };
+    return { formations, texts };
   }
 
   public async addFormation(formation: FormationAddRequest) {

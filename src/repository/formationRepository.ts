@@ -3,13 +3,13 @@ import { FormationAddRequest, FormationUpdate } from "../types/formation";
 
 export class FormationRepository {
   async findAllFormations(ownerId: string) {
-    return await prisma.formation.findMany({ where: { ownerId } });
+    return await prisma.formation.findMany({ where: { ownerId }, orderBy: { initialDate: "desc" } });
   }
 
   async findById(formationId: string) {
     return await prisma.formation.findUnique({ where: { id: formationId } });
   }
-
+  
   async addFormation(formation: FormationAddRequest) {
     return await prisma.formation.create({ data: { ...formation } });
   }

@@ -10,7 +10,7 @@ import { TranslationService } from "../services/geminiService";
  * tags:
  *   name: Formations
  *   description: Operações de CRUD para formação do Owner
-*/
+ */
 export class FormationController {
   public routerPrivate: Router;
   public routerPublic: Router;
@@ -49,7 +49,12 @@ export class FormationController {
       const result = await this.formationService.findAllFormations(req.params.ownerId);
       if (language && language != "pt") {
         try {
-          const translated = await this.translationService.translateObject(result, language, "pt");
+          const translated = await this.translationService.translateObject(
+            result,
+            language,
+            "pt",
+            "Traduza os types das formations"
+          );
           res.status(200).json(translated);
         } catch (e) {
           errorFilter(e, res);

@@ -51,7 +51,12 @@ export class TranslationService {
     return 60000;
   }
 
-  public async translateObject(obj: Object, lenguage: string, sourceLeng = "pt"): Promise<Object> {
+  public async translateObject(
+    obj: Object,
+    lenguage: string,
+    sourceLeng = "pt",
+    aditionalPrompt?: string
+  ): Promise<Object> {
     if (!lenguage || lenguage === sourceLeng || !obj) return obj;
     const cacheKey = TranslationService.getCacheKey(obj, lenguage, sourceLeng);
     const cached = TranslationService.cache.get(cacheKey);
@@ -69,7 +74,9 @@ export class TranslationService {
 
     const jsonString = JSON.stringify(obj);
     const prompt = `
-    Traduza as seguintes cadeias de caracteres JSON do objeto de ${sourceLeng} para ${lenguage}, preservando as chaves e a estrutura. Não traduza as chaves ou valores não-textuais, se a chave for título ou descrição ou qualquer outro tipo que contenha bastente texto ou informaçao relevante, traduza o valor para ${lenguage} (Traduza todos os valores de texto somente o texto dentro das aspas, se forem valores monetários, números ou chave de moeda, aplique a conversão da moeda para ${lenguage}). REGRA: retorne json, sem texto adicional:
+    Traduza as seguintes cadeias de caracteres JSON do objeto de ${sourceLeng} para ${lenguage}, preservando as chaves e a estrutura. Não traduza as chaves ou valores não-textuais, se a chave for título ou descrição ou qualquer outro tipo que contenha bastente texto ou informaçao relevante, traduza o valor para ${lenguage} (Traduza todos os valores de texto somente o texto dentro das aspas, se forem valores monetários, números ou chave de moeda, aplique a conversão da moeda para ${lenguage}). REGRA: retorne json, sem texto adicional. ${
+      aditionalPrompt ? aditionalPrompt + "\n" : ""
+    }:
     ${jsonString}
     `;
 
@@ -83,7 +90,7 @@ export class TranslationService {
       try {
         QuotaManager.recordRequest();
 
-        const resp = await gemini.ask(prompt, { model: "gemini-2.0-flash" });
+        const resp = await gemini.ask(prompt, { model: "gemini-2.0-flash-lite" });
         const response = resp as GeminiResponse;
         const text = response.response.candidates![0].content.parts[0].text;
         const jsonText = text.replace(/```json|```/g, "").trim();

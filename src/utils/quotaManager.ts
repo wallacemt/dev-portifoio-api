@@ -17,31 +17,23 @@ export class QuotaManager {
     consecutiveFailures: 0,
   };
 
-  private static readonly MAX_DAILY_REQUESTS = 180; // Conservative limit (20 requests buffer)
-  private static readonly MIN_REQUEST_INTERVAL = 1000; // 1 second between requests
+  private static readonly MAX_DAILY_REQUESTS = 180; 
+  private static readonly MIN_REQUEST_INTERVAL = 1000; 
   private static readonly MAX_CONSECUTIVE_FAILURES = 3;
 
   public static async canMakeRequest(): Promise<boolean> {
     const now = Date.now();
-
-    // Reset daily counter if it's a new day
     if (this.isNewDay(now)) {
       this.resetDailyMetrics();
     }
-
-    // Check if we've hit daily limit
     if (this.metrics.dailyRequests >= this.MAX_DAILY_REQUESTS) {
       console.warn("Daily Gemini API quota limit reached. Returning cached/original data only.");
       return false;
     }
-
-    // Check if we've had too many consecutive failures
     if (this.metrics.consecutiveFailures >= this.MAX_CONSECUTIVE_FAILURES) {
       console.warn("Too many consecutive API failures. Throttling requests.");
       return false;
     }
-
-    // Check minimum interval between requests
     const timeSinceLastRequest = now - this.metrics.lastRequestTime;
     if (timeSinceLastRequest < this.MIN_REQUEST_INTERVAL) {
       const waitTime = this.MIN_REQUEST_INTERVAL - timeSinceLastRequest;

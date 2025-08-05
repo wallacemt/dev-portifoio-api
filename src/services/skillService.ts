@@ -7,10 +7,18 @@ import { skillSchema, skillSchemaOptional } from "../validations/skillValidation
 export class SkillService {
   private skillRepository = new SkillRepository();
 
-  public async findAllSkill(ownerId: string): Promise<{ skills: Skill[]; chooseText: string }> {
+  public async findAllSkill(
+    ownerId: string
+  ): Promise<{ skills: Skill[]; texts: { chooseText: string; title: string; description: string } }> {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
     const res = await this.skillRepository.findAllSkills(ownerId);
-    return { skills: res, chooseText: "Escolha uma habilidade" };
+    const texts = {
+      chooseText: "Escolha uma habilidade",
+      title: "Minhas Habilidades",
+      description:
+        " Habilidades que domino e utilizo em meus projetos, que desenvolvi ao mediante a cursos e projetos pessoais.",
+    };
+    return { skills: res, texts };
   }
 
   public async getAllTypes() {

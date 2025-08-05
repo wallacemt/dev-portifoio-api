@@ -36,9 +36,13 @@ export class ProjectService {
       this.projectRepository.findAllProjects(where, skip, limit, orderBy),
       this.projectRepository.countProjects(where),
     ]);
-
+    const texts = {
+      title: "Meus Projetos",
+      description:
+        "Projetos que desenvolvi ao longo da minha carreira, demonstrando minhas habilidades e experiências em diversas tecnologias.",
+    };
     const projectsFinalForm = await Promise.all(
-      projects.map(async (project: Project) => {
+      projects.map(async (project: Project, idx: number) => {
         const skills = await this.projectRepository.findHabilitiesWhereProject(project.id, ownerId);
         const reorderedScreenshots = [
           project.previewImage,
@@ -47,6 +51,7 @@ export class ProjectService {
 
         return {
           ...project,
+          isMostRecent: idx === 0,
           screenshots: reorderedScreenshots,
           description: {
             title: "Descrição",
@@ -81,7 +86,7 @@ export class ProjectService {
     );
     return {
       projects: projectsFinalForm,
-
+      texts,
       meta: {
         page,
         limit,
