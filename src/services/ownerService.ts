@@ -3,10 +3,13 @@ import { OwnerRepository } from "../repository/ownerRepository";
 import { OwnerDataOptionalRequest, OwnerDataResponse } from "../types/owner";
 import { Exception } from "../utils/exception";
 import { ownerSchemaOptional } from "../validations/ownerValidations";
+import { hashPassword, verifyPassword } from "../utils/hash";
 
 export class OwnerService {
   private ownerRepository = new OwnerRepository();
-  public async getOwner(ownerId: string): Promise<OwnerDataResponse & { welcomeMessage: string, buttons: { project: string, curriculo: string }}> {
+  public async getOwner(
+    ownerId: string
+  ): Promise<OwnerDataResponse & { welcomeMessage: string; buttons: { project: string; curriculo: string } }> {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
     const owner = await this.ownerRepository.findById(ownerId);
     if (!owner) throw new Exception("Owner não  Encontrado!", 404);
@@ -24,7 +27,7 @@ export class OwnerService {
       buttons: {
         project: "Ver Projetos",
         curriculo: "Curriculo",
-      }
+      },
     };
   }
 
@@ -38,5 +41,31 @@ export class OwnerService {
       }
       throw new Exception("Informe os dados corretamente", 400);
     }
+  }
+
+  public async setSecretWord(ownerId: string, secretWord: string): Promise<void> {
+    if (!secretWord || secretWord.length < 3) {
+      throw new Exception("A palavra secreta deve ter pelo menos 3 caracteres", 400);
+    }
+    console.log("Setting secret word for ownerId:", ownerId);
+    console.log("Secret word (plain):", secretWord);
+    const hashedSecretWord = await hashPassword(secretWord);
+    return await this.ownerRepository.setSecretWord(hashedSecretWord, ownerId);
+  }
+
+  public async verifySecretWord(ownerId: string, secretWord: string): Promise<{ status: number; isValid: boolean }> {
+    
+    if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
+    if (!secretWord || secretWord.length < 3) {
+      throw new Exception("A palavra secreta deve ter pelo menos 3 caracteres", 400);
+    }
+    const owner = await this.ownerRepository.findById(ownerId);
+    if (!owner || !owner.secretWord) {
+      throw new Exception("Owner não encontrado ou palavra secreta não definida", 404);
+    }
+    if (!(await verifyPassword(owner.secretWord, secretWord))) {
+      throw new Exception("Palavra secreta incorreta", 401);
+    }
+    return { status: 200, isValid: true };
   }
 }

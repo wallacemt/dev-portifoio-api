@@ -44,4 +44,11 @@ export class OwnerRepository {
       data: { ...owner },
     });
   }
+
+  async setSecretWord(secretWord: string, ownerId: string): Promise<void> {
+    await prisma.owner.update({
+      where: { id: ownerId },
+      data: { secretWord },
+    });
+  }
 }

@@ -18,6 +18,7 @@ model owner {
   birthDate  DateTime
   cvLinkPT   String?
   cvLinkEN   String?
+  secretWord String?
 }
 
 model project {
