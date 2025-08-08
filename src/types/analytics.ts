@@ -1,3 +1,5 @@
+import { JsonValue } from "@prisma/client/runtime/library";
+
 export interface VisitorData {
   sessionId: string;
   ipAddress: string;
@@ -88,4 +90,23 @@ export interface RealTimeAnalytics {
     page: string;
     timestamp: Date;
   }>;
+}
+
+export interface Stat {
+  ownerId: string;
+  id: string;
+  createdAt: Date;
+  date: Date;
+  totalVisitors: number;
+  uniqueVisitors: number;
+  pageViews: number;
+  desktop: number;
+  mobile: number;
+  tablet: number;
+  topPages: JsonValue;
+  topCountries: JsonValue;
+  topBrowsers: JsonValue;
+  bounceRate: number;
+  avgTimeSpent: number;
+  updatedAt: Date;
 }

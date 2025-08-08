@@ -6,6 +6,7 @@ import {
   AnalyticsResponse,
   AnalyticsFilters,
   RealTimeAnalytics,
+  Stat,
 } from "../types/analytics";
 import { Exception } from "../utils/exception";
 import { trackVisitorSchema, trackPageViewSchema, analyticsFiltersSchema } from "../validations/analyticsValidation";
@@ -116,7 +117,7 @@ export class AnalyticsService {
           mobile: deviceBreakdown.mobile || 0,
           tablet: deviceBreakdown.tablet || 0,
         },
-        dailyStats: dailyStats.map((stat) => ({
+        dailyStats: dailyStats.map((stat: Stat) => ({
           date: stat.date.toISOString().split("T")[0],
           totalVisitors: stat.totalVisitors,
           uniqueVisitors: stat.uniqueVisitors,

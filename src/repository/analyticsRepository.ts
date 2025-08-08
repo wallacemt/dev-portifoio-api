@@ -122,7 +122,7 @@ export class AnalyticsRepository {
       },
     });
 
-    return result.reduce((acc, item) => {
+    return result.reduce((acc: Record<string, number>, item: { device: string; _count: { device: number } }) => {
       acc[item.device] = item._count.device;
       return acc;
     }, {} as Record<string, number>);
@@ -152,7 +152,7 @@ export class AnalyticsRepository {
       take: limit,
     });
 
-    return result.map((item) => ({
+    return result.map((item: { page: string; _count: { page: number } }) => ({
       page: item.page,
       views: item._count.page,
     }));
@@ -183,8 +183,11 @@ export class AnalyticsRepository {
       take: limit,
     });
 
-    return result.map((item) => ({
-      country: item.country || "Unknown",
+    return result.map<{
+      country: string;
+      visitors: number;
+    }>((item: { country: string | null; _count: { country: number } }) => ({
+      country: item.country ?? "Unknown",
       visitors: item._count.country,
     }));
   }
@@ -214,7 +217,10 @@ export class AnalyticsRepository {
       take: limit,
     });
 
-    return result.map((item) => ({
+    return result.map<{
+      browser: string;
+      visitors: number;
+    }>((item: { browser: string | null; _count: { browser: number } }) => ({
       browser: item.browser || "Unknown",
       visitors: item._count.browser,
     }));
@@ -323,16 +329,18 @@ export class AnalyticsRepository {
 
     return {
       activeVisitors,
-      topActivePages: topActivePages.map((item) => ({
+      topActivePages: topActivePages.map((item: { page: string; _count: { page: number } }) => ({
         page: item.page,
         activeUsers: item._count.page,
       })),
-      recentVisitors: recentVisitors.map((visitor) => ({
-        country: visitor.country || "Unknown",
-        device: visitor.device,
-        page: visitor.landingPage,
-        timestamp: visitor.createdAt,
-      })),
+      recentVisitors: recentVisitors.map(
+        (visitor: { country: string | null; device: string; landingPage: string; createdAt: Date }) => ({
+          country: visitor.country || "Unknown",
+          device: visitor.device,
+          page: visitor.landingPage,
+          timestamp: visitor.createdAt,
+        })
+      ),
     };
   }
 
