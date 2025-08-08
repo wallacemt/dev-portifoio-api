@@ -183,10 +183,7 @@ export class AnalyticsRepository {
       take: limit,
     });
 
-    return result.map<{
-      country: string;
-      visitors: number;
-    }>((item: { country: string | null; _count: { country: number } }) => ({
+    return result.map((item: { country: string | null; _count: { country: number } }) => ({
       country: item.country ?? "Unknown",
       visitors: item._count.country,
     }));
@@ -217,10 +214,7 @@ export class AnalyticsRepository {
       take: limit,
     });
 
-    return result.map<{
-      browser: string;
-      visitors: number;
-    }>((item: { browser: string | null; _count: { browser: number } }) => ({
+    return result.map((item: { browser: string | null; _count: { browser: number } }) => ({
       browser: item.browser || "Unknown",
       visitors: item._count.browser,
     }));
