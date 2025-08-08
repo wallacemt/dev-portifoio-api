@@ -17,6 +17,7 @@ export class OwnerController {
   public routerPublic: Router;
   private ownerService: OwnerService = new OwnerService();
   private translationService = new TranslationService();
+
   constructor() {
     this.routerPrivate = Router();
     this.routerPublic = Router();
@@ -32,6 +33,7 @@ export class OwnerController {
     this.routerPrivate.use(AuthPolice);
     this.routerPrivate.put("/update", this.update.bind(this));
     this.routerPrivate.post("/set-secret-word", this.postSecretWord.bind(this));
+    this.routerPrivate.get("/analysis", this.getOwnerAnalysis.bind(this));
   }
 
   public async getOwner(req: Request, res: Response) {
@@ -83,6 +85,15 @@ export class OwnerController {
       res
         .status(result.status)
         .json({ message: "Palavra secreta verificada com sucesso", status: result.status, isValid: result.isValid });
+    } catch (error) {
+      errorFilter(error, res);
+    }
+  }
+
+  public async getOwnerAnalysis(req: Request, res: Response) {
+    try {
+      const analysis = await this.ownerService.getOwnerAnalysis(req.userId);
+      res.status(200).json(analysis);
     } catch (error) {
       errorFilter(error, res);
     }

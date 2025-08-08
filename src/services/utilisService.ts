@@ -35,7 +35,6 @@ const navbarItems: NavbarItens = {
   callText: "Disponível para novos projetos",
 };
 
-
 const defaultLenguages: LanguageApiResponse = {
   translation: [
     {
@@ -67,6 +66,11 @@ const defaultLenguages: LanguageApiResponse = {
       ko: {
         name: "Korean",
         nativeName: "한국어",
+        dir: "ltr",
+      },
+      zh: {
+        name: "Chinese",
+        nativeName: "中文",
         dir: "ltr",
       },
       it: {

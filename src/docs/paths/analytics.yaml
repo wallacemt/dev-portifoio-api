@@ -1,0 +1,282 @@
+/api/analytics/{ownerId}/track-visitor:
+  post:
+    tags:
+      - Analytics
+    summary: Registra um novo visitante
+    description: Registra informações de um visitante para analytics do portfólio
+    parameters:
+      - in: path
+        name: ownerId
+        required: true
+        schema:
+          type: string
+        description: ID do proprietário do portfólio
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/TrackVisitorRequest"
+    responses:
+      "201":
+        description: Visitante registrado com sucesso
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Visitante registrado com sucesso"
+                visitor:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: "60f7b3b3b3b3b3b3b3b3b3b3"
+                    sessionId:
+                      type: string
+                      example: "sess_1234567890"
+      "400":
+        description: Dados inválidos
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Session ID é obrigatório"
+
+/api/analytics/{ownerId}/track-pageview:
+  post:
+    tags:
+      - Analytics
+    summary: Registra uma visualização de página
+    description: Registra quando um visitante acessa uma página específica do portfólio
+    parameters:
+      - in: path
+        name: ownerId
+        required: true
+        schema:
+          type: string
+        description: ID do proprietário do portfólio
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/TrackPageViewRequest"
+    responses:
+      "201":
+        description: Visualização registrada com sucesso
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Visualização registrada com sucesso"
+                pageView:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: "60f7b3b3b3b3b3b3b3b3b3b3"
+                    page:
+                      type: string
+                      example: "/projects/my-project"
+      "400":
+        description: Dados inválidos
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Session ID é obrigatório"
+      "404":
+        description: Visitante não encontrado
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Visitante não encontrado. Registre o visitante primeiro."
+
+/api/analytics/dashboard:
+  get:
+    tags:
+      - Analytics
+    summary: Busca analytics completas
+    description: Retorna métricas completas do portfólio com filtros opcionais
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: query
+        name: startDate
+        schema:
+          type: string
+          format: date
+        description: Data de início do período (ISO 8601)
+        example: "2024-04-01"
+      - in: query
+        name: endDate
+        schema:
+          type: string
+          format: date
+        description: Data de fim do período (ISO 8601)
+        example: "2024-04-30"
+      - in: query
+        name: page
+        schema:
+          type: string
+        description: Filtrar por página específica
+        example: "/projects"
+      - in: query
+        name: device
+        schema:
+          type: string
+          enum: [desktop, mobile, tablet]
+        description: Filtrar por tipo de dispositivo
+        example: "mobile"
+      - in: query
+        name: country
+        schema:
+          type: string
+        description: Filtrar por país
+        example: "Brazil"
+    responses:
+      "200":
+        description: Analytics retornadas com sucesso
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Analytics"
+      "400":
+        description: Filtros inválidos
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Data de fim deve ser posterior à data de início"
+      "401":
+        description: Token de autenticação inválido ou ausente
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Token de autenticação necessário"
+
+/api/analytics/summary:
+  get:
+    tags:
+      - Analytics
+    summary: Busca resumo de analytics
+    description: Retorna um resumo das métricas principais para dashboard
+    security:
+      - bearerAuth: []
+    responses:
+      "200":
+        description: Resumo retornado com sucesso
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyticsSummary"
+      "401":
+        description: Token de autenticação inválido ou ausente
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Token de autenticação necessário"
+
+/api/analytics/realtime:
+  get:
+    tags:
+      - Analytics
+    summary: Busca analytics em tempo real
+    description: Retorna métricas dos últimos 30 minutos de atividade
+    security:
+      - bearerAuth: []
+    responses:
+      "200":
+        description: Analytics em tempo real retornadas com sucesso
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RealTimeAnalytics"
+      "401":
+        description: Token de autenticação inválido ou ausente
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Token de autenticação necessário"
+
+/api/analytics/update-daily:
+  post:
+    tags:
+      - Analytics
+    summary: Força atualização das métricas diárias
+    description: Atualiza manualmente as métricas agregadas diárias (função administrativa)
+    security:
+      - bearerAuth: []
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+                description: Data para atualizar (opcional, padrão é hoje)
+                example: "2024-04-01"
+    responses:
+      "200":
+        description: Métricas atualizadas com sucesso
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Métricas diárias atualizadas com sucesso"
+      "401":
+        description: Token de autenticação inválido ou ausente
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Token de autenticação necessário"
+      "500":
+        description: Erro interno do servidor
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Erro ao atualizar métricas diárias"

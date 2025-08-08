@@ -24,3 +24,28 @@ export interface OwnerDataResponse {
   cvLinkEN: string | null;
   token?: string;
 }
+
+export interface OwnerAnalysisResponse {
+  projectsCount: number;
+  skillsCount: number;
+  formationsCount: number;
+  servicesCount: number;
+  analytics?: {
+    totalVisitors: number;
+    uniqueVisitors: number;
+    pageViews: number;
+    bounceRate: number;
+    avgTimeSpent: number;
+    topPages: Array<{ page: string; views: number }>;
+    deviceBreakdown: {
+      desktop: number;
+      mobile: number;
+      tablet: number;
+    };
+    recentActivity: {
+      activeVisitors: number;
+      todayVisitors: number;
+      weeklyGrowth: number;
+    };
+  };
+}

@@ -1,0 +1,303 @@
+Analytics:
+  type: object
+  properties:
+    overview:
+      type: object
+      properties:
+        totalVisitors:
+          type: number
+          description: Total de visitantes únicos no período
+          example: 1500
+        uniqueVisitors:
+          type: number
+          description: Visitantes únicos
+          example: 1200
+        pageViews:
+          type: number
+          description: Total de visualizações de página
+          example: 3500
+        bounceRate:
+          type: number
+          description: Taxa de rejeição em porcentagem
+          example: 35.5
+        avgTimeSpent:
+          type: number
+          description: Tempo médio gasto no site em segundos
+          example: 180
+    deviceBreakdown:
+      type: object
+      properties:
+        desktop:
+          type: number
+          description: Visitantes em desktop
+          example: 800
+        mobile:
+          type: number
+          description: Visitantes em mobile
+          example: 600
+        tablet:
+          type: number
+          description: Visitantes em tablet
+          example: 100
+    dailyStats:
+      type: array
+      items:
+        $ref: "#/components/schemas/DailyAnalytics"
+    topPages:
+      type: array
+      items:
+        type: object
+        properties:
+          page:
+            type: string
+            description: URL da página
+            example: "/projects"
+          views:
+            type: number
+            description: Número de visualizações
+            example: 450
+    topCountries:
+      type: array
+      items:
+        type: object
+        properties:
+          country:
+            type: string
+            description: Nome do país
+            example: "Brazil"
+          visitors:
+            type: number
+            description: Número de visitantes
+            example: 850
+    topBrowsers:
+      type: array
+      items:
+        type: object
+        properties:
+          browser:
+            type: string
+            description: Nome do navegador
+            example: "Chrome"
+          visitors:
+            type: number
+            description: Número de visitantes
+            example: 950
+
+DailyAnalytics:
+  type: object
+  properties:
+    date:
+      type: string
+      format: date
+      description: Data das métricas
+      example: "2024-04-01"
+    totalVisitors:
+      type: number
+      description: Total de visitantes no dia
+      example: 50
+    uniqueVisitors:
+      type: number
+      description: Visitantes únicos no dia
+      example: 45
+    pageViews:
+      type: number
+      description: Visualizações de página no dia
+      example: 120
+    desktop:
+      type: number
+      description: Visitantes desktop no dia
+      example: 30
+    mobile:
+      type: number
+      description: Visitantes mobile no dia
+      example: 20
+    tablet:
+      type: number
+      description: Visitantes tablet no dia
+      example: 5
+    topPages:
+      type: array
+      items:
+        type: object
+        properties:
+          page:
+            type: string
+          views:
+            type: number
+    topCountries:
+      type: array
+      items:
+        type: object
+        properties:
+          country:
+            type: string
+          visitors:
+            type: number
+    topBrowsers:
+      type: array
+      items:
+        type: object
+        properties:
+          browser:
+            type: string
+          visitors:
+            type: number
+    bounceRate:
+      type: number
+      description: Taxa de rejeição do dia
+      example: 40.2
+    avgTimeSpent:
+      type: number
+      description: Tempo médio gasto no dia
+      example: 165
+
+TrackVisitorRequest:
+  type: object
+  required:
+    - sessionId
+    - userAgent
+    - device
+    - landingPage
+  properties:
+    sessionId:
+      type: string
+      description: ID único da sessão do visitante
+      example: "sess_1234567890"
+      maxLength: 255
+    userAgent:
+      type: string
+      description: User agent do navegador
+      example: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      maxLength: 500
+    country:
+      type: string
+      description: País do visitante
+      example: "Brazil"
+      maxLength: 100
+    city:
+      type: string
+      description: Cidade do visitante
+      example: "São Paulo"
+      maxLength: 100
+    device:
+      type: string
+      enum: [desktop, mobile, tablet]
+      description: Tipo de dispositivo
+      example: "desktop"
+    browser:
+      type: string
+      description: Navegador utilizado
+      example: "Chrome"
+      maxLength: 100
+    os:
+      type: string
+      description: Sistema operacional
+      example: "Windows"
+      maxLength: 100
+    referrer:
+      type: string
+      format: uri
+      description: URL de referência
+      example: "https://google.com"
+    landingPage:
+      type: string
+      description: Página de entrada
+      example: "/"
+      maxLength: 500
+
+TrackPageViewRequest:
+  type: object
+  required:
+    - sessionId
+    - page
+  properties:
+    sessionId:
+      type: string
+      description: ID da sessão do visitante
+      example: "sess_1234567890"
+      maxLength: 255
+    page:
+      type: string
+      description: URL da página visitada
+      example: "/projects/my-project"
+      maxLength: 500
+    timeSpent:
+      type: number
+      minimum: 0
+      maximum: 86400
+      description: Tempo gasto na página em segundos
+      example: 120
+
+RealTimeAnalytics:
+  type: object
+  properties:
+    activeVisitors:
+      type: number
+      description: Visitantes ativos nos últimos 30 minutos
+      example: 15
+    topActivePages:
+      type: array
+      items:
+        type: object
+        properties:
+          page:
+            type: string
+            description: URL da página
+            example: "/projects"
+          activeUsers:
+            type: number
+            description: Usuários ativos na página
+            example: 8
+    recentVisitors:
+      type: array
+      items:
+        type: object
+        properties:
+          country:
+            type: string
+            description: País do visitante
+            example: "Brazil"
+          device:
+            type: string
+            description: Tipo de dispositivo
+            example: "mobile"
+          page:
+            type: string
+            description: Página visitada
+            example: "/about"
+          timestamp:
+            type: string
+            format: date-time
+            description: Momento da visita
+            example: "2024-04-01T10:30:00Z"
+
+AnalyticsSummary:
+  type: object
+  properties:
+    today:
+      type: object
+      properties:
+        visitors:
+          type: number
+          description: Visitantes de hoje
+          example: 25
+        change:
+          type: number
+          description: Mudança percentual em relação a ontem
+          example: 15.5
+    week:
+      type: object
+      properties:
+        visitors:
+          type: number
+          description: Visitantes da semana
+          example: 180
+    month:
+      type: object
+      properties:
+        visitors:
+          type: number
+          description: Visitantes do mês
+          example: 750
+    realTime:
+      $ref: "#/components/schemas/RealTimeAnalytics"

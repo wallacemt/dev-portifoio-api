@@ -1,5 +1,5 @@
 import { prisma } from "../prisma/prismaClient";
-import { OwnerDataOptionalRequest, OwnerDataRequest } from "../types/owner";
+import { OwnerAnalysisResponse, OwnerDataOptionalRequest, OwnerDataRequest } from "../types/owner";
 
 export class OwnerRepository {
   /**
@@ -50,5 +50,21 @@ export class OwnerRepository {
       where: { id: ownerId },
       data: { secretWord },
     });
+  }
+
+  async getOwnerAnalysis(ownerId: string): Promise<OwnerAnalysisResponse> {
+    const projectsCount = await prisma.project.count({
+      where: { ownerId },
+    });
+    const skillsCount = await prisma.skill.count({
+      where: { ownerId },
+    });
+    const formationsCount = await prisma.formation.count({
+      where: { ownerId },
+    });
+    const servicesCount = await prisma.service.count({
+      where: { ownerId },
+    });
+    return { projectsCount, skillsCount, formationsCount, servicesCount };
   }
 }

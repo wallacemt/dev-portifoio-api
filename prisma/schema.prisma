@@ -65,6 +65,7 @@ model service {
   sId             String       @unique
   title           String
   description     String
+  technologies    String[]
   category        String
   complexity      String
   deliveryTime    String
@@ -85,4 +86,50 @@ model connection {
   type        String
   serviceFrom service @relation("ServiceFrom", fields: [fromId], references: [id])
   serviceTo   service @relation("ServiceTo", fields: [toId], references: [id])
+}
+
+model visitor {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId   String     @unique
+  ipAddress   String
+  userAgent   String
+  country     String?
+  city        String?
+  device      String 
+  browser     String?
+  os          String?
+  referrer    String?
+  landingPage String
+  createdAt   DateTime   @default(now())
+  ownerId     String
+  pageViews   pageView[]
+}
+
+model pageView {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  visitorId String   @db.ObjectId
+  page      String
+  timeSpent Int? 
+  timestamp DateTime @default(now())
+  ownerId   String
+  visitor   visitor  @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+}
+
+model analyticsDaily {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  date           DateTime @unique
+  totalVisitors  Int      @default(0)
+  uniqueVisitors Int      @default(0)
+  pageViews      Int      @default(0)
+  desktop        Int      @default(0)
+  mobile         Int      @default(0)
+  tablet         Int      @default(0)
+  topPages       Json     @default("[]")
+  topCountries   Json     @default("[]")
+  topBrowsers    Json     @default("[]")
+  bounceRate     Float    @default(0)
+  avgTimeSpent   Float    @default(0)
+  ownerId        String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }

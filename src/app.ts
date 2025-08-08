@@ -6,6 +6,7 @@ import { OwnerController } from "./controllers/ownerController";
 import { ProjectController } from "./controllers/projectController";
 import { SkillController } from "./controllers/skillController";
 import { FormationController } from "./controllers/formationController";
+import { AnalyticsController } from "./controllers/analyticsController";
 import express, { Application, Express } from "express";
 import { swaggerSpec } from "./docs/swaggerConfiguration";
 import swaggerUi from "swagger-ui-express";
@@ -36,6 +37,8 @@ class App {
     this.app.use("/formations/private", new FormationController().routerPrivate);
     this.app.use("/formations", new FormationController().routerPublic);
     this.app.use("/services", new ServicesOwnerController().routerPublic);
+    this.app.use("/analytics", new AnalyticsController().routerPublic);
+    this.app.use("/analytics/private", new AnalyticsController().routerPrivate);
     this.app.use("/utilis", new UtilisController().routerPublic);
     this.app.use(
       "/docs",
@@ -50,7 +53,7 @@ class App {
     );
   }
   config() {
-    this.app.use(cors({ origin: env.FRONTEND_URL }));
+    this.app.use(cors({ origin: env.FRONTEND_URL, methods: ["GET", "POST", "PUT", "DELETE"] }));
     if (env.NODE_ENV !== "production") this.app.use(requestLogger);
     this.app.use(express.json());
   }
