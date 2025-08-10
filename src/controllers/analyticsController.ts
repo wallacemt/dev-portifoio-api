@@ -1,9 +1,10 @@
-import { Request, Response, Router } from "express";
 import { AnalyticsService } from "../services/analyticsService";
-import { TrackVisitorRequest, TrackPageViewRequest, AnalyticsFilters } from "../types/analytics";
+import type { TrackVisitorRequest, TrackPageViewRequest, AnalyticsFilters } from "../types/analytics";
 import AuthPolice from "../middleware/authPolice";
 import { trackingRateLimit, adminAnalyticsRateLimit } from "../middleware/analyticsRateLimit";
 import errorFilter from "../utils/isCustomError";
+import type { Request, Response } from "express";
+import { Router } from "express";
 
 /**
  * @swagger
@@ -12,8 +13,8 @@ import errorFilter from "../utils/isCustomError";
  *   description: Operações de métricas e analytics do portfólio
  */
 export class AnalyticsController {
-  public routerPrivate: Router;
-  public routerPublic: Router;
+  routerPrivate: Router;
+  routerPublic: Router;
   private analyticsService: AnalyticsService = new AnalyticsService();
 
   constructor() {
@@ -37,7 +38,7 @@ export class AnalyticsController {
     this.routerPrivate.post("/update-daily", this.forceUpdateDailyAnalytics.bind(this));
   }
 
-  public async trackVisitor(req: Request, res: Response) {
+  async trackVisitor(req: Request, res: Response) {
     try {
       const { ownerId } = req.params;
       const visitorData: TrackVisitorRequest = req.body;
@@ -53,7 +54,7 @@ export class AnalyticsController {
     }
   }
 
-  public async trackPageView(req: Request, res: Response) {
+  async trackPageView(req: Request, res: Response) {
     try {
       const { ownerId } = req.params;
       const pageViewData: TrackPageViewRequest = req.body;
@@ -68,7 +69,7 @@ export class AnalyticsController {
     }
   }
 
-  public async getAnalytics(req: Request, res: Response) {
+  async getAnalytics(req: Request, res: Response) {
     try {
       const filters: AnalyticsFilters = {};
 
@@ -95,7 +96,7 @@ export class AnalyticsController {
     }
   }
 
-  public async getAnalyticsSummary(req: Request, res: Response) {
+  async getAnalyticsSummary(req: Request, res: Response) {
     try {
       const summary = await this.analyticsService.getAnalyticsSummary(req.userId);
       res.status(200).json(summary);
@@ -104,7 +105,7 @@ export class AnalyticsController {
     }
   }
 
-  public async getRealTimeAnalytics(req: Request, res: Response) {
+  async getRealTimeAnalytics(req: Request, res: Response) {
     try {
       const realTimeData = await this.analyticsService.getRealTimeAnalytics(req.userId);
       res.status(200).json(realTimeData);
@@ -113,7 +114,7 @@ export class AnalyticsController {
     }
   }
 
-  public async forceUpdateDailyAnalytics(req: Request, res: Response) {
+  async forceUpdateDailyAnalytics(req: Request, res: Response) {
     try {
       const { date } = req.body;
       const targetDate = date ? new Date(date) : new Date();

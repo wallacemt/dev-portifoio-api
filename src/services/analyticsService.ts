@@ -1,6 +1,9 @@
-import { ZodError } from "zod";
+//@biome-ignore 
 import { AnalyticsRepository } from "../repository/analyticsRepository";
-import {
+import { Exception } from "../utils/exception";
+import { ZodError } from "zod";
+import { trackVisitorSchema, trackPageViewSchema, analyticsFiltersSchema } from "../validations/analyticsValidation";
+import type {
   TrackVisitorRequest,
   TrackPageViewRequest,
   AnalyticsResponse,
@@ -8,8 +11,6 @@ import {
   RealTimeAnalytics,
   Stat,
 } from "../types/analytics";
-import { Exception } from "../utils/exception";
-import { trackVisitorSchema, trackPageViewSchema, analyticsFiltersSchema } from "../validations/analyticsValidation";
 
 export class AnalyticsService {
   private analyticsRepository = new AnalyticsRepository();
@@ -17,7 +18,7 @@ export class AnalyticsService {
   /**
    * Registra um novo visitante
    */
-  public async trackVisitor(visitorData: TrackVisitorRequest, ownerId: string, ipAddress: string) {
+  async trackVisitor(visitorData: TrackVisitorRequest, ownerId: string, ipAddress: string) {
     try {
       trackVisitorSchema.parse(visitorData);
 
@@ -28,7 +29,7 @@ export class AnalyticsService {
       });
 
       // Agenda atualização das métricas diárias
-      this.updateDailyAnalytics(ownerId, new Date()).catch(console.error);
+      this.updateDailyAnalytics(ownerId, new Date());
 
       return visitor;
     } catch (e) {
@@ -42,7 +43,7 @@ export class AnalyticsService {
   /**
    * Registra uma visualização de página
    */
-  public async trackPageView(pageViewData: TrackPageViewRequest, ownerId: string) {
+  async trackPageView(pageViewData: TrackPageViewRequest, ownerId: string) {
     try {
       trackPageViewSchema.parse(pageViewData);
       const visitor = await this.analyticsRepository.findVisitorBySessionId(pageViewData.sessionId);
@@ -55,7 +56,7 @@ export class AnalyticsService {
         timeSpent: pageViewData.timeSpent,
         ownerId,
       });
-      this.updateDailyAnalytics(ownerId, new Date()).catch(console.error);
+      this.updateDailyAnalytics(ownerId, new Date());
       return pageView;
     } catch (e) {
       if (e instanceof ZodError) {
@@ -71,12 +72,11 @@ export class AnalyticsService {
   /**
    * Busca analytics completas com filtros
    */
-  public async getAnalytics(ownerId: string, filters: AnalyticsFilters = {}): Promise<AnalyticsResponse> {
+  async getAnalytics(ownerId: string, filters: AnalyticsFilters = {}): Promise<AnalyticsResponse> {
     try {
       if (Object.keys(filters).length > 0) {
         analyticsFiltersSchema.parse(filters);
       }
-
       // Define período padrão (últimos 30 dias)
       const endDate = filters.endDate || new Date();
       const startDate = filters.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -153,10 +153,10 @@ export class AnalyticsService {
   /**
    * Busca analytics em tempo real
    */
-  public async getRealTimeAnalytics(ownerId: string): Promise<RealTimeAnalytics> {
+  async getRealTimeAnalytics(ownerId: string): Promise<RealTimeAnalytics> {
     try {
       return await this.analyticsRepository.getRealTimeAnalytics(ownerId);
-    } catch (e) {
+    } catch (_e) {
       throw new Exception("Erro ao buscar analytics em tempo real", 500);
     }
   }
@@ -168,28 +168,28 @@ export class AnalyticsService {
     try {
       const stats = await this.analyticsRepository.getDailyStatsForDate(ownerId, date);
       await this.analyticsRepository.upsertDailyAnalytics(date, stats, ownerId);
-    } catch (error) {
-      console.error("Erro ao atualizar analytics diárias:", error);
+    } catch (_e) {
+      throw new Exception("Erro ao atualizar analytics diárias", 500);
     }
   }
 
   /**
    * Força atualização das métricas diárias (endpoint administrativo)
    */
-  public async forceUpdateDailyAnalytics(ownerId: string, date?: Date) {
+  async forceUpdateDailyAnalytics(ownerId: string, date?: Date) {
     try {
       const targetDate = date || new Date();
       await this.updateDailyAnalytics(ownerId, targetDate);
       return { message: "Métricas diárias atualizadas com sucesso" };
-    } catch (e) {
-      throw e;
+    } catch (_e) {
+      throw new Exception("Erro ao forçar atualização das métricas diárias", 500);
     }
   }
 
   /**
    * Busca resumo de analytics para dashboard
    */
-  public async getAnalyticsSummary(ownerId: string) {
+  async getAnalyticsSummary(ownerId: string) {
     try {
       const today = new Date();
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -217,7 +217,7 @@ export class AnalyticsService {
         },
         realTime,
       };
-    } catch (e) {
+    } catch (_e) {
       throw new Exception("Erro ao buscar resumo de analytics", 500);
     }
   }

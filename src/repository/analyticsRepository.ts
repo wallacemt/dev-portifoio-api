@@ -1,5 +1,12 @@
+//@viom
 import { prisma } from "../prisma/prismaClient";
-import { VisitorData, PageViewData, AnalyticsFilters, DailyAnalytics, RealTimeAnalytics } from "../types/analytics";
+import type {
+  VisitorData,
+  PageViewData,
+  AnalyticsFilters,
+  DailyAnalytics,
+  RealTimeAnalytics,
+} from "../types/analytics";
 
 export class AnalyticsRepository {
   /**
@@ -39,7 +46,13 @@ export class AnalyticsRepository {
    * Busca analytics diárias com filtros
    */
   async getDailyAnalytics(ownerId: string, filters: AnalyticsFilters) {
-    const whereClause: any = { ownerId };
+    const whereClause = {
+      ownerId,
+      date: {
+        gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        lte: new Date(),
+      },
+    };
 
     if (filters.startDate && filters.endDate) {
       whereClause.date = {
@@ -131,7 +144,7 @@ export class AnalyticsRepository {
   /**
    * Busca páginas mais visitadas
    */
-  async getTopPages(ownerId: string, startDate: Date, endDate: Date, limit: number = 10) {
+  async getTopPages(ownerId: string, startDate: Date, endDate: Date, limit = 10) {
     const result = await prisma.pageView.groupBy({
       by: ["page"],
       where: {
@@ -161,7 +174,7 @@ export class AnalyticsRepository {
   /**
    * Busca países com mais visitantes
    */
-  async getTopCountries(ownerId: string, startDate: Date, endDate: Date, limit: number = 10) {
+  async getTopCountries(ownerId: string, startDate: Date, endDate: Date, limit = 10) {
     const result = await prisma.visitor.groupBy({
       by: ["country"],
       where: {
@@ -192,7 +205,7 @@ export class AnalyticsRepository {
   /**
    * Busca browsers mais utilizados
    */
-  async getTopBrowsers(ownerId: string, startDate: Date, endDate: Date, limit: number = 10) {
+  async getTopBrowsers(ownerId: string, startDate: Date, endDate: Date, limit = 10) {
     const result = await prisma.visitor.groupBy({
       by: ["browser"],
       where: {
@@ -226,6 +239,7 @@ export class AnalyticsRepository {
   async getBounceRate(ownerId: string, startDate: Date, endDate: Date): Promise<number> {
     const totalVisitors = await this.getUniqueVisitors(ownerId, startDate, endDate);
 
+    // biome-ignore lint/style/useBlockStatements: Simplified for readability
     if (totalVisitors === 0) return 0;
 
     const singlePageVisitors = await prisma.visitor.count({

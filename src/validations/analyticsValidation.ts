@@ -23,19 +23,23 @@ export const trackPageViewSchema = z.object({
   timeSpent: z
     .number()
     .min(0, "Tempo gasto deve ser pelo menos 0 segundos")
-    .max(86400, "Tempo gasto deve ser no máximo 86400 segundos (24 horas)")
+    .max(8640.0, "Tempo gasto deve ser no máximo 86400 segundos (24 horas)")
     .optional(),
 });
 
 export const analyticsFiltersSchema = z
   .object({
     startDate: z
-      .string()
-      .transform((str) => new Date(str))
+      .date({
+        errorMap: () => ({ message: "Data de início deve ser uma data válida" }),
+      })
+      .transform((date) => date.toISOString().split("T")[0])
       .optional(),
     endDate: z
-      .string()
-      .transform((str) => new Date(str))
+      .date({
+        errorMap: () => ({ message: "Data de fim deve ser uma data válida" }),
+      })
+      .transform((date) => date.toISOString().split("T")[0])
       .optional(),
     page: z.string().max(500, "Página deve ter no máximo 500 caracteres").optional(),
     device: z
