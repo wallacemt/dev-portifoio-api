@@ -1,3 +1,4 @@
+//biome-ignore-all lint: using for devlopment env
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -51,7 +52,7 @@ const servicesData = [
     complexity: "avançado",
     deliveryTime: "8-16 semanas",
     priceMin: 3000,
-    priceMax: 10000,
+    priceMax: 10_000,
     ownerId: "685b41be6ba068f5fbe56d71",
     currency: "R$",
   },
@@ -102,13 +103,41 @@ async function main() {
   }, {} as Record<string, string>);
   await prisma.connection.createMany({
     data: [
-      { fromId: serviceMap["frontend-dev"], toId: serviceMap["fullstack-app"], type: "integration" },
-      { fromId: serviceMap["backend-dev"], toId: serviceMap["fullstack-app"], type: "integration" },
-      { fromId: serviceMap["api-integration"], toId: serviceMap["fullstack-app"], type: "dependency" },
-      { fromId: serviceMap["fullstack-app"], toId: serviceMap["mobile-app"], type: "data-flow" },
-      { fromId: serviceMap["backend-dev"], toId: serviceMap["api-integration"], type: "dependency" },
-      { fromId: serviceMap["fullstack-app"], toId: serviceMap["devops-setup"], type: "dependency" },
-      { fromId: serviceMap["mobile-app"], toId: serviceMap["api-integration"], type: "data-flow" },
+      {
+        fromId: serviceMap["frontend-dev"] || "",
+        toId: serviceMap["fullstack-app"] || "",
+        type: "integration",
+      },
+      {
+        fromId: serviceMap["backend-dev"] || "",
+        toId: serviceMap["fullstack-app"] || "",
+        type: "integration",
+      },
+      {
+        fromId: serviceMap["api-integration"] || "",
+        toId: serviceMap["fullstack-app"] || "",
+        type: "dependency",
+      },
+      {
+        fromId: serviceMap["fullstack-app"] || "",
+        toId: serviceMap["mobile-app"] || "",
+        type: "data-flow",
+      },
+      {
+        fromId: serviceMap["backend-dev"] || "",
+        toId: serviceMap["api-integration"] || "",
+        type: "dependency",
+      },
+      {
+        fromId: serviceMap["fullstack-app"] || "",
+        toId: serviceMap["devops-setup"] || "",
+        type: "dependency",
+      },
+      {
+        fromId: serviceMap["mobile-app"] || "",
+        toId: serviceMap["api-integration"] || "",
+        type: "data-flow",
+      },
     ],
   });
 

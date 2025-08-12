@@ -1,6 +1,6 @@
-import git from "git-rev-sync";
-import { prisma } from "../prisma/prismaClient";
-import { env } from "../env";
+import git from 'git-rev-sync';
+import { env } from '../env';
+import { prisma } from '../prisma/prismaClient';
 
 export class StatusService {
   async getStatus() {
@@ -15,31 +15,31 @@ export class StatusService {
 
       const stats = await prisma.$runCommandRaw({ serverStatus: 1 });
 
-      database.status = "healthy";
+      database.status = 'healthy';
       database.latência = `${latency}ms`;
       database.conexões = stats.connections;
       database.versão = stats.version;
     } catch (err: any) {
-      database.status = "unhealthy";
+      database.status = 'unhealthy';
       database.erro = err.message;
     }
 
-    server.status = "healthy";
-    server.ambiente = env.NODE_ENV || "development";
+    server.status = 'healthy';
+    server.ambiente = env.NODE_ENV || 'development';
     server.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     server.versão_node = process.version;
     server.plataforma = process.platform;
-    server.região = "oregon-us-west";
+    server.região = 'oregon-us-west';
 
     try {
       gitInfo.sha_commit = git.short();
-      gitInfo.autor_último_commit = "Owner do repositório";
+      gitInfo.autor_último_commit = 'Owner do repositório';
       gitInfo.branch = git.branch();
     } catch (err) {
-      gitInfo.sha_commit = "unknown";
-      gitInfo.autor_último_commit = "unknown";
-      gitInfo.branch = "unknown";
-      gitInfo.erro = "Git info não disponível no runtime";
+      gitInfo.sha_commit = 'unknown';
+      gitInfo.autor_último_commit = 'unknown';
+      gitInfo.branch = 'unknown';
+      gitInfo.erro = 'Git info não disponível no runtime';
       gitInfo.erro.details = err;
     }
 

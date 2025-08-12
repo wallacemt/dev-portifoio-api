@@ -1,11 +1,11 @@
-import { Request, Response, Router } from "express";
-import { ProjectService } from "../services/projectService";
+import { type Request, type Response, Router } from "express";
 import AuthPolice from "../middleware/authPolice";
-import isCustomException from "../utils/isCustomError";
-import { CreateProject, ProjectFilter, UpdateProjec } from "../types/projects";
+import { TranslationService } from "../services/geminiService";
+import { ProjectService } from "../services/projectService";
+import type { CreateProject, ProjectFilter, UpdateProjec } from "../types/projects";
+
 import errorFilter from "../utils/isCustomError";
 import { projectFilterSchema } from "../validations/projectValidation";
-import { TranslationService } from "../services/geminiService";
 
 /**
  * @swagger
@@ -15,8 +15,8 @@ import { TranslationService } from "../services/geminiService";
  */
 
 export class ProjectController {
-  public routerPrivate: Router;
-  public routerPublic: Router;
+  routerPrivate: Router;
+  routerPublic: Router;
   private projectService = new ProjectService();
   private translationService = new TranslationService();
   constructor() {
@@ -38,19 +38,17 @@ export class ProjectController {
     this.routerPrivate.put("/:id/handle-activate", this.handleActivate.bind(this));
   }
 
-  public async getAllProject(req: Request, res: Response) {
+  async getAllProject(req: Request, res: Response) {
     const { language } = req.query as { language?: string };
 
     const parseResult = projectFilterSchema.safeParse(req.query);
 
-    if (!parseResult.success) {
-      res.status(400).json({ error: parseResult.error.issues.map((i) => i.message) });
-    } else {
+    if (parseResult.success) {
       const filters: ProjectFilter = parseResult.data;
       try {
-        const result = await this.projectService.findAllProjects(req.params.ownerId, filters);
+        const result = await this.projectService.findAllProjects(req.params.ownerId || "", filters);
 
-        if (language && language != "pt") {
+        if (language && language !== "pt") {
           try {
             const translated = await this.translationService.translateObject(result, language, "pt");
             res.status(200).json(translated);
@@ -63,9 +61,11 @@ export class ProjectController {
       } catch (error) {
         errorFilter(error, res);
       }
+    } else {
+      res.status(400).json({ error: parseResult.error.issues.map((i) => i.message) });
     }
   }
-  public async create(req: Request, res: Response) {
+  async create(req: Request, res: Response) {
     try {
       const project: CreateProject = req.body;
       project.ownerId = req.userId;
@@ -77,34 +77,34 @@ export class ProjectController {
       errorFilter(error, res);
     }
   }
-  public async update(req: Request, res: Response) {
+  async update(req: Request, res: Response) {
     try {
       const project: UpdateProjec = req.body;
-      const projectUpdated = await this.projectService.updateProject(project, req.params.id);
+      const projectUpdated = await this.projectService.updateProject(project, req.params.id || "");
       res.status(200).json({ message: "Projeto atualizado com sucesso", projectUpdated });
     } catch (error) {
       errorFilter(error, res);
     }
   }
-  public async delete(req: Request, res: Response) {
+  async delete(req: Request, res: Response) {
     try {
-      await this.projectService.deleteProject(req.params.id);
+      await this.projectService.deleteProject(req.params.id || "");
       res.status(200).json({ message: "Projeto deletado com sucesso" });
     } catch (error) {
       errorFilter(error, res);
     }
   }
-  public async handleActivate(req: Request, res: Response) {
+  async handleActivate(req: Request, res: Response) {
     try {
-      const project = await this.projectService.handleActivateOrDesactivateProject(req.params.id);
+      const project = await this.projectService.handleActivateOrDesactivateProject(req.params.id || "");
       res.status(200).json({ message: "Projeto atualizado com sucesso", project });
     } catch (error) {
       errorFilter(error, res);
     }
   }
-  public async getAllTechs(req: Request, res: Response) {
+  async getAllTechs(req: Request, res: Response) {
     try {
-      const result = await this.projectService.getAllTechs(req.params.ownerId);
+      const result = await this.projectService.getAllTechs(req.params.ownerId || "");
       res.status(200).json(result);
     } catch (error) {
       errorFilter(error, res);

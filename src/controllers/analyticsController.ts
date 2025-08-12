@@ -1,10 +1,10 @@
-import { AnalyticsService } from "../services/analyticsService";
-import type { TrackVisitorRequest, TrackPageViewRequest, AnalyticsFilters } from "../types/analytics";
-import AuthPolice from "../middleware/authPolice";
-import { trackingRateLimit, adminAnalyticsRateLimit } from "../middleware/analyticsRateLimit";
-import errorFilter from "../utils/isCustomError";
 import type { Request, Response } from "express";
 import { Router } from "express";
+import { adminAnalyticsRateLimit, trackingRateLimit } from "../middleware/analyticsRateLimit";
+import AuthPolice from "../middleware/authPolice";
+import { AnalyticsService } from "../services/analyticsService";
+import type { AnalyticsFilters, TrackPageViewRequest, TrackVisitorRequest } from "../types/analytics";
+import errorFilter from "../utils/isCustomError";
 
 /**
  * @swagger
@@ -44,7 +44,7 @@ export class AnalyticsController {
       const visitorData: TrackVisitorRequest = req.body;
       const ipAddress = req.ip || req.socket.remoteAddress || "unknown";
 
-      const visitor = await this.analyticsService.trackVisitor(visitorData, ownerId, ipAddress);
+      const visitor = await this.analyticsService.trackVisitor(visitorData, ownerId || "", ipAddress);
       res.status(201).json({
         message: "Visitante registrado com sucesso",
         visitor: { id: visitor.id, sessionId: visitor.sessionId },
@@ -59,7 +59,7 @@ export class AnalyticsController {
       const { ownerId } = req.params;
       const pageViewData: TrackPageViewRequest = req.body;
 
-      const pageView = await this.analyticsService.trackPageView(pageViewData, ownerId);
+      const pageView = await this.analyticsService.trackPageView(pageViewData, ownerId || "");
       res.status(201).json({
         message: "Visualização registrada com sucesso",
         pageView: { id: pageView.id, page: pageView.page },

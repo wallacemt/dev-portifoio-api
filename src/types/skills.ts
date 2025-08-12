@@ -1,16 +1,16 @@
 export enum StackType {
-  Frontend = "frontend",
-  Backend = "backend",
-  Mobile = "mobile",
-  Design = "design",
-  DevOps = "devops",
-  Other = "other",
+  Frontend = 'frontend',
+  Backend = 'backend',
+  Mobile = 'mobile',
+  Design = 'design',
+  DevOps = 'devops',
+  Other = 'other',
 }
 
 export enum SkillType {
-  Framework = "framework",
-  ProgrammingLanguage = "progamationLenguage",
-  Technology = "technology",
+  Framework = 'framework',
+  ProgrammingLanguage = 'progamationLenguage',
+  Technology = 'technology',
 }
 
 export interface SkillAddRequest {
@@ -22,8 +22,7 @@ export interface SkillAddRequest {
   ownerId: string;
 }
 
-export type SkillUpdateRequest = Partial<Omit<SkillAddRequest, "ownerId">>;
-
+export type SkillUpdateRequest = Partial<Omit<SkillAddRequest, 'ownerId'>>;
 
 export interface Skill {
   id: string;

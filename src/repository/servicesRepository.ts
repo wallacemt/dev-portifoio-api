@@ -1,5 +1,5 @@
-import { prisma } from "../prisma/prismaClient";
-import { Skill } from "../types/skills";
+import { prisma } from '../prisma/prismaClient';
+import type { Skill } from '../types/skills';
 
 export class ServicesRepository {
   async getAllServices(ownerId: string) {
@@ -8,14 +8,14 @@ export class ServicesRepository {
         ownerId,
       },
       orderBy: {
-        title: "asc",
+        title: 'asc',
       },
     });
   }
   async getAllConnections() {
     return await prisma.connection.findMany({
       orderBy: {
-        type: "asc",
+        type: 'asc',
       },
     });
   }
@@ -26,12 +26,14 @@ export class ServicesRepository {
         stack: category,
       },
       orderBy: {
-        title: "asc",
+        title: 'asc',
       },
     });
     if (data.length === 0) {
       return [];
     }
-    return [...data.map((skill: Skill) => ({ title: skill.title, id: skill.id }))];
+    return [
+      ...data.map((skill: Skill) => ({ title: skill.title, id: skill.id })),
+    ];
   }
 }

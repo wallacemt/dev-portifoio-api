@@ -1,13 +1,13 @@
-import { OwnerRepository } from "../repository/ownerRepository";
-import { OwnerDataRequest, OwnerDataResponse } from "../types/owner";
-import { Exception } from "../utils/exception";
-import jwt from "jsonwebtoken";
-import { hashPassword, verifyPassword } from "../utils/hash";
-import { ZodError } from "zod";
-import { ownerSchema } from "../validations/ownerValidations";
-import { env } from "../env";
+import jwt from 'jsonwebtoken';
+import { ZodError } from 'zod';
+import { env } from '../env';
+import { OwnerRepository } from '../repository/ownerRepository';
+import type { OwnerDataRequest, OwnerDataResponse } from '../types/owner';
+import { Exception } from '../utils/exception';
+import { hashPassword, verifyPassword } from '../utils/hash';
+import { ownerSchema } from '../validations/ownerValidations';
 
-const jwtSecret = env.JWT_SECRET ;
+const jwtSecret = env.JWT_SECRET;
 
 const MAX_ATTEMPTS = 3;
 const LOCK_TIME = 30 * 60 * 1000;
@@ -28,10 +28,12 @@ export class AuthService {
    * @throws Exception if the owner data is not provided.
    */
 
-  public async registerOwner(ownerData: OwnerDataRequest): Promise<OwnerDataResponse> {
-    if (!ownerData) throw new Exception("Owner data e requerido!", 400);
+  public async registerOwner(
+    ownerData: OwnerDataRequest
+  ): Promise<OwnerDataResponse> {
+    if (!ownerData) throw new Exception('Owner data e requerido!', 400);
     const owner = await this.ownerRepository.findByEmail(ownerData.email);
-    if (owner) throw new Exception("Email ja cadastrado!", 409);
+    if (owner) throw new Exception('Email ja cadastrado!', 409);
 
     try {
       ownerSchema.parse(ownerData);
@@ -52,12 +54,21 @@ export class AuthService {
    * @returns The authenticated owner data with a JWT token.
    * @throws Exception if the owner is not found or if the password is invalid.
    */
-  public async login(email: string, password: string): Promise<OwnerDataResponse> {
+  public async login(
+    email: string,
+    password: string
+  ): Promise<OwnerDataResponse> {
     const owner = await this.ownerRepository.findByEmail(email);
 
-    if (!owner) throw new Exception("Owner não encontrado!", 404);
-    const data = attemptsCache[email] || { attempts: 0, lastAttempt: Date.now() };
-    if (data.attempts >= MAX_ATTEMPTS && Date.now() - data.lastAttempt < LOCK_TIME) {
+    if (!owner) throw new Exception('Owner não encontrado!', 404);
+    const data = attemptsCache[email] || {
+      attempts: 0,
+      lastAttempt: Date.now(),
+    };
+    if (
+      data.attempts >= MAX_ATTEMPTS &&
+      Date.now() - data.lastAttempt < LOCK_TIME
+    ) {
       throw new Exception(
         `Número máximo de tentativas excedido. Tente novamente em ${Math.ceil((LOCK_TIME - Date.now() + data.lastAttempt) / 1000 / 60)} minutos`,
         429
@@ -72,11 +83,18 @@ export class AuthService {
         lastAttempt: Date.now(),
       };
 
-      throw new Exception(`Senha inválida, tentativas restantes: ${MAX_ATTEMPTS - data.attempts}`, 401);
+      throw new Exception(
+        `Senha inválida, tentativas restantes: ${MAX_ATTEMPTS - data.attempts}`,
+        401
+      );
     }
 
     delete attemptsCache[email];
-    const token = jwt.sign({ id: owner.id, email: owner.email }, jwtSecret as string, { expiresIn: "7d" });
+    const token = jwt.sign(
+      { id: owner.id, email: owner.email },
+      jwtSecret as string,
+      { expiresIn: '7d' }
+    );
 
     return { ...owner, token };
   }

@@ -1,6 +1,6 @@
-import { z } from "zod";
-import { projectFilterSchema } from "../validations/projectValidation";
-import { Skill } from "./skills";
+import type { z } from "zod";
+import type { projectFilterSchema } from "../validations/projectValidation";
+import type { Skill } from "./skills";
 
 export interface CreateProject {
   title: string;
@@ -36,3 +36,13 @@ export interface ProjectWithSkills extends Project {
 }
 
 export type ProjectFilter = z.infer<typeof projectFilterSchema>;
+
+export interface ProjectWhere {
+  ownerId: string;
+  activate?: boolean;
+  techs?: { has: string };
+  OR?: [
+    { title: { contains: string; mode: "insensitive" } },
+    { description: { contains: string; mode: "insensitive" } }
+  ];
+}

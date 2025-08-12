@@ -1,7 +1,7 @@
-import { Router, Request, Response } from "express";
-import errorFilter from "../utils/isCustomError";
+import { type Request, type Response, Router } from "express";
 import { TranslationService } from "../services/geminiService";
 import { UtilisService } from "../services/utilisService";
+import errorFilter from "../utils/isCustomError";
 import { QuotaManager } from "../utils/quotaManager";
 
 /**
@@ -11,9 +11,9 @@ import { QuotaManager } from "../utils/quotaManager";
  *   description: Rotas uteis para o sistema
  */
 export class UtilisController {
-  public routerPublic: Router;
-  public utilisService = new UtilisService();
-  public translationService = new TranslationService();
+  routerPublic: Router;
+  utilisService = new UtilisService();
+  translationService = new TranslationService();
   constructor() {
     this.routerPublic = Router();
     this.routesPublic();
@@ -26,11 +26,11 @@ export class UtilisController {
     this.routerPublic.post("/test-translation", this.testTranslation.bind(this));
   }
 
-  public async getNavbarItens(req: Request, res: Response) {
+  async getNavbarItens(req: Request, res: Response) {
     const { language } = req.query as { language?: string };
     try {
       const navbar = this.utilisService.getNavbarItems();
-      if (language && language != "pt") {
+      if (language && language !== "pt") {
         try {
           const translated = await this.translationService.translateObject(navbar, language, "pt");
           res.status(200).json(translated);
@@ -45,7 +45,7 @@ export class UtilisController {
     }
   }
 
-  public async getlanguageOptions(req: Request, res: Response) {
+  async getlanguageOptions(_req: Request, res: Response) {
     try {
       const languages = await this.utilisService.getLeguageApiReferenceUrl();
       res.status(200).json(languages);
@@ -54,9 +54,7 @@ export class UtilisController {
     }
   }
 
- 
-   
-  public async getQuotaStatus(req: Request, res: Response): Promise<void> {
+  getQuotaStatus(_req: Request, res: Response) {
     try {
       const quotaStatus = QuotaManager.getQuotaStatus();
       const cacheStats = TranslationService.getCacheStats();
@@ -74,8 +72,7 @@ export class UtilisController {
     }
   }
 
- 
-  public async clearCache(req: Request, res: Response): Promise<void> {
+  clearCache(_req: Request, res: Response) {
     try {
       QuotaManager.clearMetrics();
 
@@ -88,8 +85,7 @@ export class UtilisController {
     }
   }
 
-  
-  public async testTranslation(req: Request, res: Response): Promise<void> {
+  async testTranslation(req: Request, res: Response): Promise<void> {
     try {
       const { text, targetLanguage = "en", sourceLanguage = "pt" } = req.body;
 

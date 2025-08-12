@@ -1,4 +1,5 @@
-import { TranslationService } from "../services/geminiService";
+import { TranslationService } from '../services/geminiService';
+import { devDebugger } from './devDebugger';
 
 interface QuotaMetrics {
   dailyRequests: number;
@@ -8,6 +9,7 @@ interface QuotaMetrics {
   consecutiveFailures: number;
 }
 
+//biome-ignore lint: This method is better for application
 export class QuotaManager {
   private static metrics: QuotaMetrics = {
     dailyRequests: 0,
@@ -17,51 +19,54 @@ export class QuotaManager {
     consecutiveFailures: 0,
   };
 
-  private static readonly MAX_DAILY_REQUESTS = 180; 
-  private static readonly MIN_REQUEST_INTERVAL = 1000; 
+  private static readonly MAX_DAILY_REQUESTS = 180;
+  private static readonly MIN_REQUEST_INTERVAL = 1000;
   private static readonly MAX_CONSECUTIVE_FAILURES = 3;
 
-  public static async canMakeRequest(): Promise<boolean> {
+   static async canMakeRequest(): Promise<boolean> {
     const now = Date.now();
-    if (this.isNewDay(now)) {
-      this.resetDailyMetrics();
+    if (QuotaManager.isNewDay(now)) {
+      QuotaManager.resetDailyMetrics();
     }
-    if (this.metrics.dailyRequests >= this.MAX_DAILY_REQUESTS) {
-      console.warn("Daily Gemini API quota limit reached. Returning cached/original data only.");
+    if (QuotaManager.metrics.dailyRequests >= QuotaManager.MAX_DAILY_REQUESTS) {
+      devDebugger('Daily Gemini API quota limit reached. Returning cached/original data only.', undefined, "warn");
       return false;
     }
-    if (this.metrics.consecutiveFailures >= this.MAX_CONSECUTIVE_FAILURES) {
-      console.warn("Too many consecutive API failures. Throttling requests.");
+    if (
+      QuotaManager.metrics.consecutiveFailures >=
+      QuotaManager.MAX_CONSECUTIVE_FAILURES
+    ) {
+      devDebugger('Too many consecutive API failures. Throttling requests.', undefined, "warn");
       return false;
     }
-    const timeSinceLastRequest = now - this.metrics.lastRequestTime;
-    if (timeSinceLastRequest < this.MIN_REQUEST_INTERVAL) {
-      const waitTime = this.MIN_REQUEST_INTERVAL - timeSinceLastRequest;
-      console.log(`Waiting ${waitTime}ms before next request to respect rate limits`);
-      await this.delay(waitTime);
+    const timeSinceLastRequest = now - QuotaManager.metrics.lastRequestTime;
+    if (timeSinceLastRequest < QuotaManager.MIN_REQUEST_INTERVAL) {
+      const waitTime = QuotaManager.MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+      devDebugger(`Waiting ${waitTime}ms before next request to respect rate limits`, undefined, );
+      await QuotaManager.delay(waitTime);
     }
 
     return true;
   }
 
-  public static recordRequest(): void {
-    this.metrics.dailyRequests++;
-    this.metrics.lastRequestTime = Date.now();
+   static recordRequest(): void {
+    QuotaManager.metrics.dailyRequests++;
+    QuotaManager.metrics.lastRequestTime = Date.now();
   }
 
-  public static recordSuccess(): void {
-    this.metrics.consecutiveFailures = 0;
-    this.metrics.rateLimitHit = false;
+   static recordSuccess(): void {
+    QuotaManager.metrics.consecutiveFailures = 0;
+    QuotaManager.metrics.rateLimitHit = false;
   }
 
-  public static recordFailure(isQuotaError: boolean = false): void {
-    this.metrics.consecutiveFailures++;
+   static recordFailure(isQuotaError = false): void {
+    QuotaManager.metrics.consecutiveFailures++;
     if (isQuotaError) {
-      this.metrics.rateLimitHit = true;
+      QuotaManager.metrics.rateLimitHit = true;
     }
   }
 
-  public static getQuotaStatus(): {
+   static getQuotaStatus(): {
     dailyRequestsUsed: number;
     dailyRequestsRemaining: number;
     rateLimitHit: boolean;
@@ -69,31 +74,34 @@ export class QuotaManager {
     canMakeRequest: boolean;
   } {
     const now = Date.now();
-    if (this.isNewDay(now)) {
-      this.resetDailyMetrics();
+    if (QuotaManager.isNewDay(now)) {
+      QuotaManager.resetDailyMetrics();
     }
 
     return {
-      dailyRequestsUsed: this.metrics.dailyRequests,
-      dailyRequestsRemaining: this.MAX_DAILY_REQUESTS - this.metrics.dailyRequests,
-      rateLimitHit: this.metrics.rateLimitHit,
-      consecutiveFailures: this.metrics.consecutiveFailures,
+      dailyRequestsUsed: QuotaManager.metrics.dailyRequests,
+      dailyRequestsRemaining:
+        QuotaManager.MAX_DAILY_REQUESTS - QuotaManager.metrics.dailyRequests,
+      rateLimitHit: QuotaManager.metrics.rateLimitHit,
+      consecutiveFailures: QuotaManager.metrics.consecutiveFailures,
       canMakeRequest:
-        this.metrics.dailyRequests < this.MAX_DAILY_REQUESTS &&
-        this.metrics.consecutiveFailures < this.MAX_CONSECUTIVE_FAILURES,
+        QuotaManager.metrics.dailyRequests < QuotaManager.MAX_DAILY_REQUESTS &&
+        QuotaManager.metrics.consecutiveFailures <
+          QuotaManager.MAX_CONSECUTIVE_FAILURES,
     };
   }
 
-  public static clearMetrics(): void {
-    this.resetDailyMetrics();
-    this.metrics.consecutiveFailures = 0;
-    this.metrics.rateLimitHit = false;
+   static clearMetrics(): void {
+    QuotaManager.resetDailyMetrics();
+    QuotaManager.metrics.consecutiveFailures = 0;
+    QuotaManager.metrics.rateLimitHit = false;
     TranslationService.clearCache();
-    console.log("Quota metrics and translation cache cleared");
+
+    devDebugger('Quota metrics and translation cache cleared', undefined);
   }
 
   private static isNewDay(now: number): boolean {
-    const lastReset = new Date(this.metrics.lastResetTime);
+    const lastReset = new Date(QuotaManager.metrics.lastResetTime);
     const current = new Date(now);
 
     return (
@@ -104,10 +112,10 @@ export class QuotaManager {
   }
 
   private static resetDailyMetrics(): void {
-    this.metrics.dailyRequests = 0;
-    this.metrics.lastResetTime = Date.now();
-    this.metrics.rateLimitHit = false;
-    console.log("Daily quota metrics reset");
+    QuotaManager.metrics.dailyRequests = 0;
+    QuotaManager.metrics.lastResetTime = Date.now();
+    QuotaManager.metrics.rateLimitHit = false;
+    devDebugger('Daily quota metrics reset', undefined);
   }
 
   private static delay(ms: number): Promise<void> {

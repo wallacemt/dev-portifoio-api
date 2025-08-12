@@ -1,10 +1,13 @@
-import { Request, Response, Router } from "express";
-import { OwnerService } from "../services/ownerService";
-import { OwnerDataOptionalRequest, OwnerDataResponse } from "../types/owner";
-import AuthPolice from "../middleware/authPolice";
-import isCustomException from "../utils/isCustomError";
-import errorFilter from "../utils/isCustomError";
-import { TranslationService } from "../services/geminiService";
+import { type Request, type Response, Router } from 'express';
+import AuthPolice from '../middleware/authPolice';
+import { TranslationService } from '../services/geminiService';
+import { OwnerService } from '../services/ownerService';
+import type {
+ OwnerDataOptionalRequest,
+
+} from '../types/owner';
+
+import errorFilter from '../utils/isCustomError';
 
 /**
  * @swagger
@@ -13,8 +16,8 @@ import { TranslationService } from "../services/geminiService";
  *   description: Operações de atualização de informação do Owner
  */
 export class OwnerController {
-  public routerPrivate: Router;
-  public routerPublic: Router;
+   routerPrivate: Router;
+   routerPublic: Router;
   private ownerService: OwnerService = new OwnerService();
   private translationService = new TranslationService();
 
@@ -26,23 +29,30 @@ export class OwnerController {
   }
 
   private routesPublic() {
-    this.routerPublic.get("/:ownerId", this.getOwner.bind(this));
-    this.routerPublic.post("/:ownerId/verify-secret-word", this.postverifySecretWord.bind(this));
+    this.routerPublic.get('/:ownerId', this.getOwner.bind(this));
+    this.routerPublic.post(
+      '/:ownerId/verify-secret-word',
+      this.postverifySecretWord.bind(this)
+    );
   }
   private routesPrivate() {
     this.routerPrivate.use(AuthPolice);
-    this.routerPrivate.put("/update", this.update.bind(this));
-    this.routerPrivate.post("/set-secret-word", this.postSecretWord.bind(this));
-    this.routerPrivate.get("/analysis", this.getOwnerAnalysis.bind(this));
+    this.routerPrivate.put('/update', this.update.bind(this));
+    this.routerPrivate.post('/set-secret-word', this.postSecretWord.bind(this));
+    this.routerPrivate.get('/analysis', this.getOwnerAnalysis.bind(this));
   }
 
-  public async getOwner(req: Request, res: Response) {
+   async getOwner(req: Request, res: Response) {
     const { language } = req.query as { language?: string };
     try {
-      const owner = await this.ownerService.getOwner(req.params.ownerId);
-      if (language && language != "pt") {
+      const owner = await this.ownerService.getOwner(req.params.ownerId || "");
+      if (language && language !=='pt') {
         try {
-          const translated = await this.translationService.translateObject(owner, language, "pt");
+          const translated = await this.translationService.translateObject(
+            owner,
+            language,
+            'pt'
+          );
           res.status(200).json(translated);
         } catch (e) {
           errorFilter(e, res);
@@ -55,42 +65,56 @@ export class OwnerController {
     }
   }
 
-  public async update(req: Request, res: Response) {
+   async update(req: Request, res: Response) {
     try {
       const ownerData: OwnerDataOptionalRequest = req.body;
       if (ownerData.birthDate) {
         ownerData.birthDate = new Date(ownerData.birthDate);
       }
-      const ownerUpdated = await this.ownerService.updateOwner(ownerData, req.userId);
-      res.status(200).json({ message: "Owner atualizado com sucesso", ownerUpdated });
+      const ownerUpdated = await this.ownerService.updateOwner(
+        ownerData,
+        req.userId
+      );
+      res
+        .status(200)
+        .json({ message: 'Owner atualizado com sucesso', ownerUpdated });
     } catch (error) {
       errorFilter(error, res);
     }
   }
 
-  public async postSecretWord(req: Request, res: Response) {
+   async postSecretWord(req: Request, res: Response) {
     try {
       const { secretWord } = req.body;
       await this.ownerService.setSecretWord(req.userId, secretWord);
-      res.status(200).json({ message: "Palavra secreta cadastrada com sucesso" });
+      res
+        .status(200)
+        .json({ message: 'Palavra secreta cadastrada com sucesso' });
     } catch (error) {
       errorFilter(error, res);
     }
   }
 
-  public async postverifySecretWord(req: Request, res: Response) {
+   async postverifySecretWord(req: Request, res: Response) {
     try {
       const { secretWord } = req.body;
-      const result = await this.ownerService.verifySecretWord(req.params.ownerId, secretWord);
+      const result = await this.ownerService.verifySecretWord(
+        req.params.ownerId || "",
+        secretWord
+      );
       res
         .status(result.status)
-        .json({ message: "Palavra secreta verificada com sucesso", status: result.status, isValid: result.isValid });
+        .json({
+          message: 'Palavra secreta verificada com sucesso',
+          status: result.status,
+          isValid: result.isValid,
+        });
     } catch (error) {
       errorFilter(error, res);
     }
   }
 
-  public async getOwnerAnalysis(req: Request, res: Response) {
+   async getOwnerAnalysis(req: Request, res: Response) {
     try {
       const analysis = await this.ownerService.getOwnerAnalysis(req.userId);
       res.status(200).json(analysis);

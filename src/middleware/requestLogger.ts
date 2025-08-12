@@ -1,5 +1,6 @@
-import { Request, Response, NextFunction } from "express";
-import { performance } from "perf_hooks";
+//biome-ignore-all lint: using for devlopment env
+import type { NextFunction, Request, Response } from "express";
+import { performance } from "node:perf_hooks";
 
 export const requestLogger = (req: Request, res: Response, next: NextFunction) => {
   const start = performance.now();

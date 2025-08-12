@@ -1,9 +1,8 @@
 import { ZodError } from "zod";
 import { ProjectRepository } from "../repository/projectRepository";
-import { CreateProject, Project, ProjectFilter, ProjectWithSkills, UpdateProjec } from "../types/projects";
+import type { CreateProject, Project, ProjectFilter, ProjectWhere, UpdateProjec } from "../types/projects";
 import { Exception } from "../utils/exception";
 import { projectSchema, projectSchemaOptional } from "../validations/projectValidation";
-import { title } from "process";
 
 export class ProjectService {
   private projectRepository = new ProjectRepository();
@@ -16,12 +15,12 @@ export class ProjectService {
    * @returns A list of projects, and pagination metadata
    * @throws {Exception} If the owner ID is invalid
    */
-  public async findAllProjects(ownerId: string, filters: ProjectFilter) {
+  async findAllProjects(ownerId: string, filters: ProjectFilter) {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
     const { page, limit, tech, activate, orderBy, search } = filters;
     const skip = (page - 1) * limit;
-    const where: any = {
-      ownerId: ownerId,
+    const where: ProjectWhere = {
+      ownerId,
       ...(activate !== undefined && { activate }),
       ...(tech && { techs: { has: tech.toLowerCase() } }),
       ...(search && {
@@ -74,13 +73,14 @@ export class ProjectService {
             content: skills,
           },
           cta: "Ver Projeto",
-          lastUpdateText:
-            "Ultima Atualização " +
-            new Date(project.lastUpdate!).toLocaleDateString("pt-BR", {
-              day: "2-digit",
-              month: "long",
-              year: "numeric",
-            }),
+          lastUpdateText: project.lastUpdate
+            ? "Ultima Atualização " +
+              new Date(project.lastUpdate).toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+              })
+            : "Sem atualizações recentes",
         };
       })
     );
@@ -104,19 +104,19 @@ export class ProjectService {
    * @throws {Exception} If the project data is invalid or if there is an error during creation.
    */
 
-  public async createProject(project: CreateProject): Promise<Project> {
+  async createProject(project: CreateProject): Promise<Project> {
     try {
       projectSchema.parse(project);
       return await this.projectRepository.createProject(project);
     } catch (e) {
       if (e instanceof ZodError) {
-        throw new Exception(e.issues[0].message, 400);
+        throw new Exception(e.issues?.[0]?.message || "Error for create project", 400);
       }
       throw new Exception("Informe os dados corretamente", 400);
     }
   }
 
-  public async updateProject(project: UpdateProjec, projectId: string): Promise<Project> {
+  async updateProject(project: UpdateProjec, projectId: string): Promise<Project> {
     if (!projectId || projectId === ":id") throw new Exception("ID do projeto invalido", 400);
     if (!(await this.projectRepository.findProjectById(projectId))) throw new Exception("Projeto não encontrado", 404);
     try {
@@ -124,25 +124,25 @@ export class ProjectService {
       return await this.projectRepository.updateProject(project, projectId);
     } catch (e) {
       if (e instanceof ZodError) {
-        throw new Exception(e.issues[0].message, 400);
+        throw new Exception(e.issues?.[0]?.message || "Error for update project", 400);
       }
       throw new Exception("Informe os dados corretamente", 400);
     }
   }
 
-  public async deleteProject(projectId: string): Promise<void> {
+  async deleteProject(projectId: string): Promise<void> {
     if (!projectId || projectId === ":id") throw new Exception("ID do projeto invalido", 400);
     if (!(await this.projectRepository.findProjectById(projectId))) throw new Exception("Projeto não encontrado", 404);
     await this.projectRepository.deleteProject(projectId);
   }
 
-  public async handleActivateOrDesactivateProject(projectId: string): Promise<Project> {
+  async handleActivateOrDesactivateProject(projectId: string): Promise<Project> {
     if (!projectId || projectId === ":id") throw new Exception("ID do projeto invalido", 400);
     if (!(await this.projectRepository.findProjectById(projectId))) throw new Exception("Projeto não encontrado", 404);
     return await this.projectRepository.handleActivateOrDesactivate(projectId);
   }
 
-  public async getAllTechs(ownerId: string) {
+  async getAllTechs(ownerId: string) {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
 
     return await this.projectRepository.getAllTechsProjects(ownerId);

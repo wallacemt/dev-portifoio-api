@@ -1,12 +1,12 @@
 import { prisma } from "../prisma/prismaClient";
-import { CreateProject, UpdateProjec } from "../types/projects";
-import { Skill } from "../types/skills";
+import type { CreateProject, ProjectWhere, UpdateProjec } from "../types/projects";
+import type { Skill } from "../types/skills";
 import { SkillRepository } from "./skillRepository";
 
 export class ProjectRepository {
   private skillRepo = new SkillRepository();
-  async findAllProjects(where: any, skip: number, take: number, orderBy: "asc" | "desc") {
-    return prisma.project.findMany({
+  async findAllProjects(where: ProjectWhere, skip: number, take: number, orderBy: "asc" | "desc") {
+    return await prisma.project.findMany({
       where,
       skip,
       take,
@@ -17,11 +17,11 @@ export class ProjectRepository {
   }
 
   async findProjectById(projectId: string) {
-    return prisma.project.findUnique({ where: { id: projectId } });
+    return await prisma.project.findUnique({ where: { id: projectId } });
   }
 
-  async countProjects(where: any) {
-    return prisma.project.count({ where });
+  async countProjects(where: ProjectWhere) {
+    return await prisma.project.count({ where });
   }
 
   async createProject(project: CreateProject) {
@@ -38,7 +38,9 @@ export class ProjectRepository {
   }
 
   async handleActivateOrDesactivate(projectId: string) {
-    const projectFind = await prisma.project.findUnique({ where: { id: projectId } });
+    const projectFind = await prisma.project.findUnique({
+      where: { id: projectId },
+    });
     return await prisma.project.update({
       where: { id: projectId },
       data: { activate: !projectFind?.activate },
@@ -64,11 +66,11 @@ export class ProjectRepository {
 
     const uniqueTechs = new Set<string>();
 
-    projects.forEach((project: { techs: string[] }) => {
-      project.techs.forEach((tech: string) => {
+    for (const project of projects) {
+      for (const tech of project.techs) {
         uniqueTechs.add(tech.toLowerCase());
-      });
-    });
+      }
+    }
 
     return Array.from(uniqueTechs);
   }

@@ -1,5 +1,5 @@
-import { prisma } from "../prisma/prismaClient";
-import { SkillAddRequest, SkillUpdateRequest } from "../types/skills";
+import { prisma } from '../prisma/prismaClient';
+import type { SkillAddRequest, SkillUpdateRequest } from '../types/skills';
 
 export class SkillRepository {
   async findAllSkills(ownerId: string) {
@@ -14,7 +14,10 @@ export class SkillRepository {
   }
 
   async updateSkill(skill: SkillUpdateRequest, skillId: string) {
-    return await prisma.skill.update({ where: { id: skillId }, data: { ...skill } });
+    return await prisma.skill.update({
+      where: { id: skillId },
+      data: { ...skill },
+    });
   }
 
   async deleteSkill(skillId: string) {

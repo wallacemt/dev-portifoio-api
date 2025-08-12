@@ -1,4 +1,4 @@
-import { JsonValue } from "@prisma/client/runtime/library";
+import type { JsonValue } from '@prisma/client/runtime/library';
 
 export interface VisitorData {
   sessionId: string;
@@ -6,7 +6,7 @@ export interface VisitorData {
   userAgent: string;
   country?: string;
   city?: string;
-  device: "desktop" | "mobile" | "tablet";
+  device: 'desktop' | 'mobile' | 'tablet';
   browser?: string;
   os?: string;
   referrer?: string;
@@ -26,7 +26,7 @@ export interface TrackVisitorRequest {
   userAgent: string;
   country?: string;
   city?: string;
-  device: "desktop" | "mobile" | "tablet";
+  device: 'desktop' | 'mobile' | 'tablet';
   browser?: string;
   os?: string;
   referrer?: string;
@@ -77,7 +77,7 @@ export interface AnalyticsFilters {
   startDate?: Date;
   endDate?: Date;
   page?: string;
-  device?: "desktop" | "mobile" | "tablet";
+  device?: 'desktop' | 'mobile' | 'tablet';
   country?: string;
 }
 

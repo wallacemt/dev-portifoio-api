@@ -1,8 +1,8 @@
-import { Request, Response, Router } from "express";
-import { StatusService } from "../services/statusService";
+import { type Request, type Response, Router } from 'express';
+import { StatusService } from '../services/statusService';
 
 export class StatusController {
-  public router: Router;
+   router: Router;
   private statusService: StatusService;
 
   constructor() {
@@ -12,15 +12,15 @@ export class StatusController {
   }
 
   private routes() {
-    this.router.get("/", this.getStatus.bind(this));
+    this.router.get('/', this.getStatus.bind(this));
   }
 
-  private async getStatus(req: Request, res: Response) {
+  private async getStatus(_req: Request, res: Response) {
     try {
       const status = await this.statusService.getStatus();
       res.status(200).json(status);
     } catch (err) {
-      res.status(500).json({ error: "Erro ao obter status", details: err });
+      res.status(500).json({ error: 'Erro ao obter status', details: err });
     }
   }
 }

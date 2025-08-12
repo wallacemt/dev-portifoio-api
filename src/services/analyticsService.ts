@@ -1,16 +1,21 @@
-//@biome-ignore 
-import { AnalyticsRepository } from "../repository/analyticsRepository";
-import { Exception } from "../utils/exception";
-import { ZodError } from "zod";
-import { trackVisitorSchema, trackPageViewSchema, analyticsFiltersSchema } from "../validations/analyticsValidation";
+//@biome-ignore
+
+import { ZodError } from 'zod';
+import { AnalyticsRepository } from '../repository/analyticsRepository';
 import type {
-  TrackVisitorRequest,
-  TrackPageViewRequest,
-  AnalyticsResponse,
   AnalyticsFilters,
+  AnalyticsResponse,
   RealTimeAnalytics,
   Stat,
-} from "../types/analytics";
+  TrackPageViewRequest,
+  TrackVisitorRequest,
+} from '../types/analytics';
+import { Exception } from '../utils/exception';
+import {
+  analyticsFiltersSchema,
+  trackPageViewSchema,
+  trackVisitorSchema,
+} from '../validations/analyticsValidation';
 
 export class AnalyticsService {
   private analyticsRepository = new AnalyticsRepository();
@@ -18,7 +23,11 @@ export class AnalyticsService {
   /**
    * Registra um novo visitante
    */
-  async trackVisitor(visitorData: TrackVisitorRequest, ownerId: string, ipAddress: string) {
+  async trackVisitor(
+    visitorData: TrackVisitorRequest,
+    ownerId: string,
+    ipAddress: string
+  ) {
     try {
       trackVisitorSchema.parse(visitorData);
 
@@ -36,7 +45,7 @@ export class AnalyticsService {
       if (e instanceof ZodError) {
         throw new Exception(e.issues[0].message, 400);
       }
-      throw new Exception("Dados do visitante inválidos", 400);
+      throw new Exception('Dados do visitante inválidos', 400);
     }
   }
 
@@ -46,9 +55,14 @@ export class AnalyticsService {
   async trackPageView(pageViewData: TrackPageViewRequest, ownerId: string) {
     try {
       trackPageViewSchema.parse(pageViewData);
-      const visitor = await this.analyticsRepository.findVisitorBySessionId(pageViewData.sessionId);
+      const visitor = await this.analyticsRepository.findVisitorBySessionId(
+        pageViewData.sessionId
+      );
       if (!visitor) {
-        throw new Exception("Visitante não encontrado. Registre o visitante primeiro.", 404);
+        throw new Exception(
+          'Visitante não encontrado. Registre o visitante primeiro.',
+          404
+        );
       }
       const pageView = await this.analyticsRepository.createPageView({
         visitorId: visitor.id,
@@ -65,21 +79,25 @@ export class AnalyticsService {
       if (e instanceof Exception) {
         throw e;
       }
-      throw new Exception("Dados da visualização inválidos", 400);
+      throw new Exception('Dados da visualização inválidos', 400);
     }
   }
 
   /**
    * Busca analytics completas com filtros
    */
-  async getAnalytics(ownerId: string, filters: AnalyticsFilters = {}): Promise<AnalyticsResponse> {
+  async getAnalytics(
+    ownerId: string,
+    filters: AnalyticsFilters = {}
+  ): Promise<AnalyticsResponse> {
     try {
       if (Object.keys(filters).length > 0) {
         analyticsFiltersSchema.parse(filters);
       }
       // Define período padrão (últimos 30 dias)
       const endDate = filters.endDate || new Date();
-      const startDate = filters.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const startDate =
+        filters.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
       // Busca dados agregados
       const [
@@ -95,13 +113,24 @@ export class AnalyticsService {
       ] = await Promise.all([
         this.analyticsRepository.getUniqueVisitors(ownerId, startDate, endDate),
         this.analyticsRepository.getTotalPageViews(ownerId, startDate, endDate),
-        this.analyticsRepository.getDeviceBreakdown(ownerId, startDate, endDate),
+        this.analyticsRepository.getDeviceBreakdown(
+          ownerId,
+          startDate,
+          endDate
+        ),
         this.analyticsRepository.getTopPages(ownerId, startDate, endDate),
         this.analyticsRepository.getTopCountries(ownerId, startDate, endDate),
         this.analyticsRepository.getTopBrowsers(ownerId, startDate, endDate),
         this.analyticsRepository.getBounceRate(ownerId, startDate, endDate),
-        this.analyticsRepository.getAverageTimeSpent(ownerId, startDate, endDate),
-        this.analyticsRepository.getDailyAnalytics(ownerId, { startDate, endDate }),
+        this.analyticsRepository.getAverageTimeSpent(
+          ownerId,
+          startDate,
+          endDate
+        ),
+        this.analyticsRepository.getDailyAnalytics(ownerId, {
+          startDate,
+          endDate,
+        }),
       ]);
 
       return {
@@ -118,16 +147,21 @@ export class AnalyticsService {
           tablet: deviceBreakdown.tablet || 0,
         },
         dailyStats: dailyStats.map((stat: Stat) => ({
-          date: stat.date.toISOString().split("T")[0],
+          date: stat.date.toISOString().split('T')[0],
           totalVisitors: stat.totalVisitors,
           uniqueVisitors: stat.uniqueVisitors,
           pageViews: stat.pageViews,
           desktop: stat.desktop,
           mobile: stat.mobile,
           tablet: stat.tablet,
-          topPages: Array.isArray(stat.topPages) ? (stat.topPages as Array<{ page: string; views: number }>) : [],
+          topPages: Array.isArray(stat.topPages)
+            ? (stat.topPages as Array<{ page: string; views: number }>)
+            : [],
           topCountries: Array.isArray(stat.topCountries)
-            ? (stat.topCountries as Array<{ country: string; visitors: number }>)
+            ? (stat.topCountries as Array<{
+                country: string;
+                visitors: number;
+              }>)
             : [],
           topBrowsers: Array.isArray(stat.topBrowsers)
             ? (stat.topBrowsers as Array<{ browser: string; visitors: number }>)
@@ -146,7 +180,7 @@ export class AnalyticsService {
       if (e instanceof Exception) {
         throw e;
       }
-      throw new Exception("Erro ao buscar analytics", 500);
+      throw new Exception('Erro ao buscar analytics', 500);
     }
   }
 
@@ -157,7 +191,7 @@ export class AnalyticsService {
     try {
       return await this.analyticsRepository.getRealTimeAnalytics(ownerId);
     } catch (_e) {
-      throw new Exception("Erro ao buscar analytics em tempo real", 500);
+      throw new Exception('Erro ao buscar analytics em tempo real', 500);
     }
   }
 
@@ -166,10 +200,13 @@ export class AnalyticsService {
    */
   private async updateDailyAnalytics(ownerId: string, date: Date) {
     try {
-      const stats = await this.analyticsRepository.getDailyStatsForDate(ownerId, date);
+      const stats = await this.analyticsRepository.getDailyStatsForDate(
+        ownerId,
+        date
+      );
       await this.analyticsRepository.upsertDailyAnalytics(date, stats, ownerId);
     } catch (_e) {
-      throw new Exception("Erro ao atualizar analytics diárias", 500);
+      throw new Exception('Erro ao atualizar analytics diárias', 500);
     }
   }
 
@@ -180,9 +217,12 @@ export class AnalyticsService {
     try {
       const targetDate = date || new Date();
       await this.updateDailyAnalytics(ownerId, targetDate);
-      return { message: "Métricas diárias atualizadas com sucesso" };
+      return { message: 'Métricas diárias atualizadas com sucesso' };
     } catch (_e) {
-      throw new Exception("Erro ao forçar atualização das métricas diárias", 500);
+      throw new Exception(
+        'Erro ao forçar atualização das métricas diárias',
+        500
+      );
     }
   }
 
@@ -196,9 +236,19 @@ export class AnalyticsService {
       const lastWeek = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       const lastMonth = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-      const [todayVisitors, yesterdayVisitors, weekVisitors, monthVisitors, realTime] = await Promise.all([
+      const [
+        todayVisitors,
+        yesterdayVisitors,
+        weekVisitors,
+        monthVisitors,
+        realTime,
+      ] = await Promise.all([
         this.analyticsRepository.getUniqueVisitors(ownerId, today, today),
-        this.analyticsRepository.getUniqueVisitors(ownerId, yesterday, yesterday),
+        this.analyticsRepository.getUniqueVisitors(
+          ownerId,
+          yesterday,
+          yesterday
+        ),
         this.analyticsRepository.getUniqueVisitors(ownerId, lastWeek, today),
         this.analyticsRepository.getUniqueVisitors(ownerId, lastMonth, today),
         this.analyticsRepository.getRealTimeAnalytics(ownerId),
@@ -207,7 +257,10 @@ export class AnalyticsService {
       return {
         today: {
           visitors: todayVisitors,
-          change: yesterdayVisitors > 0 ? ((todayVisitors - yesterdayVisitors) / yesterdayVisitors) * 100 : 0,
+          change:
+            yesterdayVisitors > 0
+              ? ((todayVisitors - yesterdayVisitors) / yesterdayVisitors) * 100
+              : 0,
         },
         week: {
           visitors: weekVisitors,
@@ -218,7 +271,7 @@ export class AnalyticsService {
         realTime,
       };
     } catch (_e) {
-      throw new Exception("Erro ao buscar resumo de analytics", 500);
+      throw new Exception('Erro ao buscar resumo de analytics', 500);
     }
   }
 }

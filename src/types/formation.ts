@@ -1,11 +1,11 @@
 export enum FormationType {
-  Technologist = "tecnologo",
-  Technical = "tecnico",
-  Bootcamp = "bootcamp",
-  Course = "curso",
-  Certificate = "certificado",
-  PosGraduation = "pos-graduacao",
-  Other = "outro",
+  Technologist = 'tecnologo',
+  Technical = 'tecnico',
+  Bootcamp = 'bootcamp',
+  Course = 'curso',
+  Certificate = 'certificado',
+  PosGraduation = 'pos-graduacao',
+  Other = 'outro',
 }
 export interface FormationAddRequest {
   title: string;
@@ -19,7 +19,7 @@ export interface FormationAddRequest {
   certificationUrl?: string;
   ownerId: string;
 }
-export type FormationUpdate = Partial<Omit<FormationAddRequest, "ownerId">>;
+export type FormationUpdate = Partial<Omit<FormationAddRequest, 'ownerId'>>;
 
 export interface Formation {
   id: string;

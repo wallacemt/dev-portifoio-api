@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import type { NextFunction, Request, Response } from "express";
 
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
@@ -9,22 +9,23 @@ setInterval(() => {
       rateLimitStore.delete(key);
     }
   }
-}, 60000); 
+}, 60_000);
 
 export const trackingRateLimit = (req: Request, res: Response, next: NextFunction): void => {
   if (process.env.NODE_ENV === "development") {
-    return next();
+    next();
   }
-  const key = req.ip + ":" + (req.body?.sessionId || "unknown");
+  const key = `${req.ip}:${req.body?.sessionId || "unknown"}`;
   const now = Date.now();
-  const windowMs = 1 * 60 * 1000; 
+  const windowMs = 1 * 60 * 1000;
   const maxRequests = 10;
 
   const record = rateLimitStore.get(key);
 
   if (!record || now > record.resetTime) {
     rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
-    return next();
+    next();
+    throw new Error("Muitas solicitações de tracking. Tente novamente em alguns segundos.");
   }
 
   if (record.count >= maxRequests) {
@@ -39,21 +40,21 @@ export const trackingRateLimit = (req: Request, res: Response, next: NextFunctio
 };
 
 export const adminAnalyticsRateLimit = (req: Request, res: Response, next: NextFunction): void => {
-
   if (process.env.NODE_ENV === "development") {
-    return next();
+     next();
   }
 
-  const key = (req as any).userId || req.ip || "unknown";
+  const key = req .userId || req.ip || "unknown";
   const now = Date.now();
-  const windowMs = 1 * 60 * 1000; 
+  const windowMs = 1 * 60 * 1000;
   const maxRequests = 30;
 
   const record = rateLimitStore.get(key);
 
   if (!record || now > record.resetTime) {
     rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
-    return next();
+     next();
+     throw new Error("Muitas solicitações administrativas. Tente novamente em alguns segundos.");
   }
 
   if (record.count >= maxRequests) {

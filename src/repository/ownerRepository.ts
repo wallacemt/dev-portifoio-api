@@ -1,5 +1,9 @@
-import { prisma } from "../prisma/prismaClient";
-import { OwnerAnalysisResponse, OwnerDataOptionalRequest, OwnerDataRequest } from "../types/owner";
+import { prisma } from '../prisma/prismaClient';
+import type {
+  OwnerAnalysisResponse,
+  OwnerDataOptionalRequest,
+  OwnerDataRequest,
+} from '../types/owner';
 
 export class OwnerRepository {
   /**

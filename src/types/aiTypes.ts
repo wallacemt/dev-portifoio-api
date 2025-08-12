@@ -15,4 +15,3 @@ export interface GeminiResponse {
     candidates?: GeminiCandidate[];
   };
 }
-
