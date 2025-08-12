@@ -1,12 +1,14 @@
-export enum FormationType {
-  Technologist = 'tecnologo',
-  Technical = 'tecnico',
-  Bootcamp = 'bootcamp',
-  Course = 'curso',
-  Certificate = 'certificado',
-  PosGraduation = 'pos-graduacao',
-  Other = 'outro',
-}
+export const FormationTypeValues = {
+  Tecnologo: "technologist" as const,
+  Tecnico: "technical" as const,
+  Bootcamp: "bootcamp" as const,
+  Curso: "course" as const,
+  Certificado: "certificate" as const,
+  PosGraduacao: "posGraduation" as const,
+  Outro: "other" as const,
+} as const;
+
+export type FormationType = typeof FormationTypeValues[keyof typeof FormationTypeValues];
 export interface FormationAddRequest {
   title: string;
   institution: string;
@@ -19,7 +21,7 @@ export interface FormationAddRequest {
   certificationUrl?: string;
   ownerId: string;
 }
-export type FormationUpdate = Partial<Omit<FormationAddRequest, 'ownerId'>>;
+export type FormationUpdate = Partial<Omit<FormationAddRequest, "ownerId">>;
 
 export interface Formation {
   id: string;

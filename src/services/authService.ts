@@ -28,7 +28,7 @@ export class AuthService {
    * @throws Exception if the owner data is not provided.
    */
 
-  public async registerOwner(
+   async registerOwner(
     ownerData: OwnerDataRequest
   ): Promise<OwnerDataResponse> {
     if (!ownerData) throw new Exception('Owner data e requerido!', 400);
@@ -42,7 +42,7 @@ export class AuthService {
       return await this.ownerRepository.createOwner(ownerData);
     } catch (e) {
       if (e instanceof ZodError) {
-        throw new Exception(e.issues[0].message, 400);
+        throw new Exception(e.issues?.[0]?.message || "error for resgister owner", 400);
       }
       throw new Exception(`Informe os dados corretamente: ${e}`, 400);
     }
@@ -54,7 +54,7 @@ export class AuthService {
    * @returns The authenticated owner data with a JWT token.
    * @throws Exception if the owner is not found or if the password is invalid.
    */
-  public async login(
+   async login(
     email: string,
     password: string
   ): Promise<OwnerDataResponse> {

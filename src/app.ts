@@ -63,13 +63,12 @@ class App {
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
       })
     );
-    if (env.NODE_ENV !== 'production') this.app.use(requestLogger);
+    this.app.use(requestLogger);
     this.app.use(express.json());
   }
   listen(port: number | string) {
     this.app.listen(port, () =>
       devDebugger(`Servidor rodando na porta ${port}`)
-
     );
   }
 }

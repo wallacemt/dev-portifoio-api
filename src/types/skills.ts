@@ -1,17 +1,21 @@
-export enum StackType {
-  Frontend = 'frontend',
-  Backend = 'backend',
-  Mobile = 'mobile',
-  Design = 'design',
-  DevOps = 'devops',
-  Other = 'other',
-}
+export const StackTypeValues = {
+  Frontend: "frontend" as const,
+  Backend: "backend" as const,
+  Mobile: "mobile" as const,
+  Design: "design" as const,
+  DevOps: "devops" as const,
+  Other: "other" as const,
+} as const;
 
-export enum SkillType {
-  Framework = 'framework',
-  ProgrammingLanguage = 'progamationLenguage',
-  Technology = 'technology',
-}
+export type StackType = typeof StackTypeValues[keyof typeof StackTypeValues];
+
+export const SkillTypeValues = {
+  Framework: "framework" as const,
+  ProgrammingLanguage: "programmingLanguage" as const,
+  Technology: "technology" as const,
+} as const;
+
+export type SkillType = (typeof SkillTypeValues)[keyof typeof SkillTypeValues];
 
 export interface SkillAddRequest {
   title: string;
@@ -22,7 +26,7 @@ export interface SkillAddRequest {
   ownerId: string;
 }
 
-export type SkillUpdateRequest = Partial<Omit<SkillAddRequest, 'ownerId'>>;
+export type SkillUpdateRequest = Partial<Omit<SkillAddRequest, "ownerId">>;
 
 export interface Skill {
   id: string;

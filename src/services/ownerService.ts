@@ -1,30 +1,24 @@
-import { ZodError } from 'zod';
-import { AnalyticsRepository } from '../repository/analyticsRepository';
-import { OwnerRepository } from '../repository/ownerRepository';
-import type {
-  OwnerAnalysisResponse,
-  OwnerDataOptionalRequest,
-  OwnerDataResponse,
-} from '../types/owner';
-import { Exception } from '../utils/exception';
-import { hashPassword, verifyPassword } from '../utils/hash';
-import { ownerSchemaOptional } from '../validations/ownerValidations';
+import { ZodError } from "zod";
+import { AnalyticsRepository } from "../repository/analyticsRepository";
+import { OwnerRepository } from "../repository/ownerRepository";
+import type { OwnerAnalysisResponse, OwnerDataOptionalRequest, OwnerDataResponse } from "../types/owner";
+import { Exception } from "../utils/exception";
+import { hashPassword, verifyPassword } from "../utils/hash";
+import { ownerSchemaOptional } from "../validations/ownerValidations";
+import { devDebugger } from "../utils/devDebugger";
 
 export class OwnerService {
   private ownerRepository = new OwnerRepository();
   private analyticsRepository = new AnalyticsRepository();
-  public async getOwner(
-    ownerId: string
-  ): Promise<
+  async getOwner(ownerId: string): Promise<
     OwnerDataResponse & {
       welcomeMessage: string;
       buttons: { project: string; curriculo: string };
     }
   > {
-    if (!ownerId || ownerId === ':ownerId')
-      throw new Exception('ID de owner invalido', 400);
+    if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
     const owner = await this.ownerRepository.findById(ownerId);
-    if (!owner) throw new Exception('Owner não  Encontrado!', 404);
+    if (!owner) throw new Exception("Owner não  Encontrado!", 404);
     return {
       id: owner.id,
       name: owner.name,
@@ -37,75 +31,56 @@ export class OwnerService {
       cvLinkEN: owner.cvLinkEN || null,
       welcomeMessage: `Olá, eu sou ${owner.name}!`,
       buttons: {
-        project: 'Ver Projetos',
-        curriculo: 'Curriculo',
+        project: "Ver Projetos",
+        curriculo: "Curriculo",
       },
     };
   }
 
-  public async updateOwner(
-    ownerUpdateData: OwnerDataOptionalRequest,
-    ownerId: string
-  ) {
+  async updateOwner(ownerUpdateData: OwnerDataOptionalRequest, ownerId: string) {
     try {
       ownerSchemaOptional.parse(ownerUpdateData);
       return await this.ownerRepository.updateOwner(ownerUpdateData, ownerId);
     } catch (e) {
       if (e instanceof ZodError) {
-        throw new Exception(e.issues[0].message, 400);
+        throw new Exception(e.issues?.[0]?.message || "error for update owner", 400);
       }
-      throw new Exception('Informe os dados corretamente', 400);
+      throw new Exception("Informe os dados corretamente", 400);
     }
   }
 
-  public async setSecretWord(
-    ownerId: string,
-    secretWord: string
-  ): Promise<void> {
+  async setSecretWord(ownerId: string, secretWord: string): Promise<void> {
     if (!secretWord || secretWord.length < 3) {
-      throw new Exception(
-        'A palavra secreta deve ter pelo menos 3 caracteres',
-        400
-      );
+      throw new Exception("A palavra secreta deve ter pelo menos 3 caracteres", 400);
     }
-    console.log('Setting secret word for ownerId:', ownerId);
-    console.log('Secret word (plain):', secretWord);
+
     const hashedSecretWord = await hashPassword(secretWord);
     return await this.ownerRepository.setSecretWord(hashedSecretWord, ownerId);
   }
 
-  public async verifySecretWord(
-    ownerId: string,
-    secretWord: string
-  ): Promise<{ status: number; isValid: boolean }> {
-    if (!ownerId || ownerId === ':ownerId')
-      throw new Exception('ID de owner invalido', 400);
+  async verifySecretWord(ownerId: string, secretWord: string): Promise<{ status: number; isValid: boolean }> {
+    if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
     if (!secretWord || secretWord.length < 3) {
-      throw new Exception(
-        'A palavra secreta deve ter pelo menos 3 caracteres',
-        400
-      );
+      throw new Exception("A palavra secreta deve ter pelo menos 3 caracteres", 400);
     }
     const owner = await this.ownerRepository.findById(ownerId);
-    if (!(owner && owner.secretWord)) {
-      throw new Exception(
-        'Owner não encontrado ou palavra secreta não definida',
-        404
-      );
+    if (!owner) {
+      throw new Exception("Owner não encontrado", 404);
+    }
+    if (!owner.secretWord) {
+      throw new Exception("Palavra secreta não definida", 404);
     }
     if (!(await verifyPassword(owner.secretWord, secretWord))) {
-      throw new Exception('Palavra secreta incorreta', 401);
+      throw new Exception("Palavra secreta incorreta", 401);
     }
     return { status: 200, isValid: true };
   }
 
-  public async getOwnerAnalysis(
-    ownerId: string
-  ): Promise<OwnerAnalysisResponse> {
-    if (!ownerId) throw new Exception('ID de owner invalido', 400);
+  async getOwnerAnalysis(ownerId: string): Promise<OwnerAnalysisResponse> {
+    if (!ownerId) throw new Exception("ID de owner invalido", 400);
 
     const analysis = await this.ownerRepository.getOwnerAnalysis(ownerId);
-    if (!analysis) throw new Exception('Owner não encontrado', 404);
+    if (!analysis) throw new Exception("Owner não encontrado", 404);
 
     // Buscar analytics dos últimos 30 dias
     try {
@@ -127,27 +102,16 @@ export class OwnerService {
       ] = await Promise.all([
         this.analyticsRepository.getUniqueVisitors(ownerId, startDate, endDate),
         this.analyticsRepository.getTotalPageViews(ownerId, startDate, endDate),
-        this.analyticsRepository.getDeviceBreakdown(
-          ownerId,
-          startDate,
-          endDate
-        ),
+        this.analyticsRepository.getDeviceBreakdown(ownerId, startDate, endDate),
         this.analyticsRepository.getTopPages(ownerId, startDate, endDate, 5),
         this.analyticsRepository.getBounceRate(ownerId, startDate, endDate),
-        this.analyticsRepository.getAverageTimeSpent(
-          ownerId,
-          startDate,
-          endDate
-        ),
+        this.analyticsRepository.getAverageTimeSpent(ownerId, startDate, endDate),
         this.analyticsRepository.getUniqueVisitors(ownerId, today, today),
         this.analyticsRepository.getUniqueVisitors(ownerId, lastWeek, lastWeek),
         this.analyticsRepository.getRealTimeAnalytics(ownerId),
       ]);
 
-      const weeklyGrowth =
-        weekAgoVisitors > 0
-          ? ((todayVisitors - weekAgoVisitors) / weekAgoVisitors) * 100
-          : 0;
+      const weeklyGrowth = weekAgoVisitors > 0 ? ((todayVisitors - weekAgoVisitors) / weekAgoVisitors) * 100 : 0;
 
       return {
         projectsCount: analysis.projectsCount,
@@ -174,8 +138,7 @@ export class OwnerService {
         },
       };
     } catch (analyticsError) {
-      // Se houver erro nas analytics, retorna apenas os dados básicos
-      console.error('Erro ao buscar analytics:', analyticsError);
+      devDebugger("Erro ao buscar analytics:", analyticsError, "error");
       return {
         projectsCount: analysis.projectsCount,
         skillsCount: analysis.skillsCount,

@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { SkillType, StackType } from '../types/skills';
+import { SkillTypeValues, StackTypeValues } from '../types/skills';
+
 
 export const skillSchema = z.object({
   title: z
@@ -8,14 +9,14 @@ export const skillSchema = z.object({
     .max(50, { message: 'O título deve ter no máximo 50 caracteres' }),
   image: z.string().url({ message: 'A URL da imagem deve ser valida' }),
   stack: z
-    .nativeEnum(StackType)
-    .refine((val) => Object.values(StackType).includes(val), {
+    .nativeEnum(StackTypeValues)
+    .refine((val) => Object.values(StackTypeValues).includes(val), {
       message:
         'O tipo de stack deve ser um dos valores: frontend, backend, mobile, design, devOps, other',
     }),
   type: z
-    .nativeEnum(SkillType)
-    .refine((val) => Object.values(SkillType).includes(val), {
+    .nativeEnum(SkillTypeValues)
+    .refine((val) => Object.values(SkillTypeValues).includes(val), {
       message:
         'O tipo de skill deve ser um dos valores: framework, programmingLanguage, technology',
     }),

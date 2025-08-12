@@ -11,19 +11,21 @@ declare module "express-serve-static-core" {
   }
 }
 
-export function authPolice(req: Request, res: Response, next: NextFunction) {
+export default function authPolice(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Token de autenticação não encontrado" });
+    res.status(401).json({ error: "Token de autenticação não encontrado" });
+    return;
   }
 
-  const token = authHeader.slice(7);
+  const token = authHeader?.slice(7);
 
   try {
-    const { id } = jwt.verify(token, jwtSecret) as { id: string };
+    const { id } = jwt.verify(token || "", jwtSecret) as { id: string };
     req.userId = id;
     next();
   } catch {
-    return res.status(401).json({ error: "Token inválido ou expirado!" });
+    res.status(401).json({ error: "Token inválido ou expirado!" });
+    return;
   }
 }

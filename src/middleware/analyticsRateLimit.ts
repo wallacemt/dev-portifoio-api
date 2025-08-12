@@ -25,26 +25,27 @@ export const trackingRateLimit = (req: Request, res: Response, next: NextFunctio
   if (!record || now > record.resetTime) {
     rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
     next();
-    throw new Error("Muitas solicitações de tracking. Tente novamente em alguns segundos.");
+    res.status(429).json({ error: "Muitas solicitações de tracking. Tente novamente em alguns segundos." });
+ 
   }
 
-  if (record.count >= maxRequests) {
+  if (record && record.count >= maxRequests) {
     res.status(429).json({
       error: "Muitas solicitações de tracking. Tente novamente em alguns segundos.",
     });
     return;
   }
 
-  record.count++;
+  record && record.count++;
   next();
 };
 
 export const adminAnalyticsRateLimit = (req: Request, res: Response, next: NextFunction): void => {
   if (process.env.NODE_ENV === "development") {
-     next();
+    next();
   }
 
-  const key = req .userId || req.ip || "unknown";
+  const key = req.userId || req.ip || "unknown";
   const now = Date.now();
   const windowMs = 1 * 60 * 1000;
   const maxRequests = 30;
@@ -53,16 +54,16 @@ export const adminAnalyticsRateLimit = (req: Request, res: Response, next: NextF
 
   if (!record || now > record.resetTime) {
     rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
-     next();
-     throw new Error("Muitas solicitações administrativas. Tente novamente em alguns segundos.");
+    next();
+    res.status(429).json({ error: "Muitas solicitações administrativas. Tente novamente em alguns segundos." });
   }
 
-  if (record.count >= maxRequests) {
+  if (record && record.count >= maxRequests) {
     res.status(429).json({
       error: "Muitas solicitações administrativas. Tente novamente em alguns segundos.",
     });
     return;
   }
-  record.count++;
+  record && record.count++;
   next();
 };

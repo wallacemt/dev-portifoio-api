@@ -276,7 +276,6 @@ export class AnalyticsRepository {
       endDate
     );
 
-    // biome-ignore lint/style/useBlockStatements: Simplified for readability
     if (totalVisitors === 0) return 0;
 
     const singlePageVisitors = await prisma.visitor.count({

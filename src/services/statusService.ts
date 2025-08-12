@@ -1,12 +1,34 @@
-import git from 'git-rev-sync';
-import { env } from '../env';
-import { prisma } from '../prisma/prismaClient';
+import type { JsonValue } from "@prisma/client/runtime/library";
+import { env } from "../env";
+import { prisma } from "../prisma/prismaClient";
 
 export class StatusService {
   async getStatus() {
-    const database: any = {};
-    const server: any = {};
-    const gitInfo: any = {};
+    const database: {
+      status: string;
+      latencia: string;
+      conexoes?: JsonValue;
+      versao?: JsonValue;
+      erro?: string;
+    } = {
+      status: "",
+      latencia: "",
+    };
+    const server: {
+      status: string;
+      ambiente: string;
+      timezone: string;
+      versao_node: string;
+      plataforma: string;
+      regiao: string;
+    } = {
+      status: "healthy",
+      ambiente: env.NODE_ENV || "development",
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      versao_node: process.version,
+      plataforma: process.platform,
+      regiao: "oregon-us-west",
+    };
 
     try {
       const start = Date.now();
@@ -14,40 +36,19 @@ export class StatusService {
       const latency = Date.now() - start;
 
       const stats = await prisma.$runCommandRaw({ serverStatus: 1 });
-
-      database.status = 'healthy';
-      database.latência = `${latency}ms`;
-      database.conexões = stats.connections;
-      database.versão = stats.version;
-    } catch (err: any) {
-      database.status = 'unhealthy';
-      database.erro = err.message;
-    }
-
-    server.status = 'healthy';
-    server.ambiente = env.NODE_ENV || 'development';
-    server.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    server.versão_node = process.version;
-    server.plataforma = process.platform;
-    server.região = 'oregon-us-west';
-
-    try {
-      gitInfo.sha_commit = git.short();
-      gitInfo.autor_último_commit = 'Owner do repositório';
-      gitInfo.branch = git.branch();
-    } catch (err) {
-      gitInfo.sha_commit = 'unknown';
-      gitInfo.autor_último_commit = 'unknown';
-      gitInfo.branch = 'unknown';
-      gitInfo.erro = 'Git info não disponível no runtime';
-      gitInfo.erro.details = err;
+      database.status = "healthy";
+      database.latencia = `${latency}ms`;
+      database.conexoes = stats.connections;
+      database.versao = stats.version;
+    } catch (err: unknown) {
+      database.status = "unhealthy";
+      database.erro = (err as Error).message;
     }
 
     return {
       updatedAt: new Date().toISOString(),
       database,
       server,
-      git: gitInfo,
     };
   }
 }

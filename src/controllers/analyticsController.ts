@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { Router } from "express";
-import { adminAnalyticsRateLimit, trackingRateLimit } from "../middleware/analyticsRateLimit";
+import {  trackingRateLimit } from "../middleware/analyticsRateLimit";
 import AuthPolice from "../middleware/authPolice";
 import { AnalyticsService } from "../services/analyticsService";
 import type { AnalyticsFilters, TrackPageViewRequest, TrackVisitorRequest } from "../types/analytics";
@@ -31,7 +31,7 @@ export class AnalyticsController {
 
   private routesPrivate() {
     this.routerPrivate.use(AuthPolice);
-    this.routerPrivate.use(adminAnalyticsRateLimit);
+  
     this.routerPrivate.get("/dashboard", this.getAnalytics.bind(this));
     this.routerPrivate.get("/summary", this.getAnalyticsSummary.bind(this));
     this.routerPrivate.get("/realtime", this.getRealTimeAnalytics.bind(this));

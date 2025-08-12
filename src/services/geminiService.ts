@@ -1,13 +1,14 @@
-import Gemini from 'gemini-ai-sdk';
-import { env } from '../env';
-import type { GeminiResponse } from '../types/aiTypes';
-import { Exception } from '../utils/exception';
-import { QuotaManager } from '../utils/quotaManager';
+import Gemini from "gemini-ai-sdk";
+import { env } from "../env";
+import type { GeminiResponse } from "../types/aiTypes";
+import { Exception } from "../utils/exception";
+import { QuotaManager } from "../utils/quotaManager";
+import { devDebugger } from "../utils/devDebugger";
 
-const gemini = new Gemini(env.GEMINI_API_KEY || '');
+const gemini = new Gemini(env.GEMINI_API_KEY || "");
 
 interface CacheItem {
-  data: Object;
+  data: object;
   timestamp: number;
   expires: number;
 }
@@ -18,102 +19,85 @@ export class TranslationService {
   private static readonly MAX_RETRIES = 3;
   private static readonly BASE_DELAY = 1000;
 
-  private static getCacheKey(
-    obj: Object,
-    language: string,
-    sourceLang: string
-  ): string {
+  private static getCacheKey(obj: object, language: string, sourceLang: string): string {
     return `${JSON.stringify(obj)}_${sourceLang}_${language}`;
   }
 
-  private static isQuotaError(error: any): boolean {
+  private static isQuotaError(error: { status: number; message: string }): boolean {
     return (
       error.status === 429 ||
-      (typeof error.message === 'string' && error.message.includes('quota')) ||
-      (typeof error.message === 'string' &&
-        error.message.includes('Too Many Requests'))
+      (typeof error.message === "string" && error.message.includes("quota")) ||
+      (typeof error.message === "string" && error.message.includes("Too Many Requests"))
     );
   }
 
   private static async delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return await new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  private static extractRetryDelay(error: any): number {
+  private static extractRetryDelay(error: {
+    errorDetails: { "@type": string; detail: string; retryDelay: string }[];
+  }): number {
     try {
       if (error.errorDetails) {
         const retryInfo = error.errorDetails.find(
-          (detail: any) =>
-            detail['@type'] === 'type.googleapis.com/google.rpc.RetryInfo'
+          (detail) => detail["@type"] === "type.googleapis.com/google.rpc.RetryInfo"
         );
         if (retryInfo?.retryDelay) {
-          const delayStr = retryInfo.retryDelay.replace('s', '');
-          return Number.parseInt(delayStr) * 1000;
+          const delayStr = retryInfo.retryDelay.replace("s", "");
+          return Number.parseInt(delayStr, 10) * 1000;
         }
       }
     } catch (e) {
-      console.warn('Could not extract retry delay from error:', e);
+      devDebugger("Could not extract retry delay from error:", e, "warn");
     }
     return 60_000;
   }
 
-  public async translateObject(
-    obj: Object,
-    lenguage: string,
-    sourceLeng = 'pt',
-    aditionalPrompt?: string
-  ): Promise<Object> {
+  async translateObject(obj: object, lenguage: string, sourceLeng = "pt", aditionalPrompt?: string): Promise<object> {
     if (!lenguage || lenguage === sourceLeng || !obj) return obj;
     const cacheKey = TranslationService.getCacheKey(obj, lenguage, sourceLeng);
     const cached = TranslationService.cache.get(cacheKey);
 
     if (cached && Date.now() < cached.expires) {
-      console.log('Translation cache hit for:', lenguage);
+      devDebugger(`Translation cache hit for: ${lenguage}`);
+
       return cached.data;
     }
     const canMakeRequest = await QuotaManager.canMakeRequest();
     if (!canMakeRequest) {
-      console.warn(
-        'Cannot make Gemini API request due to quota limits. Returning original object.'
-      );
+      devDebugger("Cannot make Gemini API request due to quota limits. Returning original object.", undefined, "warn");
       return obj;
     }
     this.cleanCache();
 
     const jsonString = JSON.stringify(obj);
     const prompt = `
-    Traduza as seguintes cadeias de caracteres JSON do objeto de ${sourceLeng} para ${lenguage}, preservando as chaves e a estrutura. Não traduza as chaves ou valores não-textuais, se a chave for título ou descrição ou qualquer outro tipo que contenha bastente texto ou informaçao relevante, traduza o valor para ${lenguage} (Traduza todos os valores de texto somente o texto dentro das aspas, se forem valores monetários, números ou chave de moeda, aplique a conversão da moeda para ${lenguage}). REGRA: retorne json, sem texto adicional. ${
-      aditionalPrompt ? aditionalPrompt + '\n' : ''
+    Traduza as seguintes cadeias de caracteres JSON do objeto de ${sourceLeng} para ${lenguage}, preservando as chaves e a estrutura. Não traduza as chaves ou valores não-textuais, se a chave for título ou descrição ou qualquer outro tipo que contenha bastente texto ou informaçao relevante, traduza o valor para ${lenguage} (Traduza todos os valores de texto somente o texto dentro das aspas, se forem valores monetários, números ou chave de moeda, aplique a conversão da moeda para ${lenguage}). REGRA: retorne json, sem texto adicional.${
+      aditionalPrompt ? `${aditionalPrompt}\n` : ""
     }:
-    ${jsonString}
-    `;
-
+    ${jsonString}`;
     return this.translateWithRetry(prompt, cacheKey, obj);
   }
 
-  private async translateWithRetry(
-    prompt: string,
-    cacheKey: string,
-    originalObj: Object
-  ): Promise<Object> {
-    let lastError: any;
+  private async translateWithRetry(prompt: string, cacheKey: string, originalObj: object): Promise<object> {
+    let lastError: unknown;
 
-    for (
-      let attempt = 1;
-      attempt <= TranslationService.MAX_RETRIES;
-      attempt++
-    ) {
+    for (let attempt = 1; attempt <= TranslationService.MAX_RETRIES; attempt++) {
       try {
         QuotaManager.recordRequest();
-
+        //biome-ignore lint: using for caution function
         const resp = await gemini.ask(prompt, {
-          model: 'gemini-2.0-flash-lite',
+          model: "gemini-2.0-flash-lite",
         });
         const response = resp as GeminiResponse;
-        const text = response.response.candidates![0].content.parts[0].text;
-        const jsonText = text.replace(/```json|```/g, '').trim();
+        const text = response.response.candidates?.[0]?.content?.parts[0]?.text;
+        const jsonText = text?.replace(/```json|```/g, "").trim();
 
         try {
+          if (!jsonText) {
+            throw new Error("Resposta do Gemini não é um JSON válido");
+          }
           const translatedObj = JSON.parse(jsonText);
           QuotaManager.recordSuccess();
           TranslationService.cache.set(cacheKey, {
@@ -123,41 +107,40 @@ export class TranslationService {
           });
 
           return translatedObj;
-        } catch (parseError) {
-          console.error('Resposta inválida do Gemini: ', response);
+        } catch (_err) {
+          devDebugger(`Resposta inválida do Gemini: ${response}`);
+
           QuotaManager.recordFailure(false);
-          throw new Exception('Não foi possível interpretar a tradução', 500);
+          throw new Exception("Não foi possível interpretar a tradução", 500);
         }
       } catch (error) {
         lastError = error;
-        const isQuotaError = TranslationService.isQuotaError(error);
+        const isQuotaError = TranslationService.isQuotaError(error as { status: number; message: string });
         QuotaManager.recordFailure(isQuotaError);
-
-        console.error(`Translation attempt ${attempt} failed:`, error);
 
         if (isQuotaError) {
           if (attempt === TranslationService.MAX_RETRIES) {
-            console.warn(
-              'Translation quota exceeded, returning original object'
-            );
+            devDebugger("Translation quota exceeded, returning original object", originalObj, "warn");
+
             return originalObj;
           }
-          const retryDelay = TranslationService.extractRetryDelay(error);
-          const backoffDelay =
-            TranslationService.BASE_DELAY * 2 ** (attempt - 1);
-          const delayTime = Math.max(retryDelay, backoffDelay);
-
-          console.log(
-            `Quota exceeded, waiting ${delayTime}ms before retry ${attempt + 1}`
+          const retryDelay = TranslationService.extractRetryDelay(
+            error as {
+              errorDetails: { "@type": string; detail: string; retryDelay: string }[];
+            }
           );
+          const backoffDelay = TranslationService.BASE_DELAY * 2 ** (attempt - 1);
+          const delayTime = Math.max(retryDelay, backoffDelay);
+          devDebugger(`Quota exceeded, waiting ${delayTime}ms before retry ${attempt + 1}`);
+
           await TranslationService.delay(delayTime);
         } else {
           break;
         }
       }
     }
-    console.error('Error ao usar geminiAI após todas as tentativas', lastError);
-    throw new Exception('Error na tradução', 500);
+    devDebugger("Error ao usar geminiAI após todas as tentativas", lastError, "error");
+    throw new Exception("Error na tradução", 500);
   }
 
   private cleanCache(): void {
@@ -168,21 +151,18 @@ export class TranslationService {
       }
     }
   }
-  public static clearCache(): void {
+  static clearCache(): void {
     TranslationService.cache.clear();
-    console.log('Translation cache cleared');
   }
-  public static getCacheStats(): {
+  static getCacheStats(): {
     size: number;
     entries: Array<{ key: string; age: number }>;
   } {
     const now = Date.now();
-    const entries = Array.from(TranslationService.cache.entries()).map(
-      ([key, item]) => ({
-        key: key.substring(0, 50) + '...',
-        age: Math.round((now - item.timestamp) / 1000 / 60),
-      })
-    );
+    const entries = Array.from(TranslationService.cache.entries()).map(([key, item]) => ({
+      key: `${key.substring(0, 50)}...`,
+      age: Math.round((now - item.timestamp) / 1000 / 60),
+    }));
 
     return {
       size: TranslationService.cache.size,

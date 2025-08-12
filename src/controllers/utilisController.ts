@@ -45,9 +45,9 @@ export class UtilisController {
     }
   }
 
-  async getlanguageOptions(_req: Request, res: Response) {
+   getlanguageOptions(_req: Request, res: Response) {
     try {
-      const languages = await this.utilisService.getLeguageApiReferenceUrl();
+      const languages =  this.utilisService.getLeguageApiReferenceUrl();
       res.status(200).json(languages);
     } catch (error) {
       errorFilter(error, res);

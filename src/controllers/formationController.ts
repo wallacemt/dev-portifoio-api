@@ -103,7 +103,7 @@ export class FormationController {
   }
    async delete(req: Request, res: Response) {
     try {
-      await this.formationService.deleteFormation(req.params.id);
+      await this.formationService.deleteFormation(req.params.id || "");
       res.status(200).json({ message: 'Formation deletada com sucesso' });
     } catch (error) {
       errorFilter(error, res);

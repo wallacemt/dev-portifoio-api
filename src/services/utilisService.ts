@@ -1,5 +1,5 @@
-import { ServicesRepository } from '../repository/servicesRepository';
-import type { LanguageApiResponse } from '../types/utils';
+
+import type { LanguageApiResponse } from "../types/utils";
 
 interface NavbarItem {
   name: string;
@@ -12,82 +12,81 @@ interface NavbarItens {
 const navbarItems: NavbarItens = {
   itens: [
     {
-      name: 'Início',
-      path: '/',
+      name: "Início",
+      path: "/",
     },
     {
-      name: 'Projetos',
-      path: '/projects',
+      name: "Projetos",
+      path: "/projects",
     },
     {
-      name: 'Habilidades',
-      path: '/skills',
+      name: "Habilidades",
+      path: "/skills",
     },
     {
-      name: 'Serviços',
-      path: '/services',
+      name: "Serviços",
+      path: "/services",
     },
     {
-      name: 'Formação',
-      path: '/formation',
+      name: "Formação",
+      path: "/formation",
     },
   ],
-  callText: 'Disponível para novos projetos',
+  callText: "Disponível para novos projetos",
 };
 
 const defaultLenguages: LanguageApiResponse = {
   translation: [
     {
       pt: {
-        name: 'Portuguese (Brazil)',
-        nativeName: 'Português (Brasil)',
-        dir: 'ltr',
+        name: "Portuguese (Brazil)",
+        nativeName: "Português (Brasil)",
+        dir: "ltr",
       },
       en: {
-        name: 'English',
-        nativeName: 'English',
-        dir: 'ltr',
+        name: "English",
+        nativeName: "English",
+        dir: "ltr",
       },
       es: {
-        name: 'Spanish',
-        nativeName: 'Español',
-        dir: 'ltr',
+        name: "Spanish",
+        nativeName: "Español",
+        dir: "ltr",
       },
       fr: {
-        name: 'French',
-        nativeName: 'Français',
-        dir: 'ltr',
+        name: "French",
+        nativeName: "Français",
+        dir: "ltr",
       },
       ja: {
-        name: 'Japanese',
-        nativeName: '日本語',
-        dir: 'ltr',
+        name: "Japanese",
+        nativeName: "日本語",
+        dir: "ltr",
       },
       ko: {
-        name: 'Korean',
-        nativeName: '한국어',
-        dir: 'ltr',
+        name: "Korean",
+        nativeName: "한국어",
+        dir: "ltr",
       },
       zh: {
-        name: 'Chinese',
-        nativeName: '中文',
-        dir: 'ltr',
+        name: "Chinese",
+        nativeName: "中文",
+        dir: "ltr",
       },
       it: {
-        name: 'Italian',
-        nativeName: 'Italiano',
-        dir: 'ltr',
+        name: "Italian",
+        nativeName: "Italiano",
+        dir: "ltr",
       },
     },
   ],
 };
 export class UtilisService {
-  private servicesRepository = new ServicesRepository();
-  public getNavbarItems(): NavbarItens {
+  getNavbarItems(): NavbarItens {
     return navbarItems;
   }
 
-  public async getLeguageApiReferenceUrl(): Promise<LanguageApiResponse> {
+  getLeguageApiReferenceUrl(): LanguageApiResponse {
     return defaultLenguages;
   }
 }
