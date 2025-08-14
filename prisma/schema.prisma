@@ -28,8 +28,8 @@ model project {
   techs        String[]
   screenshots  String[]
   deployment   String
-  backend      String
-  frontend     String
+  backend      String? 
+  frontend     String?
   previewImage String
   activate     Boolean   @default(true)
   lastUpdate   DateTime?

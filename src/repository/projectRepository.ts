@@ -6,6 +6,7 @@ import { SkillRepository } from "./skillRepository";
 export class ProjectRepository {
   private skillRepo = new SkillRepository();
   async findAllProjects(where: ProjectWhere, skip: number, take: number, orderBy: "asc" | "desc") {
+   
     return await prisma.project.findMany({
       where,
       skip,

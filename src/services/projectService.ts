@@ -19,9 +19,10 @@ export class ProjectService {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
     const { page, limit, tech, activate, orderBy, search } = filters;
     const skip = (page - 1) * limit;
+    const isAct = activate === undefined ? undefined : activate === "true";
     const where: ProjectWhere = {
       ownerId,
-      ...(activate !== undefined && { activate }),
+      ...(isAct !== undefined && { activate: isAct }),
       ...(tech && { techs: { has: tech.toLowerCase() } }),
       ...(search && {
         OR: [
@@ -106,8 +107,14 @@ export class ProjectService {
 
   async createProject(project: CreateProject): Promise<Project> {
     try {
-      projectSchema.parse(project);
-      return await this.projectRepository.createProject(project);
+      const projectData: CreateProject = {
+        ...project,
+        backend: project.backend?.length ? project.backend : undefined,
+        frontend: project.frontend?.length ? project.frontend : undefined,
+      };
+      projectSchema.parse(projectData);
+      const res = await this.projectRepository.createProject(project);
+      return res as Project;
     } catch (e) {
       if (e instanceof ZodError) {
         throw new Exception(e.issues?.[0]?.message || "Error for create project", 400);

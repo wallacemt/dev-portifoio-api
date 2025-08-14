@@ -71,6 +71,7 @@ export class ProjectController {
       project.ownerId = req.userId;
       project.lastUpdate = new Date();
       project.techs = project.techs.map((tech) => tech.toLowerCase());
+
       const projectCreated = await this.projectService.createProject(project);
       res.status(201).json({ message: "Projeto criado com sucesso", projectCreated });
     } catch (error) {
@@ -80,6 +81,7 @@ export class ProjectController {
   async update(req: Request, res: Response) {
     try {
       const project: UpdateProjec = req.body;
+      project.lastUpdate = new Date();
       const projectUpdated = await this.projectService.updateProject(project, req.params.id || "");
       res.status(200).json({ message: "Projeto atualizado com sucesso", projectUpdated });
     } catch (error) {

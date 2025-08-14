@@ -7,6 +7,14 @@ import { hashPassword, verifyPassword } from "../utils/hash";
 import { ownerSchemaOptional } from "../validations/ownerValidations";
 import { devDebugger } from "../utils/devDebugger";
 
+const MAX_ATTEMPTS = 4;
+const LOCK_TIME = 45 * 60 * 1000;
+interface AttemptData {
+  attempts: number;
+  lastAttempt: number;
+}
+
+const attemptsCache: Record<string, AttemptData> = {};
 export class OwnerService {
   private ownerRepository = new OwnerRepository();
   private analyticsRepository = new AnalyticsRepository();
@@ -70,9 +78,28 @@ export class OwnerService {
     if (!owner.secretWord) {
       throw new Exception("Palavra secreta não definida", 404);
     }
+    const data = attemptsCache[owner.email] || {
+      attempts: 0,
+      lastAttempt: Date.now(),
+    };
+    if (data.attempts >= MAX_ATTEMPTS && Date.now() - data.lastAttempt < LOCK_TIME) {
+      throw new Exception(
+        `Número máximo de tentativas excedido. Tente novamente em ${Math.ceil(
+          (LOCK_TIME - Date.now() + data.lastAttempt) / 1000 / 60
+        )} minutos`,
+        429
+      );
+    }
+
     if (!(await verifyPassword(owner.secretWord, secretWord))) {
+      attemptsCache[owner.email] = {
+        attempts: data.attempts + 1,
+        lastAttempt: Date.now(),
+      };
       throw new Exception("Palavra secreta incorreta", 401);
     }
+    delete attemptsCache[owner.email];
+
     return { status: 200, isValid: true };
   }
 

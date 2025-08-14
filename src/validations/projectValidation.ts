@@ -21,8 +21,8 @@ export const projectSchema = z.object({
     message: "O projeto deve ter pelo menos uma imagem de screenshot",
   }),
   deployment: z.string().url({ message: "A URL do deploy deve ser valida" }),
-  backend: z.string().url({ message: "A URL do backend deve ser valida" }),
-  frontend: z.string().url({ message: "A URL do frontend deve ser valida" }),
+  backend: z.string().url({ message: "A URL do backend deve ser valida" }).optional(),
+  frontend: z.string().url({ message: "A URL do frontend deve ser valida" }).optional(),
   previewImage: z.string().url({ message: "A URL da imagem de preview deve ser valida" }),
   lastUpdate: z.date().optional(),
   ownerId: z.string().min(1, { message: "o id do owner deve ser valido" }),
@@ -49,8 +49,7 @@ export const projectFilterSchema = z.object({
   tech: z.string().optional(),
   activate: z
     .string()
-    .optional()
-    .transform((val) => Boolean(val)),
+    .optional(),
 
   orderBy: z.enum(["asc", "desc"]).optional().default("desc"),
   search: z.string().optional(),

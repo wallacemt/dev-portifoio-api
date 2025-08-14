@@ -8,8 +8,8 @@ export interface CreateProject {
   techs: string[];
   screenshots: string[];
   deployment: string;
-  backend: string;
-  frontend: string;
+  backend?: string;
+  frontend?: string;
   previewImage: string;
   lastUpdate: Date;
   ownerId: string;
@@ -26,8 +26,8 @@ export interface Project {
   techs: string[];
   screenshots: string[];
   deployment: string;
-  backend: string;
-  frontend: string;
+  backend?: string;
+  frontend?: string;
   previewImage: string;
 }
 
