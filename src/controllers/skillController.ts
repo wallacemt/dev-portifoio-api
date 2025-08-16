@@ -1,9 +1,9 @@
-import { type Request, type Response, Router } from 'express';
-import AuthPolice from '../middleware/authPolice';
-import { TranslationService } from '../services/geminiService';
-import { SkillService } from '../services/skillService';
-import type { SkillAddRequest, SkillUpdateRequest } from '../types/skills';
-import errorFilter from '../utils/isCustomError';
+import { type Request, type Response, Router } from "express";
+import AuthPolice from "../middleware/authPolice";
+import { TranslationService } from "../services/geminiService";
+import { SkillService } from "../services/skillService";
+import type { SkillAddRequest, SkillUpdateRequest } from "../types/skills";
+import errorFilter from "../utils/isCustomError";
 
 /**
  * @swagger
@@ -12,8 +12,8 @@ import errorFilter from '../utils/isCustomError';
  *   description: Operações de CRUD para as Skills do Owner
  */
 export class SkillController {
-   routerPrivate: Router;
-   routerPublic: Router;
+  routerPrivate: Router;
+  routerPublic: Router;
   private skillService = new SkillService();
   private translationService = new TranslationService();
   constructor() {
@@ -23,19 +23,19 @@ export class SkillController {
     this.routesPrivate();
   }
   private routesPublic() {
-    this.routerPublic.get('/owner/:ownerId', this.getAllSkill.bind(this));
-    this.routerPublic.get('/types', this.getAllTypes.bind(this));
+    this.routerPublic.get("/owner/:ownerId", this.getAllSkill.bind(this));
+    this.routerPublic.get("/types", this.getAllTypes.bind(this));
   }
   private routesPrivate() {
     this.routerPrivate.use(AuthPolice);
-    this.routerPrivate.post('/create', this.create.bind(this));
-    this.routerPrivate.put('/:id/update', this.update.bind(this));
-    this.routerPrivate.delete('/:id/delete', this.delete.bind(this));
+    this.routerPrivate.post("/create", this.create.bind(this));
+    this.routerPrivate.put("/:id/update", this.update.bind(this));
+    this.routerPrivate.delete("/:id/delete", this.delete.bind(this));
   }
 
-   async getAllTypes(_req: Request, res: Response) {
+  getAllTypes(_req: Request, res: Response) {
     try {
-      const result = await this.skillService.getAllTypes();
+      const result = this.skillService.getAllTypes();
 
       res.status(200).json(result);
     } catch (error) {
@@ -43,17 +43,13 @@ export class SkillController {
     }
   }
 
-   async getAllSkill(req: Request, res: Response) {
+  async getAllSkill(req: Request, res: Response) {
     const { language } = req.query as { language?: string };
     try {
       const result = await this.skillService.findAllSkill(req.params.ownerId || "");
-      if (language && language !== 'pt') {
+      if (language && language !== "pt") {
         try {
-          const translated = await this.translationService.translateObject(
-            result,
-            language,
-            'pt'
-          );
+          const translated = await this.translationService.translateObject(result, language, "pt");
           res.status(200).json(translated);
         } catch (e) {
           errorFilter(e, res);
@@ -66,36 +62,30 @@ export class SkillController {
     }
   }
 
-   async create(req: Request, res: Response) {
+  async create(req: Request, res: Response) {
     try {
       const skill: SkillAddRequest = req.body;
       skill.ownerId = req.userId;
+
       const skillCreated = await this.skillService.addSkill(skill);
-      res
-        .status(201)
-        .json({ message: 'Skill adicionada com sucesso', skillCreated });
+      res.status(201).json({ message: "Skill adicionada com sucesso", skillCreated });
     } catch (error) {
       errorFilter(error, res);
     }
   }
-   async update(req: Request, res: Response) {
+  async update(req: Request, res: Response) {
     try {
       const project: SkillUpdateRequest = req.body;
-      const projectUpdated = await this.skillService.updateSkill(
-        project,
-        req.params.id || ""
-      );
-      res
-        .status(200)
-        .json({ message: 'Skill atualizada com sucesso', projectUpdated });
+      const projectUpdated = await this.skillService.updateSkill(project, req.params.id || "");
+      res.status(200).json({ message: "Skill atualizada com sucesso", projectUpdated });
     } catch (error) {
       errorFilter(error, res);
     }
   }
-   async delete(req: Request, res: Response) {
+  async delete(req: Request, res: Response) {
     try {
       await this.skillService.deleteSkill(req.params.id || "");
-      res.status(200).json({ message: 'Skill deletada com sucesso' });
+      res.status(200).json({ message: "Skill deletada com sucesso" });
     } catch (error) {
       errorFilter(error, res);
     }

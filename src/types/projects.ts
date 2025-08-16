@@ -26,8 +26,8 @@ export interface Project {
   techs: string[];
   screenshots: string[];
   deployment: string;
-  backend?: string;
-  frontend?: string;
+  backend?: string | null;
+  frontend?: string | null;
   previewImage: string;
 }
 

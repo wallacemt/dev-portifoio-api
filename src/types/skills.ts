@@ -7,7 +7,7 @@ export const StackTypeValues = {
   Other: "other" as const,
 } as const;
 
-export type StackType = typeof StackTypeValues[keyof typeof StackTypeValues];
+export type StackType = (typeof StackTypeValues)[keyof typeof StackTypeValues];
 
 export const SkillTypeValues = {
   Framework: "framework" as const,
@@ -36,4 +36,5 @@ export interface Skill {
   type: string;
   subSkils: string[];
   ownerId: string;
+  createdAt: Date;
 }

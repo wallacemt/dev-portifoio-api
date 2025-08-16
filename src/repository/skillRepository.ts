@@ -1,9 +1,9 @@
-import { prisma } from '../prisma/prismaClient';
-import type { SkillAddRequest, SkillUpdateRequest } from '../types/skills';
+import { prisma } from "../prisma/prismaClient";
+import type { SkillAddRequest, SkillUpdateRequest } from "../types/skills";
 
 export class SkillRepository {
   async findAllSkills(ownerId: string) {
-    return await prisma.skill.findMany({ where: { ownerId } });
+    return await prisma.skill.findMany({ where: { ownerId }, orderBy: { createdAt: "desc" } });
   }
 
   async findById(skillId: string) {

@@ -20,7 +20,7 @@ export class SkillService {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
     const res = await this.skillRepository.findAllSkills(ownerId);
     const texts = {
-      chooseText: "Escolha uma habilidade",
+      chooseText: "Filtre por uma Stack",
       title: "Minhas Habilidades",
       description:
         " Habilidades que domino e utilizo em meus projetos, que desenvolvi ao mediante a cursos e projetos pessoais.",

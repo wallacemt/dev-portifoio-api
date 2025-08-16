@@ -28,22 +28,24 @@ model project {
   techs        String[]
   screenshots  String[]
   deployment   String
-  backend      String? 
+  backend      String?
   frontend     String?
   previewImage String
   activate     Boolean   @default(true)
   lastUpdate   DateTime?
   ownerId      String
+  createdAt    DateTime  @default(now())
 }
 
 model skill {
-  id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  title    String
-  image    String
-  stack    String
-  type     String
-  subSkils String[]
-  ownerId  String
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  image     String
+  stack     String
+  type      String
+  subSkils  String[]
+  ownerId   String
+  createdAt DateTime @default(now())
 }
 
 model formation {
@@ -58,6 +60,7 @@ model formation {
   type             String
   certificationUrl String?
   ownerId          String
+  createdAt        DateTime @default(now())
 }
 
 model service {
@@ -95,7 +98,7 @@ model visitor {
   userAgent   String
   country     String?
   city        String?
-  device      String 
+  device      String
   browser     String?
   os          String?
   referrer    String?
@@ -109,7 +112,7 @@ model pageView {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   visitorId String   @db.ObjectId
   page      String
-  timeSpent Int? 
+  timeSpent Int?
   timestamp DateTime @default(now())
   ownerId   String
   visitor   visitor  @relation(fields: [visitorId], references: [id], onDelete: Cascade)

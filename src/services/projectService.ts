@@ -4,6 +4,8 @@ import type { CreateProject, Project, ProjectFilter, ProjectWhere, UpdateProjec 
 import { Exception } from "../utils/exception";
 import { projectSchema, projectSchemaOptional } from "../validations/projectValidation";
 
+import { optimizeCloudinary } from "../utils/cloudinaryTransform";
+
 export class ProjectService {
   private projectRepository = new ProjectRepository();
 
@@ -45,12 +47,13 @@ export class ProjectService {
       projects.map(async (project: Project, idx: number) => {
         const skills = await this.projectRepository.findHabilitiesWhereProject(project.id, ownerId);
         const reorderedScreenshots = [
-          project.previewImage,
-          ...project.screenshots.filter((img) => img !== project.previewImage),
+          optimizeCloudinary(project.previewImage),
+          ...project.screenshots.filter((img) => img !== project.previewImage).map((img) => optimizeCloudinary(img)),
         ];
 
         return {
           ...project,
+          previewImage: optimizeCloudinary(project.previewImage),
           isMostRecent: idx === 0,
           screenshots: reorderedScreenshots,
           description: {
