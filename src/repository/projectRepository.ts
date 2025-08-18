@@ -12,7 +12,7 @@ export class ProjectRepository {
       skip,
       take,
       orderBy: {
-        lastUpdate: orderBy,
+        createdAt: orderBy,
       },
     });
   }

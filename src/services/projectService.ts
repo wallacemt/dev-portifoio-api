@@ -130,8 +130,13 @@ export class ProjectService {
     if (!projectId || projectId === ":id") throw new Exception("ID do projeto invalido", 400);
     if (!(await this.projectRepository.findProjectById(projectId))) throw new Exception("Projeto não encontrado", 404);
     try {
-      projectSchemaOptional.parse(project);
-      return await this.projectRepository.updateProject(project, projectId);
+      const projectData: UpdateProjec = {
+        ...project,
+        backend: project.backend?.length ? project.backend : undefined,
+        frontend: project.frontend?.length ? project.frontend : undefined,
+      };
+      projectSchemaOptional.parse(projectData);
+      return await this.projectRepository.updateProject(projectData, projectId);
     } catch (e) {
       if (e instanceof ZodError) {
         throw new Exception(e.issues?.[0]?.message || "Error for update project", 400);

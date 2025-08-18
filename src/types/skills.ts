@@ -4,6 +4,7 @@ export const StackTypeValues = {
   Mobile: "mobile" as const,
   Design: "design" as const,
   DevOps: "devops" as const,
+
   Other: "other" as const,
 } as const;
 
@@ -12,7 +13,12 @@ export type StackType = (typeof StackTypeValues)[keyof typeof StackTypeValues];
 export const SkillTypeValues = {
   Framework: "framework" as const,
   ProgrammingLanguage: "programmingLanguage" as const,
+  DataBase: "database" as const,
   Technology: "technology" as const,
+  Lib: "lib" as const,
+  Bundler: "bundler" as const,
+   Cloud: "cloud" as const,
+    Docs: "docs" as const
 } as const;
 
 export type SkillType = (typeof SkillTypeValues)[keyof typeof SkillTypeValues];
