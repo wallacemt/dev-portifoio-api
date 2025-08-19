@@ -15,7 +15,9 @@ const envSchema = z.object({
     }),
   JWT_SECRET: z.string().min(1),
   GEMINI_API_KEY: z.string().min(1),
-
+  CLOUDINARY_CLOUD_NAME: z.string(),
+  CLOUDINARY_API_KEY: z.string(),
+  CLOUDINARY_API_SECRET: z.string(),
 });
 
 export const env = envSchema.parse(process.env);

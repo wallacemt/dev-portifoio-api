@@ -29,6 +29,7 @@ export interface Project {
   backend?: string | null;
   frontend?: string | null;
   previewImage: string;
+  createdAt: Date;
 }
 
 export interface ProjectWithSkills extends Project {

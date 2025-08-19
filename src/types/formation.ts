@@ -19,6 +19,7 @@ export interface FormationAddRequest {
   description: string;
   type: FormationType;
   certificationUrl?: string;
+  concluded:boolean,
   ownerId: string;
 }
 export type FormationUpdate = Partial<Omit<FormationAddRequest, "ownerId">>;
@@ -34,5 +35,6 @@ export interface Formation {
   description: string;
   type: string;
   certificationUrl?: string;
+  concluded: boolean;
   ownerId: string;
 }

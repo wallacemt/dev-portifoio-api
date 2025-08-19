@@ -59,6 +59,7 @@ model formation {
   description      String
   type             String
   certificationUrl String?
+  concluded        Boolean  @default(false)
   ownerId          String
   createdAt        DateTime @default(now())
 }

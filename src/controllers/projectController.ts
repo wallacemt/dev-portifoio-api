@@ -36,6 +36,7 @@ export class ProjectController {
     this.routerPrivate.put("/:id/update", this.update.bind(this));
     this.routerPrivate.delete("/:id/delete", this.delete.bind(this));
     this.routerPrivate.put("/:id/handle-activate", this.handleActivate.bind(this));
+    // this.routerPrivate.post("/upload-images", this.uploadImages.bind(this));
   }
 
   async getAllProject(req: Request, res: Response) {
@@ -112,4 +113,15 @@ export class ProjectController {
       errorFilter(error, res);
     }
   }
+
+  // uploadImages(req: Request, res: Response) {
+  //   try {
+  //     const data = Buffer.from(req.file.image).toString("base64");
+  //     //biome-ignore lint:test
+  //     console.log(data);
+  //     res.status(200);
+  //   } catch (error) {
+  //     errorFilter(error, res);
+  //   }
+  // }
 }

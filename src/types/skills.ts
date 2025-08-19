@@ -17,8 +17,11 @@ export const SkillTypeValues = {
   Technology: "technology" as const,
   Lib: "lib" as const,
   Bundler: "bundler" as const,
-   Cloud: "cloud" as const,
-    Docs: "docs" as const
+  Cloud: "cloud" as const,
+  Docs: "docs" as const,
+  PackageManager: "packageManager" as const,
+  Orm: "orm" as const,
+  ArtificialIntelligence: "AI" as const,
 } as const;
 
 export type SkillType = (typeof SkillTypeValues)[keyof typeof SkillTypeValues];

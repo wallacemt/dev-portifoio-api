@@ -19,5 +19,6 @@ export const formationSchema = z.object({
   }),
   certificationUrl: z.string().url({ message: "A URL da certificação deve ser válida" }).optional(),
   ownerId: z.string().min(1, { message: "O id do owner deve ser válido" }),
+  concluded: z.boolean().default(false),
 });
 export const formationSchemaOptional = formationSchema.partial();

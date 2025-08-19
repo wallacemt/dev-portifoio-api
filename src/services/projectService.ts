@@ -77,14 +77,21 @@ export class ProjectService {
             content: skills,
           },
           cta: "Ver Projeto",
-          lastUpdateText: project.lastUpdate
-            ? "Ultima Atualização " +
-              new Date(project.lastUpdate).toLocaleDateString("pt-BR", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })
-            : "Sem atualizações recentes",
+
+          lastUpdateText:
+            project.lastUpdate && project.lastUpdate.getDate() !== project.createdAt.getDate()
+              ? "Ultima Atualização " +
+                new Date(project.lastUpdate).toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })
+              : "Adicionado Em " +
+                new Date(project.createdAt).toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                }),
         };
       })
     );

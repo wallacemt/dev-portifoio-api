@@ -28,8 +28,12 @@ export class FormationService {
 
   async addFormation(formation: FormationAddRequest) {
     try {
-      formationSchema.parse(formation);
-      return await this.formationRepository.addFormation(formation);
+      const formationData: FormationAddRequest = {
+        ...formation,
+        certificationUrl: formation.certificationUrl?.length ? formation.certificationUrl : undefined,
+      };
+      formationSchema.parse(formationData);
+      return await this.formationRepository.addFormation(formationData);
     } catch (e) {
       if (e instanceof ZodError) {
         throw new Exception(e.issues?.[0]?.message || "error for add formations", 400);
