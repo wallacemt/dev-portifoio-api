@@ -22,6 +22,8 @@ export const SkillTypeValues = {
   PackageManager: "packageManager" as const,
   Orm: "orm" as const,
   ArtificialIntelligence: "AI" as const,
+  ContainerTool: "containerTool" as const,
+  Testing: "test" as const,
 } as const;
 
 export type SkillType = (typeof SkillTypeValues)[keyof typeof SkillTypeValues];

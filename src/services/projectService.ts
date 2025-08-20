@@ -50,11 +50,19 @@ export class ProjectService {
           optimizeCloudinary(project.previewImage),
           ...project.screenshots.filter((img) => img !== project.previewImage).map((img) => optimizeCloudinary(img)),
         ];
-
+        function isMostRecent(project: Project): boolean {
+          const today = new Date();
+          const lastUpdate = project.lastUpdate || project.createdAt;
+          return (
+            lastUpdate.getFullYear() === today.getFullYear() &&
+            lastUpdate.getMonth() === today.getMonth() &&
+            lastUpdate.getDate() === today.getDate()
+          );
+        }
         return {
           ...project,
           previewImage: optimizeCloudinary(project.previewImage),
-          isMostRecent: idx === 0,
+          isMostRecent: { isRecent: isMostRecent(project), text: "Mais Recente" },
           screenshots: reorderedScreenshots,
           description: {
             title: "Descrição",

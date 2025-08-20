@@ -15,7 +15,11 @@ export class FormationService {
       title: "Formação Acadêmica",
       description:
         "Minha jornada de aprendizado contínuo atravéz de cursos, certificações e formações que moldam minha expertise técnica.",
-      certificationText: "Ver certificado",
+      formationStatsText: {
+        inProgress: "Cursando",
+        certificationText: "Ver certificado",
+        conclude: "Concluido"
+      },
       stats: {
         formations: "Formações",
         studyHours: "Horas de Estudo",
@@ -51,8 +55,14 @@ export class FormationService {
     if (!formationId || formationId === ":id") throw new Exception("ID da formação invalida", 400);
     if (!(await this.formationRepository.findById(formationId))) throw new Exception("Formação não encontrado", 404);
     try {
-      formationSchemaOptional.parse(formation);
-      return await this.formationRepository.updateFormation(formation, formationId);
+      const formationData: FormationUpdate = {
+        ...formation,
+        initialDate: formation.initialDate && new Date(formation.initialDate),
+        endDate: formation.endDate && new Date(formation.endDate),
+        certificationUrl: formation.certificationUrl?.length ? formation.certificationUrl : undefined,
+      };
+      formationSchemaOptional.parse(formationData);
+      return await this.formationRepository.updateFormation(formationData, formationId);
     } catch (e) {
       if (e instanceof ZodError) {
         throw new Exception(e.issues?.[0]?.message || "error for update formations", 400);
@@ -66,5 +76,18 @@ export class FormationService {
     if (!(await this.formationRepository.findById(formationId))) throw new Exception("Formação não encontrado", 404);
 
     return await this.formationRepository.deleteFormation(formationId);
+  }
+
+  async concludeFormation(formationId: string) {
+    if (!formationId || formationId === ":id") throw new Exception("ID da formação invalida", 400);
+    if (!(await this.formationRepository.findById(formationId))) throw new Exception("Formação não encontrado", 404);
+    try {
+      return await this.formationRepository.updateFormation({ concluded: true }, formationId);
+    } catch (e) {
+      if (e instanceof ZodError) {
+        throw new Exception(e.issues?.[0]?.message || "error for update formations", 400);
+      }
+      throw new Exception("Informe os dados corretamente", 400);
+    }
   }
 }

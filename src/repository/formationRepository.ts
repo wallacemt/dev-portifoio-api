@@ -5,7 +5,7 @@ export class FormationRepository {
   async findAllFormations(ownerId: string) {
     return await prisma.formation.findMany({
       where: { ownerId },
-      orderBy: { concluded: 'desc' },
+      orderBy: { concluded: 'asc' },
     });
   }
 
