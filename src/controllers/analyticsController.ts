@@ -75,9 +75,16 @@ export class AnalyticsController {
   async trackPageView(req: Request, res: Response): Promise<void> {
     try {
       const { ownerId } = req.params;
-      const pageViewData: TrackPageViewRequest = req.body;
+      const pageViewData: { pageView: TrackPageViewRequest; visitor: TrackVisitorRequest } = req.body;
+      const ipAddress = req.ip || req.socket.remoteAddress || "unknown";
 
-      const pageView = await this.analyticsService.trackPageView(pageViewData, ownerId || "");
+      const pageView = await this.analyticsService.trackPageView(
+        pageViewData.pageView,
+        ownerId || "",
+        pageViewData.visitor,
+        ipAddress
+      );
+
       res.status(201).json({
         message: "Visualização registrada com sucesso",
         pageView: { id: pageView.id, page: pageView.page },

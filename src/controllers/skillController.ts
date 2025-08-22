@@ -44,18 +44,23 @@ export class SkillController {
   }
 
   async getAllSkill(req: Request, res: Response) {
-    const { language, page, limit } = req.query as {
+    const { language, page, limit, pagination } = req.query as {
       language?: string;
       page?: string;
       limit?: string;
+      pagination?: boolean;
     };
-
+   
     try {
-
       const pageNumber = page ? Number.parseInt(page, 10) : 1;
       const limitNumber = limit ? Number.parseInt(limit, 10) : 10;
 
-      const result = await this.skillService.findAllSkill(req.params.ownerId || "", pageNumber, limitNumber);
+      const result = await this.skillService.findAllSkill(
+        req.params.ownerId || "",
+        pageNumber,
+        limitNumber,
+        pagination
+      );
 
       if (language && language !== "pt") {
         try {
@@ -64,7 +69,7 @@ export class SkillController {
 
           const translatedResult = {
             skills: translatedSkills,
-            pagination: result.pagination, 
+            pagination: result.pagination,
             texts: translatedTexts,
           };
 

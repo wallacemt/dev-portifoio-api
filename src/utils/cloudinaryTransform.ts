@@ -1,4 +1,5 @@
-export const optimizeCloudinary = (img: string): string => {
+export const optimizeCloudinary = (img: string | null): string | null => {
+  if (!img) return img;
   const optimizedImg = img.replace(
     //biome-ignore lint: this regex is correct
     /^.*\/upload\//,

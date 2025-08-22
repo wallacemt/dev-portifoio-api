@@ -74,13 +74,22 @@ export class AnalyticsService {
   /**
    * Registra uma visualização de página
    */
-  async trackPageView(pageViewData: TrackPageViewRequest, ownerId: string) {
+  async trackPageView(
+    pageViewData: TrackPageViewRequest,
+    ownerId: string,
+    visitorData: TrackVisitorRequest,
+    ipAddress: string
+  ) {
     try {
+    
       trackPageViewSchema.parse(pageViewData);
-
-      const visitor = await this.analyticsRepository.findVisitorBySessionId(pageViewData.sessionId);
+      let visitor = await this.analyticsRepository.findVisitorBySessionId(pageViewData.sessionId);
       if (!visitor) {
-        throw new Exception("Visitante não encontrado. Registre o visitante primeiro.", 404);
+        visitor = await this.analyticsRepository.upsertVisitor({
+          ...visitorData,
+          ownerId,
+          ipAddress,
+        });
       }
 
       const pageView = await this.analyticsRepository.createPageView({

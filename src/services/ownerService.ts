@@ -6,6 +6,7 @@ import { Exception } from "../utils/exception";
 import { hashPassword, verifyPassword } from "../utils/hash";
 import { ownerSchemaOptional } from "../validations/ownerValidations";
 import { devDebugger } from "../utils/devDebugger";
+import { optimizeCloudinary } from "../utils/cloudinaryTransform";
 
 const MAX_ATTEMPTS = 4;
 const LOCK_TIME = 45 * 60 * 1000;
@@ -31,7 +32,7 @@ export class OwnerService {
       id: owner.id,
       name: owner.name,
       email: owner.email,
-      avatar: owner.avatar,
+      avatar: optimizeCloudinary(owner.avatar || ""),
       about: owner.about,
       occupation: owner.occupation,
       birthDate: owner.birthDate,

@@ -16,7 +16,8 @@ export class SkillService {
   async findAllSkill(
     ownerId: string,
     page = 1,
-    limit = 10
+    limit = 10,
+    pagination = true
   ): Promise<{
     skills: Skill[];
     pagination: {
@@ -30,24 +31,39 @@ export class SkillService {
     texts: { chooseText: string; title: string; description: string };
   }> {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
-
-    // Validação de parâmetros de paginação
-    const validatedPage = Math.max(1, Math.floor(page));
-    const validatedLimit = Math.min(Math.max(1, Math.floor(limit)), 100); // Máximo 100 por página
-
-    const result = await this.skillRepository.findAllSkills(ownerId, validatedPage, validatedLimit);
     const texts = {
       chooseText: "Filtre por uma Stack",
       title: "Minhas Habilidades",
       description:
         " Habilidades que domino e utilizo em meus projetos, que desenvolvi ao mediante a cursos e projetos pessoais.",
     };
+    
+    if (pagination === true) {
+      const validatedPage = Math.max(1, Math.floor(page));
+      const validatedLimit = Math.min(Math.max(1, Math.floor(limit)), 100); // Máximo 100 por página
 
-    return {
-      skills: result.skills,
-      pagination: result.pagination,
-      texts,
-    };
+      const result = await this.skillRepository.findAllSkills(ownerId, validatedPage, validatedLimit);
+
+      return {
+        skills: result.skills,
+        pagination: result.pagination,
+        texts,
+      };
+    }
+
+      const skills = await this.skillRepository.findAllSkillsNoFilter(ownerId);
+      return {
+        skills,
+        pagination: {
+          total: skills.length,
+          page: 1,
+          limit: skills.length,
+          totalPages: 1,
+          hasNext: false,
+          hasPrev: false,
+        },
+        texts,
+      };
   }
 
   getAllTypes() {
