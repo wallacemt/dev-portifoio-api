@@ -14,8 +14,7 @@ export class ProjectService {
     const lastUpdate = project.lastUpdate || project.createdAt;
     return (
       lastUpdate.getFullYear() === today.getFullYear() &&
-      lastUpdate.getMonth() === today.getMonth() &&
-      lastUpdate.getDate() === today.getDate()
+      lastUpdate.getMonth() === today.getMonth()
     );
   }
 
