@@ -26,13 +26,18 @@ export class AnalyticsService {
     ipAddress: string
   ): Promise<TrackVisitorResponse> {
     try {
-      trackVisitorSchema.parse(visitorData);
-
-      // Verifica se o visitante já existe para evitar processamento desnecessário
+      const visitorDataT: TrackVisitorRequest = {
+        ...visitorData,
+        referrer: visitorData.referrer?.length ? visitorData.referrer : undefined,
+        browser: visitorData.browser?.length ? visitorData.browser : undefined,
+        os: visitorData.os?.length ? visitorData.os : undefined,
+        city: visitorData.city?.length ? visitorData.city : undefined,
+        country: visitorData.country?.length ? visitorData.country : undefined,
+      };
+      trackVisitorSchema.parse(visitorDataT);
       const existingVisitor = await this.analyticsRepository.findVisitorBySessionId(visitorData.sessionId);
 
       if (existingVisitor) {
-        // Se já existe, apenas retorna os dados básicos sem reprocessar
         return {
           id: existingVisitor.id,
           sessionId: existingVisitor.sessionId,
@@ -85,7 +90,6 @@ export class AnalyticsService {
         ownerId,
       });
 
-      // Agenda atualização das métricas diárias de forma assíncrona
       setImmediate(() => {
         this.updateDailyAnalytics(ownerId, new Date()).catch((error) => {
           //biome-ignore lint: using in development
