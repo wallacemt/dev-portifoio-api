@@ -50,7 +50,7 @@ export class ProjectRepository {
 
   async findHabilitiesWhereProject(projectId: string, ownerId: string) {
     const project = await this.findProjectById(projectId);
-    const habilities = await this.skillRepo.findAllSkills(ownerId);
+    const habilities = await this.skillRepo.findAllSkillsNoFilter(ownerId);
     const relatedHabilities = habilities
       .filter((skill: Skill) => project?.techs.some((tech: string) => skill.title.toLowerCase() === tech.toLowerCase()))
       .map(({ id, image, title }: Skill) => ({ id, image, title }));

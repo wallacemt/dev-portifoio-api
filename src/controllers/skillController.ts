@@ -44,13 +44,31 @@ export class SkillController {
   }
 
   async getAllSkill(req: Request, res: Response) {
-    const { language } = req.query as { language?: string };
+    const { language, page, limit } = req.query as {
+      language?: string;
+      page?: string;
+      limit?: string;
+    };
+
     try {
-      const result = await this.skillService.findAllSkill(req.params.ownerId || "");
+
+      const pageNumber = page ? Number.parseInt(page, 10) : 1;
+      const limitNumber = limit ? Number.parseInt(limit, 10) : 10;
+
+      const result = await this.skillService.findAllSkill(req.params.ownerId || "", pageNumber, limitNumber);
+
       if (language && language !== "pt") {
         try {
-          const translated = await this.translationService.translateObject(result, language, "pt");
-          res.status(200).json(translated);
+          const translatedSkills = await this.translationService.translateObject(result.skills, language, "pt");
+          const translatedTexts = await this.translationService.translateObject(result.texts, language, "pt");
+
+          const translatedResult = {
+            skills: translatedSkills,
+            pagination: result.pagination, 
+            texts: translatedTexts,
+          };
+
+          res.status(200).json(translatedResult);
         } catch (e) {
           errorFilter(e, res);
         }

@@ -9,6 +9,16 @@ import { optimizeCloudinary } from "../utils/cloudinaryTransform";
 export class ProjectService {
   private projectRepository = new ProjectRepository();
 
+  isMostRecent(project: Project): boolean {
+    const today = new Date();
+    const lastUpdate = project.lastUpdate || project.createdAt;
+    return (
+      lastUpdate.getFullYear() === today.getFullYear() &&
+      lastUpdate.getMonth() === today.getMonth() &&
+      lastUpdate.getDate() === today.getDate()
+    );
+  }
+
   /**
    * Find all projects for a given owner, with filters
    *
@@ -44,25 +54,17 @@ export class ProjectService {
         "Projetos que desenvolvi ao longo da minha carreira, demonstrando minhas habilidades e experiências em diversas tecnologias.",
     };
     const projectsFinalForm = await Promise.all(
-      projects.map(async (project: Project, idx: number) => {
+      projects.map(async (project: Project) => {
         const skills = await this.projectRepository.findHabilitiesWhereProject(project.id, ownerId);
         const reorderedScreenshots = [
           optimizeCloudinary(project.previewImage),
           ...project.screenshots.filter((img) => img !== project.previewImage).map((img) => optimizeCloudinary(img)),
         ];
-        function isMostRecent(project: Project): boolean {
-          const today = new Date();
-          const lastUpdate = project.lastUpdate || project.createdAt;
-          return (
-            lastUpdate.getFullYear() === today.getFullYear() &&
-            lastUpdate.getMonth() === today.getMonth() &&
-            lastUpdate.getDate() === today.getDate()
-          );
-        }
+
         return {
           ...project,
           previewImage: optimizeCloudinary(project.previewImage),
-          isMostRecent: { isRecent: isMostRecent(project), text: "Mais Recente" },
+          isMostRecent: { isRecent: this.isMostRecent(project), text: "Mais Recente" },
           screenshots: reorderedScreenshots,
           description: {
             title: "Descrição",

@@ -22,7 +22,9 @@ export class UtilisController {
     this.routerPublic.get("/navbar", this.getNavbarItens.bind(this));
     this.routerPublic.get("/languages", this.getlanguageOptions.bind(this));
     this.routerPublic.get("/quota-status", this.getQuotaStatus.bind(this));
+    this.routerPublic.get("/translation-stats", this.getTranslationStats.bind(this));
     this.routerPublic.post("/clear-cache", this.clearCache.bind(this));
+    this.routerPublic.post("/force-clean-cache", this.forceCleanCache.bind(this));
     this.routerPublic.post("/test-translation", this.testTranslation.bind(this));
   }
 
@@ -45,9 +47,9 @@ export class UtilisController {
     }
   }
 
-   getlanguageOptions(_req: Request, res: Response) {
+  getlanguageOptions(_req: Request, res: Response) {
     try {
-      const languages =  this.utilisService.getLeguageApiReferenceUrl();
+      const languages = this.utilisService.getLeguageApiReferenceUrl();
       res.status(200).json(languages);
     } catch (error) {
       errorFilter(error, res);
@@ -85,9 +87,51 @@ export class UtilisController {
     }
   }
 
+  getTranslationStats(_req: Request, res: Response) {
+    try {
+      const stats = TranslationService.getTranslationStats();
+      const quotaStatus = QuotaManager.getQuotaStatus();
+
+      res.status(200).json({
+        success: true,
+        data: {
+          translation: stats,
+          quota: quotaStatus,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      errorFilter(error, res);
+    }
+  }
+
+  forceCleanCache(req: Request, res: Response) {
+    try {
+      const { maxAge } = req.body;
+      const ageInMs = maxAge ? Number(maxAge) * 60 * 60 * 1000 : 12 * 60 * 60 * 1000; 
+
+      const statsBefore = TranslationService.getTranslationStats();
+      TranslationService.forceCleanCache(ageInMs);
+      const statsAfter = TranslationService.getTranslationStats();
+
+      res.status(200).json({
+        success: true,
+        message: "Cache limpo com sucesso",
+        data: {
+          before: statsBefore,
+          after: statsAfter,
+          removed: statsBefore.cacheSize - statsAfter.cacheSize,
+          maxAgeHours: ageInMs / (60 * 60 * 1000),
+        },
+      });
+    } catch (error) {
+      errorFilter(error, res);
+    }
+  }
+
   async testTranslation(req: Request, res: Response): Promise<void> {
     try {
-      const { text, targetLanguage = "en", sourceLanguage = "pt" } = req.body;
+      const { text, targetLanguage = "en", sourceLanguage = "pt", testChunking = false } = req.body;
 
       if (!text) {
         res.status(400).json({
@@ -97,18 +141,43 @@ export class UtilisController {
         return;
       }
 
-      const testObject = { message: text };
+      // Se testChunking for true, cria um objeto grande para testar o sistema de chunks
+      let testObject: object;
+      if (testChunking) {
+        testObject = {
+          title: text,
+          descriptions: Array.from({ length: 10 }, (_, i) => `${text} - Descrição ${i + 1}`),
+          content: {
+            main: text,
+            secondary: Array.from({ length: 5 }, (_, i) => ({
+              title: `Seção ${i + 1}`,
+              content: `${text} - Conteúdo da seção ${i + 1}`,
+            })),
+          },
+        };
+      } else {
+        testObject = { message: text };
+      }
 
+      const startTime = Date.now();
       const result = await this.translationService.translateObject(testObject, targetLanguage, sourceLanguage);
+      const endTime = Date.now();
 
       const quotaStatus = QuotaManager.getQuotaStatus();
+      const translationStats = TranslationService.getTranslationStats();
 
       res.status(200).json({
         success: true,
         data: {
           original: testObject,
           translated: result,
+          performance: {
+            duration: `${endTime - startTime}ms`,
+            chunked: testChunking,
+            estimatedTokens: TranslationService.estimateTokens(JSON.stringify(testObject)),
+          },
           quotaStatus,
+          translationStats,
         },
       });
     } catch (error) {

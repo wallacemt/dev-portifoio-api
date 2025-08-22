@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { Router } from "express";
-import {  trackingRateLimit } from "../middleware/analyticsRateLimit";
+import { trackingRateLimit } from "../middleware/analyticsRateLimit";
 import AuthPolice from "../middleware/authPolice";
 import { AnalyticsService } from "../services/analyticsService";
 import type { AnalyticsFilters, TrackPageViewRequest, TrackVisitorRequest } from "../types/analytics";
@@ -31,30 +31,48 @@ export class AnalyticsController {
 
   private routesPrivate() {
     this.routerPrivate.use(AuthPolice);
-  
+
     this.routerPrivate.get("/dashboard", this.getAnalytics.bind(this));
     this.routerPrivate.get("/summary", this.getAnalyticsSummary.bind(this));
     this.routerPrivate.get("/realtime", this.getRealTimeAnalytics.bind(this));
     this.routerPrivate.post("/update-daily", this.forceUpdateDailyAnalytics.bind(this));
   }
 
-  async trackVisitor(req: Request, res: Response) {
+  async trackVisitor(req: Request, res: Response): Promise<void> {
     try {
       const { ownerId } = req.params;
       const visitorData: TrackVisitorRequest = req.body;
       const ipAddress = req.ip || req.socket.remoteAddress || "unknown";
 
-      const visitor = await this.analyticsService.trackVisitor(visitorData, ownerId || "", ipAddress);
+      if (!ownerId) {
+        res.status(400).json({
+          error: "ID do proprietário é obrigatório",
+        });
+        return;
+      }
+
+      const visitor = await this.analyticsService.trackVisitor(visitorData, ownerId, ipAddress);
+
+      if (visitor.isExisting) {
+        res.status(200).json({
+          message: "Visitante já registrado",
+          visitor: { id: visitor.id, sessionId: visitor.sessionId },
+          cached: true,
+        });
+        return;
+      }
+
       res.status(201).json({
         message: "Visitante registrado com sucesso",
         visitor: { id: visitor.id, sessionId: visitor.sessionId },
+        cached: false,
       });
     } catch (error) {
       errorFilter(error, res);
     }
   }
 
-  async trackPageView(req: Request, res: Response) {
+  async trackPageView(req: Request, res: Response): Promise<void> {
     try {
       const { ownerId } = req.params;
       const pageViewData: TrackPageViewRequest = req.body;

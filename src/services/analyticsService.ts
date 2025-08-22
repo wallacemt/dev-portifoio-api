@@ -9,6 +9,7 @@ import type {
   Stat,
   TrackPageViewRequest,
   TrackVisitorRequest,
+  TrackVisitorResponse,
 } from "../types/analytics";
 import { Exception } from "../utils/exception";
 import { analyticsFiltersSchema, trackPageViewSchema, trackVisitorSchema } from "../validations/analyticsValidation";
@@ -19,9 +20,25 @@ export class AnalyticsService {
   /**
    * Registra um novo visitante
    */
-  async trackVisitor(visitorData: TrackVisitorRequest, ownerId: string, ipAddress: string) {
+  async trackVisitor(
+    visitorData: TrackVisitorRequest,
+    ownerId: string,
+    ipAddress: string
+  ): Promise<TrackVisitorResponse> {
     try {
       trackVisitorSchema.parse(visitorData);
+
+      // Verifica se o visitante já existe para evitar processamento desnecessário
+      const existingVisitor = await this.analyticsRepository.findVisitorBySessionId(visitorData.sessionId);
+
+      if (existingVisitor) {
+        // Se já existe, apenas retorna os dados básicos sem reprocessar
+        return {
+          id: existingVisitor.id,
+          sessionId: existingVisitor.sessionId,
+          isExisting: true,
+        };
+      }
 
       const visitor = await this.analyticsRepository.upsertVisitor({
         ...visitorData,
@@ -29,13 +46,21 @@ export class AnalyticsService {
         ipAddress,
       });
 
-      // Agenda atualização das métricas diárias
-      this.updateDailyAnalytics(ownerId, new Date());
+      setImmediate(() => {
+        this.updateDailyAnalytics(ownerId, new Date()).catch((error) => {
+          //biome-ignore lint: using in development
+          if (process.env.NODE_ENV === "development") console.warn("Erro ao atualizar métricas diárias:", error);
+        });
+      });
 
-      return visitor;
+      return {
+        id: visitor.id,
+        sessionId: visitor.sessionId,
+        isExisting: false,
+      };
     } catch (e) {
       if (e instanceof ZodError) {
-        throw new Exception(e.issues?.[0]?.message || " error for track-visitor data ", 400);
+        throw new Exception(e.issues?.[0]?.message || "Erro de validação para dados do visitante", 400);
       }
       throw new Exception("Dados do visitante inválidos", 400);
     }
@@ -47,21 +72,31 @@ export class AnalyticsService {
   async trackPageView(pageViewData: TrackPageViewRequest, ownerId: string) {
     try {
       trackPageViewSchema.parse(pageViewData);
+
       const visitor = await this.analyticsRepository.findVisitorBySessionId(pageViewData.sessionId);
       if (!visitor) {
         throw new Exception("Visitante não encontrado. Registre o visitante primeiro.", 404);
       }
+
       const pageView = await this.analyticsRepository.createPageView({
         visitorId: visitor.id,
         page: pageViewData.page,
         timeSpent: pageViewData.timeSpent,
         ownerId,
       });
-      this.updateDailyAnalytics(ownerId, new Date());
+
+      // Agenda atualização das métricas diárias de forma assíncrona
+      setImmediate(() => {
+        this.updateDailyAnalytics(ownerId, new Date()).catch((error) => {
+          //biome-ignore lint: using in development
+          if (process.env.NODE_ENV === "development") console.warn("Erro ao atualizar métricas diárias:", error);
+        });
+      });
+
       return pageView;
     } catch (e) {
       if (e instanceof ZodError) {
-        throw new Exception(e.issues?.[0]?.message || " error for track-pageview data ", 400);
+        throw new Exception(e.issues?.[0]?.message || "Erro de validação para dados de visualização", 400);
       }
       if (e instanceof Exception) {
         throw e;
@@ -199,22 +234,33 @@ export class AnalyticsService {
   async getAnalyticsSummary(ownerId: string) {
     try {
       const today = new Date();
-      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const lastWeek = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      const lastMonth = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
       const [todayVisitors, yesterdayVisitors, weekVisitors, monthVisitors, realTime] = await Promise.all([
-        this.analyticsRepository.getUniqueVisitors(ownerId, today, today),
-        this.analyticsRepository.getUniqueVisitors(ownerId, yesterday, yesterday),
-        this.analyticsRepository.getUniqueVisitors(ownerId, lastWeek, today),
-        this.analyticsRepository.getUniqueVisitors(ownerId, lastMonth, today),
+        this.analyticsRepository.getTodayVisitors(ownerId),
+        this.analyticsRepository.getYesterdayVisitors(ownerId),
+        this.analyticsRepository.getUniqueVisitors(
+          ownerId,
+          new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7),
+          today
+        ),
+        this.analyticsRepository.getUniqueVisitors(
+          ownerId,
+          new Date(today.getFullYear(), today.getMonth(), today.getDate() - 30),
+          today
+        ),
         this.analyticsRepository.getRealTimeAnalytics(ownerId),
       ]);
-
+      let changeData: number | string;
+      if (yesterdayVisitors > todayVisitors) {
+        changeData = Number(((yesterdayVisitors - todayVisitors) / yesterdayVisitors) * -100).toFixed(2);
+      } else if (yesterdayVisitors === 0) {
+        changeData = 0;
+      } else {
+        changeData = Number(((todayVisitors - yesterdayVisitors) / yesterdayVisitors) * 100).toFixed(2);
+      }
       return {
         today: {
           visitors: todayVisitors,
-          change: yesterdayVisitors > 0 ? ((todayVisitors - yesterdayVisitors) / yesterdayVisitors) * 100 : 0,
+          change: changeData,
         },
         week: {
           visitors: weekVisitors,

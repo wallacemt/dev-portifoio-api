@@ -13,19 +13,41 @@ import { skillSchema, skillSchemaOptional } from "../validations/skillValidation
 export class SkillService {
   private skillRepository = new SkillRepository();
 
-  async findAllSkill(ownerId: string): Promise<{
+  async findAllSkill(
+    ownerId: string,
+    page = 1,
+    limit = 10
+  ): Promise<{
     skills: Skill[];
+    pagination: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
     texts: { chooseText: string; title: string; description: string };
   }> {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
-    const res = await this.skillRepository.findAllSkills(ownerId);
+
+    // Validação de parâmetros de paginação
+    const validatedPage = Math.max(1, Math.floor(page));
+    const validatedLimit = Math.min(Math.max(1, Math.floor(limit)), 100); // Máximo 100 por página
+
+    const result = await this.skillRepository.findAllSkills(ownerId, validatedPage, validatedLimit);
     const texts = {
       chooseText: "Filtre por uma Stack",
       title: "Minhas Habilidades",
       description:
         " Habilidades que domino e utilizo em meus projetos, que desenvolvi ao mediante a cursos e projetos pessoais.",
     };
-    return { skills: res, texts };
+
+    return {
+      skills: result.skills,
+      pagination: result.pagination,
+      texts,
+    };
   }
 
   getAllTypes() {

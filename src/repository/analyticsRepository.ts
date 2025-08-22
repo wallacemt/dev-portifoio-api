@@ -1,12 +1,12 @@
 //@viom
-import { prisma } from '../prisma/prismaClient';
+import { prisma } from "../prisma/prismaClient";
 import type {
   AnalyticsFilters,
   DailyAnalytics,
   PageViewData,
   RealTimeAnalytics,
   VisitorData,
-} from '../types/analytics';
+} from "../types/analytics";
 
 export class AnalyticsRepository {
   /**
@@ -63,18 +63,14 @@ export class AnalyticsRepository {
 
     return await prisma.analyticsDaily.findMany({
       where: whereClause,
-      orderBy: { date: 'asc' },
+      orderBy: { date: "asc" },
     });
   }
 
   /**
    * Cria ou atualiza analytics diárias
    */
-  async upsertDailyAnalytics(
-    date: Date,
-    data: Partial<DailyAnalytics>,
-    ownerId: string
-  ) {
+  async upsertDailyAnalytics(date: Date, data: Partial<DailyAnalytics>, ownerId: string) {
     const dateOnly = new Date(date.toDateString());
 
     return await prisma.analyticsDaily.upsert({
@@ -106,6 +102,30 @@ export class AnalyticsRepository {
     });
   }
 
+  async getTodayVisitors(ownerId: string) {
+    return await prisma.visitor.count({
+      where: {
+        ownerId,
+        createdAt: {
+          gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+          lte: new Date(),
+        },
+      },
+    });
+  }
+
+  async getYesterdayVisitors(ownerId: string) {
+    return await prisma.visitor.count({
+      where: {
+        ownerId,
+        createdAt: {
+          gte: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+          lte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        },
+      },
+    });
+  }
+
   /**
    * Busca total de page views em um período
    */
@@ -126,7 +146,7 @@ export class AnalyticsRepository {
    */
   async getDeviceBreakdown(ownerId: string, startDate: Date, endDate: Date) {
     const result = await prisma.visitor.groupBy({
-      by: ['device'],
+      by: ["device"],
       where: {
         ownerId,
         createdAt: {
@@ -139,29 +159,18 @@ export class AnalyticsRepository {
       },
     });
 
-    return result.reduce(
-      (
-        acc: Record<string, number>,
-        item: { device: string; _count: { device: number } }
-      ) => {
-        acc[item.device] = item._count.device;
-        return acc;
-      },
-      {} as Record<string, number>
-    );
+    return result.reduce((acc: Record<string, number>, item: { device: string; _count: { device: number } }) => {
+      acc[item.device] = item._count.device;
+      return acc;
+    }, {} as Record<string, number>);
   }
 
   /**
    * Busca páginas mais visitadas
    */
-  async getTopPages(
-    ownerId: string,
-    startDate: Date,
-    endDate: Date,
-    limit = 10
-  ) {
+  async getTopPages(ownerId: string, startDate: Date, endDate: Date, limit = 10) {
     const result = await prisma.pageView.groupBy({
-      by: ['page'],
+      by: ["page"],
       where: {
         ownerId,
         timestamp: {
@@ -174,7 +183,7 @@ export class AnalyticsRepository {
       },
       orderBy: {
         _count: {
-          page: 'desc',
+          page: "desc",
         },
       },
       take: limit,
@@ -189,14 +198,9 @@ export class AnalyticsRepository {
   /**
    * Busca países com mais visitantes
    */
-  async getTopCountries(
-    ownerId: string,
-    startDate: Date,
-    endDate: Date,
-    limit = 10
-  ) {
+  async getTopCountries(ownerId: string, startDate: Date, endDate: Date, limit = 10) {
     const result = await prisma.visitor.groupBy({
-      by: ['country'],
+      by: ["country"],
       where: {
         ownerId,
         country: { not: null },
@@ -210,31 +214,24 @@ export class AnalyticsRepository {
       },
       orderBy: {
         _count: {
-          country: 'desc',
+          country: "desc",
         },
       },
       take: limit,
     });
 
-    return result.map(
-      (item: { country: string | null; _count: { country: number } }) => ({
-        country: item.country ?? 'Unknown',
-        visitors: item._count.country,
-      })
-    );
+    return result.map((item: { country: string | null; _count: { country: number } }) => ({
+      country: item.country ?? "Unknown",
+      visitors: item._count.country,
+    }));
   }
 
   /**
    * Busca browsers mais utilizados
    */
-  async getTopBrowsers(
-    ownerId: string,
-    startDate: Date,
-    endDate: Date,
-    limit = 10
-  ) {
+  async getTopBrowsers(ownerId: string, startDate: Date, endDate: Date, limit = 10) {
     const result = await prisma.visitor.groupBy({
-      by: ['browser'],
+      by: ["browser"],
       where: {
         ownerId,
         browser: { not: null },
@@ -248,33 +245,23 @@ export class AnalyticsRepository {
       },
       orderBy: {
         _count: {
-          browser: 'desc',
+          browser: "desc",
         },
       },
       take: limit,
     });
 
-    return result.map(
-      (item: { browser: string | null; _count: { browser: number } }) => ({
-        browser: item.browser || 'Unknown',
-        visitors: item._count.browser,
-      })
-    );
+    return result.map((item: { browser: string | null; _count: { browser: number } }) => ({
+      browser: item.browser || "Unknown",
+      visitors: item._count.browser,
+    }));
   }
 
   /**
    * Calcula taxa de rejeição (bounce rate)
    */
-  async getBounceRate(
-    ownerId: string,
-    startDate: Date,
-    endDate: Date
-  ): Promise<number> {
-    const totalVisitors = await this.getUniqueVisitors(
-      ownerId,
-      startDate,
-      endDate
-    );
+  async getBounceRate(ownerId: string, startDate: Date, endDate: Date): Promise<number> {
+    const totalVisitors = await this.getUniqueVisitors(ownerId, startDate, endDate);
 
     if (totalVisitors === 0) return 0;
 
@@ -297,11 +284,7 @@ export class AnalyticsRepository {
   /**
    * Calcula tempo médio no site
    */
-  async getAverageTimeSpent(
-    ownerId: string,
-    startDate: Date,
-    endDate: Date
-  ): Promise<number> {
+  async getAverageTimeSpent(ownerId: string, startDate: Date, endDate: Date): Promise<number> {
     const result = await prisma.pageView.aggregate({
       where: {
         ownerId,
@@ -323,9 +306,8 @@ export class AnalyticsRepository {
    * Busca analytics em tempo real (últimos 30 minutos)
    */
   async getRealTimeAnalytics(ownerId: string): Promise<RealTimeAnalytics> {
-    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+    const thirtyMinutesAgo = new Date(Date.now() - 60 * 60 * 1000);
 
-    // Visitantes ativos
     const activeVisitors = await prisma.visitor.count({
       where: {
         ownerId,
@@ -337,7 +319,7 @@ export class AnalyticsRepository {
 
     // Páginas mais ativas
     const topActivePages = await prisma.pageView.groupBy({
-      by: ['page'],
+      by: ["page"],
       where: {
         ownerId,
         timestamp: {
@@ -349,7 +331,7 @@ export class AnalyticsRepository {
       },
       orderBy: {
         _count: {
-          page: 'desc',
+          page: "desc",
         },
       },
       take: 5,
@@ -370,27 +352,20 @@ export class AnalyticsRepository {
         createdAt: true,
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
       take: 10,
     });
 
     return {
       activeVisitors,
-      topActivePages: topActivePages.map(
-        (item: { page: string; _count: { page: number } }) => ({
-          page: item.page,
-          activeUsers: item._count.page,
-        })
-      ),
+      topActivePages: topActivePages.map((item: { page: string; _count: { page: number } }) => ({
+        page: item.page,
+        activeUsers: item._count.page,
+      })),
       recentVisitors: recentVisitors.map(
-        (visitor: {
-          country: string | null;
-          device: string;
-          landingPage: string;
-          createdAt: Date;
-        }) => ({
-          country: visitor.country || 'Unknown',
+        (visitor: { country: string | null; device: string; landingPage: string; createdAt: Date }) => ({
+          country: visitor.country || "Unknown",
           device: visitor.device,
           page: visitor.landingPage,
           timestamp: visitor.createdAt,
