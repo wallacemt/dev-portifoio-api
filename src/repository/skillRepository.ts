@@ -28,7 +28,7 @@ export class SkillRepository {
     };
   }
   async findAllSkillsNoFilter(ownerId: string) {
-    return await prisma.skill.findMany({ where: { ownerId } });
+    return await prisma.skill.findMany({ where: { ownerId }, orderBy: { createdAt: "desc" } });
   }
   async findById(skillId: string) {
     return await prisma.skill.findUnique({ where: { id: skillId } });
