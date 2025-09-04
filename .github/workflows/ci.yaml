@@ -13,13 +13,14 @@ on:
 jobs:
   lint:
     name: lint
-    runs-on: unbuntu-latest
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "20"
+          cache: "npm"
       - run: npm run ci
       - run: npm run lint || true
 
