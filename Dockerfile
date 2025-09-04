@@ -21,7 +21,7 @@ COPY --from=builder /app/tsconfig.json ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/src/docs ./src/docs
-COPY .env ./
+COPY . .
 
 RUN bun install --frozen-lockfile --production
 RUN bunx prisma generate
