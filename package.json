@@ -16,6 +16,8 @@
     "test": "bun test",
     "test:watch": "bun test --watch",
     "format": "bunx biome format --write .",
+    "ci": "npm install",
+    "lint": "npx biome lint .",
     "lint:fix": "bunx biome lint --write .",
     "check:fix": "bunx biome check --write ."
   },
