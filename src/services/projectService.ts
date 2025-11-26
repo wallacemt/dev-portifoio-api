@@ -12,10 +12,7 @@ export class ProjectService {
   isMostRecent(project: Project): boolean {
     const today = new Date();
     const lastUpdate = project.lastUpdate || project.createdAt;
-    return (
-      lastUpdate.getFullYear() === today.getFullYear() &&
-      lastUpdate.getMonth() === today.getMonth()
-    );
+    return lastUpdate.getFullYear() === today.getFullYear() && lastUpdate.getMonth() === today.getMonth();
   }
 
   /**
@@ -129,6 +126,7 @@ export class ProjectService {
       const projectData: CreateProject = {
         ...project,
         backend: project.backend?.length ? project.backend : undefined,
+        deployment: project.deployment?.length ? project.deployment : undefined,
         frontend: project.frontend?.length ? project.frontend : undefined,
       };
       projectSchema.parse(projectData);
@@ -149,6 +147,7 @@ export class ProjectService {
       const projectData: UpdateProjec = {
         ...project,
         backend: project.backend?.length ? project.backend : undefined,
+        deployment: project.deployment?.length ? project.deployment : undefined,
         frontend: project.frontend?.length ? project.frontend : undefined,
       };
       projectSchemaOptional.parse(projectData);

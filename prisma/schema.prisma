@@ -27,10 +27,11 @@ model project {
   description  String
   techs        String[]
   screenshots  String[]
-  deployment   String
+  deployment   String?
   backend      String?
   frontend     String?
   previewImage String
+  previewVideoUrl String?
   activate     Boolean   @default(true)
   lastUpdate   DateTime?
   ownerId      String

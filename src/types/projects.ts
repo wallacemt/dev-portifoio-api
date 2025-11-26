@@ -7,9 +7,10 @@ export interface CreateProject {
   description: string;
   techs: string[];
   screenshots: string[];
-  deployment: string;
+  deployment?: string;
   backend?: string;
   frontend?: string;
+  previewVideoUrl?: string;
   previewImage: string;
   lastUpdate: Date;
   ownerId: string;
@@ -25,7 +26,7 @@ export interface Project {
   description: string;
   techs: string[];
   screenshots: string[];
-  deployment: string;
+  deployment?: string | null;
   backend?: string | null;
   frontend?: string | null;
   previewImage: string;

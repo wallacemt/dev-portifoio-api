@@ -17,15 +17,15 @@ export const projectSchema = z.object({
         .max(50, { message: "A tecnologia deve ter no máximo 50 caracteres" })
     )
     .min(1, { message: "O projeto deve ter pelo menos uma tecnologia" }),
-  screenshots: z.array(z.string().url({ message: "A URL da imagem deve ser valida" })).min(1, {
-    message: "O projeto deve ter pelo menos uma imagem de screenshot",
-  }),
-  deployment: z.string().url({ message: "A URL do deploy deve ser valida" }),
+  screenshots: z.array(z.string().url({ message: "A URL da imagem deve ser valida" })),
+  deployment: z.string().url({ message: "A URL do deploy deve ser valida" }).optional(),
   backend: z.string().url({ message: "A URL do backend deve ser valida" }).optional(),
   frontend: z.string().url({ message: "A URL do frontend deve ser valida" }).optional(),
   previewImage: z.string().url({ message: "A URL da imagem de preview deve ser valida" }),
+  previewVideoUrl:z.string().url({message: "A url do video deve ser Valida!"}).optional(),
   lastUpdate: z.date().optional(),
   ownerId: z.string().min(1, { message: "o id do owner deve ser valido" }),
+
 });
 export const projectSchemaOptional = projectSchema.partial();
 
