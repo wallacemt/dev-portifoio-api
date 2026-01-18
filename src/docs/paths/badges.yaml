@@ -1,0 +1,140 @@
+paths:
+  /badges/owner/{ownerId}:
+    get:
+      tags:
+        - Badges
+      summary: Buscar todos os badges de um owner
+      parameters:
+        - in: path
+          name: ownerId
+          required: true
+          schema:
+            type: string
+          description: ID do proprietário
+        - in: query
+          name: language
+          schema:
+            type: string
+          description: Código do idioma para tradução (ex pt, en, es)
+      responses:
+        "200":
+          description: Lista de badges
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "../schemas/Badges.yaml#/components/schemas/Badge"
+        "400":
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                $ref: "../schemas/Common.yaml#/components/schemas/Error"
+
+  /badges/{id}:
+    get:
+      tags:
+        - Badges
+      summary: Buscar badge por ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID do badge
+        - in: query
+          name: language
+          schema:
+            type: string
+          description: Código do idioma para tradução
+      responses:
+        "200":
+          description: Dados do badge
+          content:
+            application/json:
+              schema:
+                $ref: "../schemas/Badges.yaml#/components/schemas/Badge"
+        "404":
+          description: Badge não encontrado
+
+  /badges/private/create:
+    post:
+      tags:
+        - Badges
+      summary: Criar um novo badge
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "../schemas/Badges.yaml#/components/schemas/BadgeInput"
+      responses:
+        "201":
+          description: Badge criado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  badge:
+                    $ref: "../schemas/Badges.yaml#/components/schemas/Badge"
+        "400":
+          description: Erro de validação
+        "401":
+          description: Não autorizado
+
+  /badges/private/{id}/update:
+    put:
+      tags:
+        - Badges
+      summary: Atualizar um badge
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID do badge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "../schemas/Badges.yaml#/components/schemas/BadgeInput"
+      responses:
+        "200":
+          description: Badge atualizado com sucesso
+        "404":
+          description: Badge não encontrado
+        "401":
+          description: Não autorizado
+
+  /badges/private/{id}/delete:
+    delete:
+      tags:
+        - Badges
+      summary: Deletar um badge
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID do badge
+      responses:
+        "200":
+          description: Badge deletado com sucesso
+        "404":
+          description: Badge não encontrado
+        "401":
+          description: Não autorizado

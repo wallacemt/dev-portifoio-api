@@ -1,16 +1,34 @@
-import { prisma } from '../prisma/prismaClient';
-import type { FormationAddRequest, FormationUpdate } from '../types/formation';
+import { prisma } from "../prisma/prismaClient";
+import type { FormationAddRequest, FormationUpdate } from "../types/formation";
 
 export class FormationRepository {
   async findAllFormations(ownerId: string) {
     return await prisma.formation.findMany({
       where: { ownerId },
-      orderBy: { concluded: 'asc' },
+      orderBy: { concluded: "asc" },
+      include: {
+        badges: {
+          orderBy: { issueDate: "desc" },
+        },
+        certifications: {
+          orderBy: { issueDate: "desc" },
+        },
+      },
     });
   }
 
   async findById(formationId: string) {
-    return await prisma.formation.findUnique({ where: { id: formationId } });
+    return await prisma.formation.findUnique({
+      where: { id: formationId },
+      include: {
+        badges: {
+          orderBy: { issueDate: "desc" },
+        },
+        certifications: {
+          orderBy: { issueDate: "desc" },
+        },
+      },
+    });
   }
 
   async addFormation(formation: FormationAddRequest) {

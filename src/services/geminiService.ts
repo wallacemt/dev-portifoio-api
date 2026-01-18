@@ -6,7 +6,7 @@ import { QuotaManager } from "../utils/quotaManager";
 import { devDebugger } from "../utils/devDebugger";
 
 const gemini = new Gemini(env.GEMINI_API_KEY || "");
-
+const GEMINI_MODEL = "gemma-3-4b-it";
 interface CacheItem {
   data: object;
   timestamp: number;
@@ -158,7 +158,7 @@ export class TranslationService {
     try {
       if (error.errorDetails) {
         const retryInfo = error.errorDetails.find(
-          (detail) => detail["@type"] === "type.googleapis.com/google.rpc.RetryInfo"
+          (detail) => detail["@type"] === "type.googleapis.com/google.rpc.RetryInfo",
         );
         if (retryInfo?.retryDelay) {
           const delayStr = retryInfo.retryDelay.replace("s", "");
@@ -210,7 +210,7 @@ export class TranslationService {
     obj: object,
     language: string,
     sourceLang: string,
-    additionalPrompt?: string
+    additionalPrompt?: string,
   ): Promise<object> {
     try {
       const chunks = TranslationService.chunkObject(obj);
@@ -233,7 +233,7 @@ export class TranslationService {
           continue;
         }
 
-         //biome-ignore lint: this, await is correct
+        //biome-ignore lint: this, await is correct
         const canMakeRequest = await QuotaManager.canMakeRequest();
         if (!canMakeRequest) {
           devDebugger(`Cannot translate chunk ${i + 1}, quota exceeded. Using original chunk.`, undefined, "warn");
@@ -293,7 +293,7 @@ export class TranslationService {
     jsonString: string,
     language: string,
     sourceLang: string,
-    additionalPrompt?: string
+    additionalPrompt?: string,
   ): string {
     return `
     Traduza as seguintes cadeias de caracteres JSON do objeto de ${sourceLang} para ${language}, preservando as chaves e a estrutura. Não traduza as chaves ou valores não-textuais, se a chave for título ou descrição ou qualquer outro tipo que contenha bastante texto ou informação relevante, traduza o valor para ${language} (Traduza todos os valores de texto somente o texto dentro das aspas, se forem valores monetários, números ou chave de moeda, aplique a conversão da moeda para ${language}). REGRA: retorne json, sem texto adicional.${
@@ -310,7 +310,7 @@ export class TranslationService {
         QuotaManager.recordRequest();
         //biome-ignore lint: using for caution function
         const resp = await gemini.ask(prompt, {
-          model: "gemini-2.0-flash-lite",
+          model: GEMINI_MODEL,
         });
         const response = resp as GeminiResponse;
         const text = response.response.candidates?.[0]?.content?.parts[0]?.text;
@@ -349,7 +349,7 @@ export class TranslationService {
           const retryDelay = TranslationService.extractRetryDelay(
             error as {
               errorDetails: { "@type": string; detail: string; retryDelay: string }[];
-            }
+            },
           );
           const backoffDelay = TranslationService.BASE_DELAY * 2 ** (attempt - 1);
           const delayTime = Math.max(retryDelay, backoffDelay);
@@ -414,7 +414,6 @@ export class TranslationService {
     const stats = TranslationService.getCacheStats();
 
     const estimatedTokensSaved = Array.from(TranslationService.cache.values()).reduce((total, item) => {
-    
       return total + TranslationService.estimateTokens(JSON.stringify(item.data));
     }, 0);
 

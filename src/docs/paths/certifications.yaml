@@ -1,0 +1,140 @@
+paths:
+  /certifications/owner/{ownerId}:
+    get:
+      tags:
+        - Certifications
+      summary: Buscar todas as certificações de um owner
+      parameters:
+        - in: path
+          name: ownerId
+          required: true
+          schema:
+            type: string
+          description: ID do proprietário
+        - in: query
+          name: language
+          schema:
+            type: string
+          description: Código do idioma para tradução (ex pt, en, es)
+      responses:
+        "200":
+          description: Lista de certificações
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "../schemas/Badges.yaml#/components/schemas/Certification"
+        "400":
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                $ref: "../schemas/Common.yaml#/components/schemas/Error"
+
+  /certifications/{id}:
+    get:
+      tags:
+        - Certifications
+      summary: Buscar certificação por ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID da certificação
+        - in: query
+          name: language
+          schema:
+            type: string
+          description: Código do idioma para tradução
+      responses:
+        "200":
+          description: Dados da certificação
+          content:
+            application/json:
+              schema:
+                $ref: "../schemas/Badges.yaml#/components/schemas/Certification"
+        "404":
+          description: Certificação não encontrada
+
+  /certifications/private/create:
+    post:
+      tags:
+        - Certifications
+      summary: Criar uma nova certificação
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "../schemas/Badges.yaml#/components/schemas/CertificationInput"
+      responses:
+        "201":
+          description: Certificação criada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  certification:
+                    $ref: "../schemas/Badges.yaml#/components/schemas/Certification"
+        "400":
+          description: Erro de validação
+        "401":
+          description: Não autorizado
+
+  /certifications/private/{id}/update:
+    put:
+      tags:
+        - Certifications
+      summary: Atualizar uma certificação
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID da certificação
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "../schemas/Badges.yaml#/components/schemas/CertificationInput"
+      responses:
+        "200":
+          description: Certificação atualizada com sucesso
+        "404":
+          description: Certificação não encontrada
+        "401":
+          description: Não autorizado
+
+  /certifications/private/{id}/delete:
+    delete:
+      tags:
+        - Certifications
+      summary: Deletar uma certificação
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID da certificação
+      responses:
+        "200":
+          description: Certificação deletada com sucesso
+        "404":
+          description: Certificação não encontrada
+        "401":
+          description: Não autorizado

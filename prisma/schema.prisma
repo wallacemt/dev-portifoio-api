@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "mongodb"
-  url      = env("MONGODB_URI")
+  url      = env("DATABASE_URL")
 }
 
 model owner {
@@ -22,20 +22,20 @@ model owner {
 }
 
 model project {
-  id           String    @id @default(auto()) @map("_id") @db.ObjectId
-  title        String
-  description  String
-  techs        String[]
-  screenshots  String[]
-  deployment   String?
-  backend      String?
-  frontend     String?
-  previewImage String
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  title           String
+  description     String
+  techs           String[]
+  screenshots     String[]
+  deployment      String?
+  backend         String?
+  frontend        String?
+  previewImage    String
   previewVideoUrl String?
-  activate     Boolean   @default(true)
-  lastUpdate   DateTime?
-  ownerId      String
-  createdAt    DateTime  @default(now())
+  activate        Boolean   @default(true)
+  lastUpdate      DateTime?
+  ownerId         String
+  createdAt       DateTime  @default(now())
 }
 
 model skill {
@@ -63,6 +63,32 @@ model formation {
   concluded        Boolean  @default(false)
   ownerId          String
   createdAt        DateTime @default(now())
+}
+
+model badge {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  imageUrl    String
+  issuer      String
+  issueDate   DateTime
+  badgeUrl    String?
+  ownerId     String
+  createdAt   DateTime @default(now())
+}
+
+model certification {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  title           String
+  description     String
+  issuer          String
+  issueDate       DateTime
+  expirationDate  DateTime?
+  credentialId    String?
+  credentialUrl   String
+  certificateFile String?
+  ownerId         String
+  createdAt       DateTime  @default(now())
 }
 
 model service {

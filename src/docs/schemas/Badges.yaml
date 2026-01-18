@@ -1,0 +1,229 @@
+components:
+  schemas:
+    Badge:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        title:
+          type: string
+          example: "AWS Cloud Quest: Cloud Practitioner"
+        description:
+          type: string
+          example: "Badge obtido após completar o treinamento AWS Cloud Quest"
+        imageUrl:
+          type: string
+          example: "https://res.cloudinary.com/example/badge.png"
+        issuer:
+          type: string
+          example: "Amazon Web Services"
+        issueDate:
+          type: string
+          format: date-time
+          example: "2024-01-15T00:00:00.000Z"
+        badgeUrl:
+          type: string
+          example: "https://www.credly.com/badges/example"
+        formationId:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        ownerId:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        createdAt:
+          type: string
+          format: date-time
+        formation:
+          type: object
+          properties:
+            id:
+              type: string
+            title:
+              type: string
+            institution:
+              type: string
+
+    BadgeInput:
+      type: object
+      required:
+        - title
+        - description
+        - imageUrl
+        - issuer
+        - issueDate
+        - formationId
+      properties:
+        title:
+          type: string
+          minLength: 3
+        description:
+          type: string
+          minLength: 10
+        imageUrl:
+          type: string
+          format: uri
+        issuer:
+          type: string
+          minLength: 2
+        issueDate:
+          type: string
+          format: date-time
+        badgeUrl:
+          type: string
+          format: uri
+        formationId:
+          type: string
+
+    Certification:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        title:
+          type: string
+          example: "AWS Certified Solutions Architect - Associate"
+        description:
+          type: string
+          example: "Certificação profissional da AWS"
+        issuer:
+          type: string
+          example: "Amazon Web Services"
+        issueDate:
+          type: string
+          format: date-time
+          example: "2024-01-15T00:00:00.000Z"
+        expirationDate:
+          type: string
+          format: date-time
+          example: "2027-01-15T00:00:00.000Z"
+        credentialId:
+          type: string
+          example: "AWS-12345-6789"
+        credentialUrl:
+          type: string
+          example: "https://www.credly.com/badges/example"
+        certificateFile:
+          type: string
+          example: "https://res.cloudinary.com/example/certificate.pdf"
+        formationId:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        ownerId:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        createdAt:
+          type: string
+          format: date-time
+        formation:
+          type: object
+          properties:
+            id:
+              type: string
+            title:
+              type: string
+            institution:
+              type: string
+
+    CertificationInput:
+      type: object
+      required:
+        - title
+        - description
+        - issuer
+        - issueDate
+        - credentialUrl
+        - formationId
+      properties:
+        title:
+          type: string
+          minLength: 3
+        description:
+          type: string
+          minLength: 10
+        issuer:
+          type: string
+          minLength: 2
+        issueDate:
+          type: string
+          format: date-time
+        expirationDate:
+          type: string
+          format: date-time
+        credentialId:
+          type: string
+        credentialUrl:
+          type: string
+          format: uri
+        certificateFile:
+          type: string
+          format: uri
+        formationId:
+          type: string
+
+    UploadResult:
+      type: object
+      properties:
+        url:
+          type: string
+          example: "https://res.cloudinary.com/example/image.jpg"
+        publicId:
+          type: string
+          example: "portifolio/image_abc123"
+        format:
+          type: string
+          example: "jpg"
+        resourceType:
+          type: string
+          example: "image"
+        bytes:
+          type: number
+          example: 1048576
+
+    UploadRequest:
+      type: object
+      required:
+        - file
+      properties:
+        file:
+          type: string
+          description: "Base64 encoded file"
+        folder:
+          type: string
+          example: "portifolio/badges"
+        filename:
+          type: string
+          example: "my-badge"
+        resourceType:
+          type: string
+          enum: [image, raw, video, auto]
+          default: auto
+        allowedFormats:
+          type: array
+          items:
+            type: string
+          example: ["jpg", "png", "pdf"]
+
+    MultipleUploadRequest:
+      type: object
+      required:
+        - files
+      properties:
+        files:
+          type: array
+          items:
+            type: string
+          description: "Array of base64 encoded files"
+        folder:
+          type: string
+          example: "portifolio/certificates"
+        resourceType:
+          type: string
+          enum: [image, raw, video, auto]
+          default: auto
+        allowedFormats:
+          type: array
+          items:
+            type: string
+          example: ["jpg", "png", "pdf"]

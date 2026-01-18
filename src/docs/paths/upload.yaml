@@ -1,0 +1,108 @@
+paths:
+  /upload/single:
+    post:
+      tags:
+        - Upload
+      summary: Upload de um arquivo único
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "../schemas/Badges.yaml#/components/schemas/UploadRequest"
+      responses:
+        "200":
+          description: Upload realizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  result:
+                    $ref: "../schemas/Badges.yaml#/components/schemas/UploadResult"
+        "400":
+          description: Arquivo não fornecido ou inválido
+        "401":
+          description: Não autorizado
+        "500":
+          description: Erro no servidor
+
+  /upload/multiple:
+    post:
+      tags:
+        - Upload
+      summary: Upload de múltiplos arquivos
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "../schemas/Badges.yaml#/components/schemas/MultipleUploadRequest"
+      responses:
+        "200":
+          description: Uploads realizados com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  results:
+                    type: array
+                    items:
+                      $ref: "../schemas/Badges.yaml#/components/schemas/UploadResult"
+        "400":
+          description: Arquivos não fornecidos ou inválidos
+        "401":
+          description: Não autorizado
+        "500":
+          description: Erro no servidor
+
+  /upload/delete:
+    delete:
+      tags:
+        - Upload
+      summary: Deletar um arquivo do Cloudinary
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - publicId
+              properties:
+                publicId:
+                  type: string
+                  description: Public ID do arquivo no Cloudinary
+                  example: "portifolio/badges/badge_abc123"
+                resourceType:
+                  type: string
+                  enum: [image, raw, video]
+                  default: image
+                  description: Tipo do recurso
+      responses:
+        "200":
+          description: Arquivo deletado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Public ID não fornecido
+        "401":
+          description: Não autorizado
+        "500":
+          description: Erro ao deletar arquivo
