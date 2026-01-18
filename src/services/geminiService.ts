@@ -6,7 +6,7 @@ import { QuotaManager } from "../utils/quotaManager";
 import { devDebugger } from "../utils/devDebugger";
 
 const gemini = new Gemini(env.GEMINI_API_KEY || "");
-const GEMINI_MODEL = "gemma-3-4b-it";
+const GEMINI_MODEL = env.AI_MODEL;
 interface CacheItem {
   data: object;
   timestamp: number;

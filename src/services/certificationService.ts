@@ -11,7 +11,13 @@ export class CertificationService {
     if (!ownerId || ownerId === ":ownerId") {
       throw new Exception("ID de owner inválido", 400);
     }
-    return await this.certificationRepository.findAllCertifications(ownerId);
+    const texts = {
+      title: "Certificações Profissionais",
+      description: "Certificações validadas que comprovam conhecimento e expertise técnica",
+    };
+    const certifications = await this.certificationRepository.findAllCertifications(ownerId);
+
+    return { certifications, texts };
   }
 
   async findById(certificationId: string) {

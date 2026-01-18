@@ -1,4 +1,4 @@
-import { cloudinary } from "../config/cloudinary";
+import { v2 as cloudinary } from "cloudinary";
 
 export class CloudinaryService {
   async uploadBase64(base64: string, filename?: string, typeData = "image/png"): Promise<string> {

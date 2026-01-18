@@ -1,6 +1,5 @@
-import { v2, type UploadApiResponse } from "cloudinary";
+import { v2 as cloudinary, type UploadApiResponse } from "cloudinary";
 import { Exception } from "../utils/exception";
-import { cloudinaryInstance } from "../config/cloudinary";
 import { devDebugger } from "../utils/devDebugger";
 
 const EXTRACT_PULIC_ID_REGEX = /\/v\d+\/(.+)\.\w+$/;
@@ -61,7 +60,7 @@ export class UploadService {
         uploadOptions.allowed_formats = allowedFormats;
       }
 
-      const result: UploadApiResponse = await v2.uploader.upload(dataUri, uploadOptions);
+      const result: UploadApiResponse = await cloudinary.uploader.upload(dataUri, uploadOptions);
 
       if (result.bytes > this.MAX_FILE_SIZE) {
         await this.deleteFile(result.public_id);
@@ -100,7 +99,7 @@ export class UploadService {
    */
   async deleteFile(publicId: string, resourceType: "image" | "raw" | "video" = "image"): Promise<void> {
     try {
-      await cloudinaryInstance.uploader.destroy(publicId, {
+      await cloudinary.uploader.destroy(publicId, {
         resource_type: resourceType,
       });
     } catch (error) {
@@ -113,7 +112,7 @@ export class UploadService {
    */
   async deleteMultipleFiles(publicIds: string[], resourceType: "image" | "raw" | "video" = "image"): Promise<void> {
     try {
-      await v2.api.delete_resources(publicIds, {
+      await cloudinary.api.delete_resources(publicIds, {
         resource_type: resourceType,
       });
     } catch (error) {
