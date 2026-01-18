@@ -6,28 +6,14 @@ export class FormationRepository {
     return await prisma.formation.findMany({
       where: { ownerId },
       orderBy: { concluded: "asc" },
-      include: {
-        badges: {
-          orderBy: { issueDate: "desc" },
-        },
-        certifications: {
-          orderBy: { issueDate: "desc" },
-        },
-      },
+      
     });
   }
 
   async findById(formationId: string) {
     return await prisma.formation.findUnique({
       where: { id: formationId },
-      include: {
-        badges: {
-          orderBy: { issueDate: "desc" },
-        },
-        certifications: {
-          orderBy: { issueDate: "desc" },
-        },
-      },
+     
     });
   }
 
