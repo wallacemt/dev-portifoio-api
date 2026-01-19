@@ -30,4 +30,4 @@ ENV NODE_ENV=production
 ENV PORT=8081
 
 EXPOSE 8081
-CMD ["bun", "run", "dist/app.js"]
+CMD ["bun", "run", "src/app.ts"]
