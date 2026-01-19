@@ -1,9 +1,9 @@
-import { v2 as cloudinary } from "cloudinary";
+import { cloudImage } from "../config/cloudinary";
 
 export class CloudinaryService {
   async uploadBase64(base64: string, filename?: string, typeData = "image/png"): Promise<string> {
     const dataUri = `data:${typeData};base64,${base64}`;
-    const result = await cloudinary.uploader.upload(dataUri, {
+    const result = await cloudImage.uploader.upload(dataUri, {
       folder: "portifolio/project",
       public_id: filename,
     });

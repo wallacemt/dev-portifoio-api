@@ -1,6 +1,7 @@
-import { v2 as cloudinary, type UploadApiResponse } from "cloudinary";
 import { Exception } from "../utils/exception";
 import { devDebugger } from "../utils/devDebugger";
+import { cloudImage as cloudinary } from "../config/cloudinary";
+import type { UploadApiResponse } from "cloudinary";
 
 const EXTRACT_PULIC_ID_REGEX = /\/v\d+\/(.+)\.\w+$/;
 
