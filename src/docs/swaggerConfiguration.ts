@@ -1,4 +1,5 @@
 import swaggerJSDoc from 'swagger-jsdoc';
+import { env } from '../env';
 
 export const swaggerOptions = {
   definition: {
@@ -15,7 +16,7 @@ export const swaggerOptions = {
         description: 'Servidor de Desenvolvimento',
       },
       {
-        url: 'https://dev-portifoio-api.onrender.com',
+        url: env.SELF_URL,
         description: 'Servidor de Produção',
       },
     ],
