@@ -23,9 +23,11 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/src/docs ./src/docs
 
 RUN bun install --frozen-lockfile --production
+RUN bunx prisma generate
 
 ENV NODE_ENV=production
 ENV PORT=8081
 
 EXPOSE 8081
-CMD ["bun", "run", "dist/src/app.js"]
+
+CMD ["bun", "dist/src/app.js"]
