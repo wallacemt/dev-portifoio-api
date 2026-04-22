@@ -1,4 +1,4 @@
-FROM oven/bun:1.2 AS builder
+FROM oven/bun:canary-alpine AS builder
 WORKDIR /app
 
 COPY bun.lock package.json tsconfig.json ./
@@ -13,7 +13,7 @@ ENV DATABASE_URL=$DATABASE_URL
 RUN bun run build
 
 
-FROM oven/bun:1.2-alpine
+FROM oven/bun:canary-alpine
 WORKDIR /app
 
 COPY --from=builder /app/package.json ./
