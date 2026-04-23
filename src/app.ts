@@ -61,7 +61,7 @@ class App {
       }),
     );
     this.app.use((_req, res, _next) => {
-      res.status(404).json({ error: "Endpoint não encontrado" ,details: `Rota '${_req.url}' não encontrada!` });
+      res.status(404).json({ error: "Endpoint não encontrado", details: `Rota '${_req.url}' não encontrada!` });
     });
   }
   config() {
@@ -75,7 +75,12 @@ class App {
     this.app.use(express.json());
   }
   listen(port: number | string) {
-    this.app.listen(port, () => devDebugger(`Servidor rodando na porta ${port}`));
+    this.app.listen(port, () => {
+     
+      devDebugger(`Servidor rodando na porta ${port}`);
+      devDebugger(`Acesse ${env.SELF_URL}`);
+
+    });
   }
 }
 

@@ -26,6 +26,7 @@ export class UtilisController {
     this.routerPublic.post("/clear-cache", this.clearCache.bind(this));
     this.routerPublic.post("/force-clean-cache", this.forceCleanCache.bind(this));
     this.routerPublic.post("/test-translation", this.testTranslation.bind(this));
+    this.routerPublic.get("/ai-models", this.aiModels.bind(this));
   }
 
   async getNavbarItens(req: Request, res: Response) {
@@ -108,7 +109,7 @@ export class UtilisController {
   forceCleanCache(req: Request, res: Response) {
     try {
       const { maxAge } = req.body;
-      const ageInMs = maxAge ? Number(maxAge) * 60 * 60 * 1000 : 12 * 60 * 60 * 1000; 
+      const ageInMs = maxAge ? Number(maxAge) * 60 * 60 * 1000 : 12 * 60 * 60 * 1000;
 
       const statsBefore = TranslationService.getTranslationStats();
       TranslationService.forceCleanCache(ageInMs);
@@ -180,6 +181,14 @@ export class UtilisController {
           translationStats,
         },
       });
+    } catch (error) {
+      errorFilter(error, res);
+    }
+  }
+
+  async aiModels(_req: Request, res: Response) {
+    try {
+      res.json(await TranslationService.listModels()).status(200);
     } catch (error) {
       errorFilter(error, res);
     }

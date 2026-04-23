@@ -1,10 +1,9 @@
 import Gemini from "gemini-ai-sdk";
 import { env } from "../env";
-import type { GeminiResponse } from "../types/aiTypes";
+import type { GeminiResponse, GeminiModel } from "../types/aiTypes";
 import { Exception } from "../utils/exception";
 import { QuotaManager } from "../utils/quotaManager";
 import { devDebugger } from "../utils/devDebugger";
-
 const gemini = new Gemini(env.GEMINI_API_KEY || "");
 const GEMINI_MODEL = env.AI_MODEL;
 interface CacheItem {
@@ -295,76 +294,148 @@ export class TranslationService {
     sourceLang: string,
     additionalPrompt?: string,
   ): string {
-    return `
-    Traduza as seguintes cadeias de caracteres JSON do objeto de ${sourceLang} para ${language}, preservando as chaves e a estrutura. Não traduza as chaves ou valores não-textuais, se a chave for título ou descrição ou qualquer outro tipo que contenha bastante texto ou informação relevante, traduza o valor para ${language} (Traduza todos os valores de texto somente o texto dentro das aspas, se forem valores monetários, números ou chave de moeda, aplique a conversão da moeda para ${language}). REGRA: retorne json, sem texto adicional.${
-      additionalPrompt ? `${additionalPrompt}\n` : ""
-    }:
-    ${jsonString}`;
-  }
+    return `You are a JSON transformer.
 
-  private async translateWithRetry(prompt: string, cacheKey: string, originalObj: object): Promise<object> {
+Translate all string values in the JSON from ${sourceLang} to ${language}.
+- A Saida tem que ser um JSON valido e puro!
+- Não precisar ter explicacoes, somente o json puro deve ser retornado!
+       
+${additionalPrompt ?? ""}
+
+WHAT TO DO:
+- Keep all keys exactly the same.
+- Translate ONLY string values.
+- Keep numbers, booleans, null unchanged.
+
+INPUT:
+${jsonString}
+
+OUTPUT (strictly JSON, no text before or after): Exemple {} or []`;
+  }
+  //biome-ignore lint: this necessary
+  private async translateWithRetry(basePrompt: string, cacheKey: string, originalObj: object): Promise<object> {
     let lastError: unknown;
+    let prompt = basePrompt;
 
     for (let attempt = 1; attempt <= TranslationService.MAX_RETRIES; attempt++) {
       try {
         QuotaManager.recordRequest();
-        //biome-ignore lint: using for caution function
+        //biome-ignore lint: this necessary
         const resp = await gemini.ask(prompt, {
           model: GEMINI_MODEL,
         });
+
         const response = resp as GeminiResponse;
-        const text = response.response.candidates?.[0]?.content?.parts[0]?.text;
-        const jsonText = text?.replace(/```json|```/g, "").trim();
+        // 🔐 Extração segura do texto (evita quebra com múltiplos parts)
+        const parts = response.response.candidates?.[0]?.content?.parts || [];
+        const text = parts
+          .map((p) => p.text || "")
+          .join("")
+          .trim();
 
-        try {
-          if (!jsonText) {
-            throw new Error("Resposta do Gemini não é um JSON válido");
-          }
-          const translatedObj = JSON.parse(jsonText);
-          QuotaManager.recordSuccess();
-          TranslationService.cache.set(cacheKey, {
-            data: translatedObj,
-            timestamp: Date.now(),
-            expires: Date.now() + TranslationService.CACHE_DURATION,
-          });
-
-          return translatedObj;
-        } catch (_err) {
-          devDebugger(`Resposta inválida do Gemini: ${response}`);
-
-          QuotaManager.recordFailure(false);
-          throw new Exception("Não foi possível interpretar a tradução", 500);
+        if (!text) {
+          throw new Error("Resposta vazia do modelo");
         }
+
+        devDebugger(`{ attempt:${attempt}, raw: ${text} }`);
+
+        //  Se nem começa como JSON, força retry
+        if (!(text.startsWith("{") || text.startsWith("["))) {
+          throw new Error("Resposta não começou com JSON válido");
+        }
+
+        //  Parse resiliente
+        const parsed = this.safeJSONParse(text);
+
+        // ✅ sucesso
+        QuotaManager.recordSuccess();
+
+        TranslationService.cache.set(cacheKey, {
+          data: parsed,
+          timestamp: Date.now(),
+          expires: Date.now() + TranslationService.CACHE_DURATION,
+        });
+
+        return parsed;
       } catch (error) {
         lastError = error;
+
         const isQuotaError = TranslationService.isQuotaError(error as { status: number; message: string });
+
         QuotaManager.recordFailure(isQuotaError);
 
+        // 🧠 Se for erro de parse/formato → tenta corrigir com prompt mais rígido
+        if (!isQuotaError) {
+          devDebugger(`Attempt ${attempt} failed (format/parse). Retrying...`);
+
+          if (attempt < TranslationService.MAX_RETRIES) {
+            prompt = `${basePrompt}`;
+            continue;
+          }
+
+          break;
+        }
+
+        // ⏳ tratamento de quota (mantido)
         if (isQuotaError) {
           if (attempt === TranslationService.MAX_RETRIES) {
-            devDebugger("Translation quota exceeded, returning original object", originalObj, "warn");
-
+            devDebugger("Quota exceeded, returning original object", originalObj, "warn");
             return originalObj;
           }
+
           const retryDelay = TranslationService.extractRetryDelay(
             error as {
-              errorDetails: { "@type": string; detail: string; retryDelay: string }[];
+              errorDetails: {
+                "@type": string;
+                detail: string;
+                retryDelay: string;
+              }[];
             },
           );
+
           const backoffDelay = TranslationService.BASE_DELAY * 2 ** (attempt - 1);
+
           const delayTime = Math.max(retryDelay, backoffDelay);
+
           devDebugger(`Quota exceeded, waiting ${delayTime}ms before retry ${attempt + 1}`);
 
           await TranslationService.delay(delayTime);
-        } else {
-          break;
         }
       }
     }
-    devDebugger("Error ao usar geminiAI após todas as tentativas", lastError, "error");
-    throw new Exception("Error na tradução", 500);
-  }
 
+    devDebugger("Erro final após retries, retornando original", lastError, "error");
+
+    return originalObj;
+  }
+  private safeJSONParse(text: string) {
+    devDebugger(text)
+    const firstBrace = text.indexOf("{");
+    const firstBracket = text.indexOf("[");
+
+    let start = -1;
+
+    if (firstBrace === -1) start = firstBracket;
+    else if (firstBracket === -1) start = firstBrace;
+    else start = Math.min(firstBrace, firstBracket);
+
+    if (start === -1) {
+      throw new Error("No JSON start found");
+    }
+
+    // tenta encontrar um JSON válido progressivamente
+    for (let end = text.length; end > start; end--) {
+      const candidate = text.slice(start, end);
+
+      try {
+        return JSON.parse(candidate);
+      } catch (_) {
+        // continua tentando
+      }
+    }
+
+    throw new Error("No valid JSON could be parsed");
+  }
   private cleanCache(): void {
     const now = Date.now();
     for (const [key, item] of TranslationService.cache.entries()) {
@@ -440,5 +511,26 @@ export class TranslationService {
     }
 
     devDebugger(`Force cleaned ${removed} old cache entries`);
+  }
+
+  /**
+   * Lista os modelos disponíveis do Gemini, filtrando apenas os que suportam geração de texto
+   */
+  static async listModels(): Promise<GeminiModel[]> {
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${env.GEMINI_API_KEY}`);
+
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar modelos: ${response.statusText}`);
+      }
+
+      const data = (await response.json()) as { models: GeminiModel[] };
+
+      // Filtra apenas modelos que suportam geração de conteúdo (texto)
+      return data.models.filter((model) => model.supportedGenerationMethods.includes("generateContent"));
+    } catch (error) {
+      devDebugger("Erro ao listar modelos do Gemini:", error, "error");
+      throw new Exception("Não foi possível listar os modelos do Gemini", 500);
+    }
   }
 }
