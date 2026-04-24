@@ -127,6 +127,7 @@ model visitor {
   country     String?
   city        String?
   device      String
+  ip          String?
   browser     String?
   os          String?
   referrer    String?
