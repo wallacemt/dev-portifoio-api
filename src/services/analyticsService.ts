@@ -114,7 +114,7 @@ export class AnalyticsService {
       if (e instanceof Exception) {
         throw e;
       }
-      throw new Exception("Dados da visualização inválidos", 400);
+      throw new Exception(`Dados da visualização inválidos ${e}`, 400);
     }
   }
 
