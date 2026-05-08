@@ -20,6 +20,7 @@ const envSchema = z.object({
   CLOUDINARY_API_SECRET: z.string(),
   SELF_URL: z.string(),
   AI_MODEL: z.string(),
+  REDIS_URL: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);
