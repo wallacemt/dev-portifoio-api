@@ -50,13 +50,11 @@ export class FormationController {
       const result = await this.formationService.findAllFormations(req.params.ownerId || "");
       if (language && language !== "pt") {
         try {
-          const translated = await this.translationService.translateObject(
-            result,
-            language,
-            "pt",
-            "Traduza os types das formations"
-          );
-          res.status(200).json(translated);
+          const [translatedFormations, translatedTexts] = await Promise.all([
+            this.translationService.translateObject(result.formations, language, "pt", "Translate formation type values"),
+            this.translationService.translateObject(result.texts, language, "pt"),
+          ]);
+          res.status(200).json({ ...result, formations: translatedFormations, texts: translatedTexts });
         } catch (e) {
           errorFilter(e, res);
         }

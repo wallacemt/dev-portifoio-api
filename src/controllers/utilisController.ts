@@ -22,9 +22,7 @@ export class UtilisController {
     this.routerPublic.get("/navbar", this.getNavbarItens.bind(this));
     this.routerPublic.get("/languages", this.getlanguageOptions.bind(this));
     this.routerPublic.get("/quota-status", this.getQuotaStatus.bind(this));
-    this.routerPublic.get("/translation-stats", this.getTranslationStats.bind(this));
     this.routerPublic.post("/clear-cache", this.clearCache.bind(this));
-    this.routerPublic.post("/force-clean-cache", this.forceCleanCache.bind(this));
     this.routerPublic.post("/test-translation", this.testTranslation.bind(this));
     this.routerPublic.get("/ai-models", this.aiModels.bind(this));
   }
@@ -57,18 +55,15 @@ export class UtilisController {
     }
   }
 
-  getQuotaStatus(_req: Request, res: Response) {
+  async getQuotaStatus(_req: Request, res: Response) {
     try {
-      const quotaStatus = QuotaManager.getQuotaStatus();
-      const cacheStats = TranslationService.getCacheStats();
-
+      const [quotaStatus, cacheStats] = await Promise.all([
+        Promise.resolve(QuotaManager.getQuotaStatus()),
+        TranslationService.getCacheStats(),
+      ]);
       res.status(200).json({
         success: true,
-        data: {
-          quota: quotaStatus,
-          cache: cacheStats,
-          timestamp: new Date().toISOString(),
-        },
+        data: { quota: quotaStatus, cache: cacheStats, timestamp: new Date().toISOString() },
       });
     } catch (error) {
       errorFilter(error, res);
@@ -78,53 +73,7 @@ export class UtilisController {
   clearCache(_req: Request, res: Response) {
     try {
       QuotaManager.clearMetrics();
-
-      res.status(200).json({
-        success: true,
-        message: "Cache e métricas de quota limpos com sucesso",
-      });
-    } catch (error) {
-      errorFilter(error, res);
-    }
-  }
-
-  getTranslationStats(_req: Request, res: Response) {
-    try {
-      const stats = TranslationService.getTranslationStats();
-      const quotaStatus = QuotaManager.getQuotaStatus();
-
-      res.status(200).json({
-        success: true,
-        data: {
-          translation: stats,
-          quota: quotaStatus,
-          timestamp: new Date().toISOString(),
-        },
-      });
-    } catch (error) {
-      errorFilter(error, res);
-    }
-  }
-
-  forceCleanCache(req: Request, res: Response) {
-    try {
-      const { maxAge } = req.body;
-      const ageInMs = maxAge ? Number(maxAge) * 60 * 60 * 1000 : 12 * 60 * 60 * 1000;
-
-      const statsBefore = TranslationService.getTranslationStats();
-      TranslationService.forceCleanCache(ageInMs);
-      const statsAfter = TranslationService.getTranslationStats();
-
-      res.status(200).json({
-        success: true,
-        message: "Cache limpo com sucesso",
-        data: {
-          before: statsBefore,
-          after: statsAfter,
-          removed: statsBefore.cacheSize - statsAfter.cacheSize,
-          maxAgeHours: ageInMs / (60 * 60 * 1000),
-        },
-      });
+      res.status(200).json({ success: true, message: "Cache e métricas de quota limpos com sucesso" });
     } catch (error) {
       errorFilter(error, res);
     }
@@ -135,14 +84,10 @@ export class UtilisController {
       const { text, targetLanguage = "en", sourceLanguage = "pt", testChunking = false } = req.body;
 
       if (!text) {
-        res.status(400).json({
-          success: false,
-          message: "Texto é obrigatório",
-        });
+        res.status(400).json({ success: false, message: "Texto é obrigatório" });
         return;
       }
 
-      // Se testChunking for true, cria um objeto grande para testar o sistema de chunks
       let testObject: object;
       if (testChunking) {
         testObject = {
@@ -162,10 +107,6 @@ export class UtilisController {
 
       const startTime = Date.now();
       const result = await this.translationService.translateObject(testObject, targetLanguage, sourceLanguage);
-      const endTime = Date.now();
-
-      const quotaStatus = QuotaManager.getQuotaStatus();
-      const translationStats = TranslationService.getTranslationStats();
 
       res.status(200).json({
         success: true,
@@ -173,12 +114,11 @@ export class UtilisController {
           original: testObject,
           translated: result,
           performance: {
-            duration: `${endTime - startTime}ms`,
+            duration: `${Date.now() - startTime}ms`,
             chunked: testChunking,
             estimatedTokens: TranslationService.estimateTokens(JSON.stringify(testObject)),
           },
-          quotaStatus,
-          translationStats,
+          quotaStatus: QuotaManager.getQuotaStatus(),
         },
       });
     } catch (error) {
