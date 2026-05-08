@@ -1,4 +1,4 @@
-import { TranslationService } from '../services/geminiService';
+import { TranslationCache } from '../services/translationCacheService';
 import { devDebugger } from './devDebugger';
 
 interface QuotaMetrics {
@@ -19,8 +19,8 @@ export class QuotaManager {
     consecutiveFailures: 0,
   };
 
-  private static readonly MAX_DAILY_REQUESTS = 180;
-  private static readonly MIN_REQUEST_INTERVAL = 1000;
+  private static readonly MAX_DAILY_REQUESTS = 280;
+  private static readonly MIN_REQUEST_INTERVAL = 2500;
   private static readonly MAX_CONSECUTIVE_FAILURES = 3;
 
    static async canMakeRequest(): Promise<boolean> {
@@ -95,7 +95,7 @@ export class QuotaManager {
     QuotaManager.resetDailyMetrics();
     QuotaManager.metrics.consecutiveFailures = 0;
     QuotaManager.metrics.rateLimitHit = false;
-    TranslationService.clearCache();
+    TranslationCache.clearAll().catch((e) => devDebugger('Failed to clear translation cache', e, 'warn'));
 
     devDebugger('Quota metrics and translation cache cleared', undefined);
   }
