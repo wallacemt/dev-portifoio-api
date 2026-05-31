@@ -13,12 +13,19 @@ export class AnalyticsRepository {
    * Cria ou atualiza um visitante
    */
   async upsertVisitor(visitorData: VisitorData) {
+    const geoUpdate: { country?: string; city?: string } = {};
+    if (visitorData.country && visitorData.country !== "unknown") {
+      geoUpdate.country = visitorData.country;
+    }
+    if (visitorData.city && visitorData.city !== "unknown") {
+      geoUpdate.city = visitorData.city;
+    }
+
     return await prisma.visitor.upsert({
       where: { sessionId: visitorData.sessionId },
       update: {
         ipAddress: visitorData.ipAddress,
-        country: visitorData.country,
-        city: visitorData.city,
+        ...geoUpdate,
       },
       create: visitorData,
     });
@@ -74,7 +81,7 @@ export class AnalyticsRepository {
     const dateOnly = new Date(date.toDateString());
 
     return await prisma.analyticsDaily.upsert({
-      where: { date: dateOnly },
+      where: { ownerId_date: { ownerId, date: dateOnly } },
       update: {
         ...data,
         updatedAt: new Date(),
@@ -103,25 +110,24 @@ export class AnalyticsRepository {
   }
 
   async getTodayVisitors(ownerId: string) {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     return await prisma.visitor.count({
       where: {
         ownerId,
-        createdAt: {
-          gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
-          lte: new Date(),
-        },
+        createdAt: { gte: startOfDay },
       },
     });
   }
 
   async getYesterdayVisitors(ownerId: string) {
+    const now = new Date();
+    const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     return await prisma.visitor.count({
       where: {
         ownerId,
-        createdAt: {
-          gte: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-          lte: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        },
+        createdAt: { gte: startOfYesterday, lt: startOfToday },
       },
     });
   }
@@ -259,24 +265,42 @@ export class AnalyticsRepository {
 
   /**
    * Calcula taxa de rejeição (bounce rate)
+   *
+   * A bounce is a visitor who viewed exactly one page. Visitors with zero page
+   * views are tracking artifacts (middleware registered them before their page
+   * view arrived) and must not be counted as bounces.
    */
   async getBounceRate(ownerId: string, startDate: Date, endDate: Date): Promise<number> {
     const totalVisitors = await this.getUniqueVisitors(ownerId, startDate, endDate);
 
     if (totalVisitors === 0) return 0;
 
-    const singlePageVisitors = await prisma.visitor.count({
+    // Visitors who have at least one page view recorded in the period.
+    const visitorsWithPageViews = await prisma.visitor.count({
       where: {
         ownerId,
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
-        pageViews: {
-          none: {},
+        createdAt: { gte: startDate, lte: endDate },
+        pageViews: { some: {} },
+      },
+    });
+
+    // Visitors with 2+ page views — these did NOT bounce.
+    const multiPageGroups = await prisma.pageView.groupBy({
+      by: ["visitorId"],
+      where: {
+        ownerId,
+        timestamp: { gte: startDate, lte: endDate },
+      },
+      _count: { visitorId: true },
+      having: {
+        visitorId: {
+          _count: { gt: 1 },
         },
       },
     });
+
+    const multiPageVisitors = multiPageGroups.length;
+    const singlePageVisitors = visitorsWithPageViews - multiPageVisitors;
 
     return (singlePageVisitors / totalVisitors) * 100;
   }
@@ -306,7 +330,7 @@ export class AnalyticsRepository {
    * Busca analytics em tempo real (últimos 30 minutos)
    */
   async getRealTimeAnalytics(ownerId: string): Promise<RealTimeAnalytics> {
-    const thirtyMinutesAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
 
     const activeVisitors = await prisma.visitor.count({
       where: {

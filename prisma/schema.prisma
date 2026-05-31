@@ -149,7 +149,7 @@ model pageView {
 
 model analyticsDaily {
   id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  date           DateTime @unique
+  date           DateTime
   totalVisitors  Int      @default(0)
   uniqueVisitors Int      @default(0)
   pageViews      Int      @default(0)
@@ -164,4 +164,6 @@ model analyticsDaily {
   ownerId        String
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@unique([ownerId, date])
 }
