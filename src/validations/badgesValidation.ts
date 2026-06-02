@@ -41,6 +41,7 @@ export const certificationSchema = z.object({
     .optional(),
   credentialId: z.string().optional(),
   credentialUrl: z.string().url("URL da credencial inválida"),
+  badgeImageUrl: z.string().url("URL da imagem do badge inválida").optional(),
   certificateFile: z.string().url("URL do certificado inválida").optional(),
   ownerId: z.string().min(1, "ID do proprietário é obrigatório"),
 });
@@ -61,5 +62,6 @@ export const certificationSchemaOptional = z.object({
     .optional(),
   credentialId: z.string().optional(),
   credentialUrl: z.string().url("URL da credencial inválida").optional(),
+  badgeImageUrl: z.string().url("URL da imagem do badge inválida").optional(),
   certificateFile: z.string().url("URL do certificado inválida").optional(),
 });

@@ -30,6 +30,7 @@ export interface CertificationAddRequest {
   expirationDate?: Date;
   credentialId?: string;
   credentialUrl: string;
+  badgeImageUrl?: string;
   certificateFile?: string;
   ownerId: string;
 }
@@ -45,6 +46,7 @@ export interface Certification {
   expirationDate?: Date;
   credentialId?: string;
   credentialUrl: string;
+  badgeImageUrl?: string;
   certificateFile?: string;
   ownerId: string;
   createdAt: Date;

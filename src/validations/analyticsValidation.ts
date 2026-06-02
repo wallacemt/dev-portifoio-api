@@ -49,7 +49,7 @@ export const trackPageViewSchema = z.object({
   timeSpent: z
     .number()
     .min(0, 'Tempo gasto deve ser pelo menos 0 segundos')
-    .max(86400, 'Tempo gasto deve ser no máximo 86400 segundos (24 horas)')
+    .max(86_400, 'Tempo gasto deve ser no máximo 86400 segundos (24 horas)')
     .optional(),
 });
 

@@ -86,6 +86,7 @@ model certification {
   expirationDate  DateTime?
   credentialId    String?
   credentialUrl   String
+  badgeImageUrl   String?
   certificateFile String?
   ownerId         String
   createdAt       DateTime  @default(now())

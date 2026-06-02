@@ -239,7 +239,6 @@ export class TranslationService {
     jsonString: string,
     language: string,
     sourceLang: string,
-    additionalPrompt?: string,
   ): string {
     let keyConstraint = "";
     try {
@@ -250,11 +249,11 @@ export class TranslationService {
           keyConstraint = `\n- The output object MUST contain EXACTLY these top-level keys and no others: ${keys.join(", ")}`;
         }
       }
+      return keyConstraint
     } catch {
       /* ignore — jsonString may be an array */
     }
 
-    const extra = additionalPrompt ? `\nAdditional rules: ${additionalPrompt}\n` : "";
     return `
 Translate JSON string values from ${sourceLang} to ${language}.
 

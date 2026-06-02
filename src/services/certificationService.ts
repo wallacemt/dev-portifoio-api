@@ -37,6 +37,7 @@ export class CertificationService {
         ...certification,
         expirationDate: certification.expirationDate ? certification.expirationDate : undefined,
         credentialId: certification.credentialId?.length ? certification.credentialId : undefined,
+        badgeImageUrl: certification.badgeImageUrl?.length ? certification.badgeImageUrl : undefined,
         certificateFile: certification.certificateFile?.length ? certification.certificateFile : undefined,
       };
       certificationSchema.parse(certificationData);
@@ -65,6 +66,7 @@ export class CertificationService {
         issueDate: certification.issueDate && new Date(certification.issueDate),
         expirationDate: certification.expirationDate && new Date(certification.expirationDate),
         credentialId: certification.credentialId?.length ? certification.credentialId : undefined,
+        badgeImageUrl: certification.badgeImageUrl?.length ? certification.badgeImageUrl : undefined,
         certificateFile: certification.certificateFile?.length ? certification.certificateFile : undefined,
       };
       certificationSchemaOptional.parse(certificationData);
