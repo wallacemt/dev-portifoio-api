@@ -172,7 +172,7 @@ export class TranslationService {
     }
 
     const jsonString = JSON.stringify(obj);
-    const prompt = this.buildTranslationPrompt(jsonString, lenguage, sourceLeng, aditionalPrompt);
+    const prompt = this.buildTranslationPrompt(jsonString, lenguage, sourceLeng, );
     return await this.translateWithRetry(prompt, cacheKey, obj);
   }
 
@@ -210,7 +210,7 @@ export class TranslationService {
         }
 
         devDebugger(`Translating chunk ${i + 1}/${chunks.length}`);
-        const chunkPrompt = this.buildTranslationPrompt(JSON.stringify(chunk), language, sourceLang, additionalPrompt);
+        const chunkPrompt = this.buildTranslationPrompt(JSON.stringify(chunk), language, sourceLang, );
 
         try {
           const translatedChunk = await this.translateWithRetry(chunkPrompt, chunkCacheKey, chunk);
@@ -250,6 +250,7 @@ export class TranslationService {
         }
       }
       return keyConstraint
+      
     } catch {
       /* ignore — jsonString may be an array */
     }
