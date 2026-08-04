@@ -40,6 +40,8 @@ export class OwnerController {
     this.routerPrivate.put('/update', this.update.bind(this));
     this.routerPrivate.post('/set-secret-word', this.postSecretWord.bind(this));
     this.routerPrivate.get('/analysis', this.getOwnerAnalysis.bind(this));
+    this.routerPrivate.get('/ai-config', this.getAiConfig.bind(this));
+    this.routerPrivate.patch('/ai-config', this.updateAiConfig.bind(this));
   }
 
    async getOwner(req: Request, res: Response) {
@@ -118,6 +120,25 @@ export class OwnerController {
     try {
       const analysis = await this.ownerService.getOwnerAnalysis(req.userId);
       res.status(200).json(analysis);
+    } catch (error) {
+      errorFilter(error, res);
+    }
+  }
+
+   async getAiConfig(req: Request, res: Response) {
+    try {
+      const config = await this.ownerService.getAiConfig(req.userId);
+      res.status(200).json(config);
+    } catch (error) {
+      errorFilter(error, res);
+    }
+  }
+
+   async updateAiConfig(req: Request, res: Response) {
+    try {
+      const { model } = req.body as { model?: string };
+      const config = await this.ownerService.updateAiConfig(req.userId, model || '');
+      res.status(200).json({ message: 'Modelo de IA atualizado com sucesso', ...config });
     } catch (error) {
       errorFilter(error, res);
     }

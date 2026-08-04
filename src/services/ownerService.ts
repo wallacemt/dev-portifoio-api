@@ -1,6 +1,9 @@
 import { ZodError } from "zod";
+import { env } from "../env";
 import { AnalyticsRepository } from "../repository/analyticsRepository";
 import { OwnerRepository } from "../repository/ownerRepository";
+import { TranslationService } from "./aiService";
+import type { AiConfigResponse } from "../types/aiTypes";
 import type { OwnerAnalysisResponse, OwnerDataOptionalRequest, OwnerDataResponse } from "../types/owner";
 import { Exception } from "../utils/exception";
 import { hashPassword, verifyPassword } from "../utils/hash";
@@ -56,6 +59,33 @@ export class OwnerService {
       }
       throw new Exception("Informe os dados corretamente", 400);
     }
+  }
+
+  async getAiConfig(ownerId: string): Promise<AiConfigResponse> {
+    if (!TranslationService.isConfigured()) {
+      return { available: false, model: null, defaultModel: env.AI_MODEL };
+    }
+    const owner = await this.ownerRepository.findById(ownerId);
+    if (!owner) throw new Exception("Owner não encontrado", 404);
+    return { available: true, model: owner.aiModel ?? null, defaultModel: env.AI_MODEL };
+  }
+
+  async updateAiConfig(ownerId: string, model: string): Promise<AiConfigResponse> {
+    if (!TranslationService.isConfigured()) {
+      throw new Exception("OPENROUTER_API_KEY não configurada no ambiente", 503);
+    }
+    if (!model || typeof model !== "string") {
+      throw new Exception("Modelo é obrigatório", 400);
+    }
+    // Never trust the client's model string — it flows straight into the
+    // provider request body, so it must match a model OpenRouter actually
+    // serves for free before we persist it.
+    const isValid = await TranslationService.isValidModel(model);
+    if (!isValid) {
+      throw new Exception("Modelo inválido ou não disponível gratuitamente no OpenRouter", 400);
+    }
+    await this.ownerRepository.setAiModel(ownerId, model);
+    return { available: true, model, defaultModel: env.AI_MODEL };
   }
 
   async setSecretWord(ownerId: string, secretWord: string): Promise<void> {

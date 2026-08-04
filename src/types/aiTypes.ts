@@ -26,3 +26,10 @@ export interface OpenRouterModel {
     completion: string;
   };
 }
+
+/** GET/PATCH /owner/private/ai-config response — owner's chosen translation model. */
+export interface AiConfigResponse {
+  available: boolean;
+  model: string | null;
+  defaultModel: string;
+}

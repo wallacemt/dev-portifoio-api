@@ -133,3 +133,60 @@ describe("TranslationService.translateObject (OpenRouter flow)", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
+
+describe("TranslationService.listModels (Redis/memory cache)", () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("fetches the OpenRouter catalog once, filters to free models, and serves the second call from cache", async () => {
+    const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [
+          { id: "free/model-a", name: "A", pricing: { prompt: "0", completion: "0" } },
+          { id: "paid/model-b", name: "B", pricing: { prompt: "0.002", completion: "0.002" } },
+        ],
+      }),
+    } as Response);
+
+    const first = await TranslationService.listModels();
+    const second = await TranslationService.listModels();
+
+    expect(first).toEqual([{ id: "free/model-a", name: "A", pricing: { prompt: "0", completion: "0" } }]);
+    expect(second).toEqual(first);
+    // Second call must be served from cache (Redis, or the in-memory
+    // fallback when REDIS_URL isn't set) rather than hitting OpenRouter again.
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("TranslationService.isValidModel (security: model validation against the real catalog)", () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("accepts a model id that is present in the free-model catalog", async () => {
+    jest.spyOn(TranslationService, "listModels").mockResolvedValue([
+      { id: "google/gemma-4-31b-it:free", name: "Gemma", pricing: { prompt: "0", completion: "0" } },
+    ]);
+
+    expect(await TranslationService.isValidModel("google/gemma-4-31b-it:free")).toBe(true);
+  });
+
+  it("rejects a model id that isn't in the catalog — this is what stops an arbitrary client-supplied string from being persisted and later forwarded straight into the OpenRouter request body", async () => {
+    jest.spyOn(TranslationService, "listModels").mockResolvedValue([
+      { id: "google/gemma-4-31b-it:free", name: "Gemma", pricing: { prompt: "0", completion: "0" } },
+    ]);
+
+    expect(await TranslationService.isValidModel("some/made-up-model:free")).toBe(false);
+    expect(await TranslationService.isValidModel("openai/gpt-4o")).toBe(false);
+  });
+
+  it("rejects an empty model id without calling the catalog", async () => {
+    const listModelsSpy = jest.spyOn(TranslationService, "listModels");
+
+    expect(await TranslationService.isValidModel("")).toBe(false);
+    expect(listModelsSpy).not.toHaveBeenCalled();
+  });
+});

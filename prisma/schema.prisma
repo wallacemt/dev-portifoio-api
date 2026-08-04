@@ -19,6 +19,7 @@ model owner {
   cvLinkPT   String?
   cvLinkEN   String?
   secretWord String?
+  aiModel    String?
 }
 
 model project {

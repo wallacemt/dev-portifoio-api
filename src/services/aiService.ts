@@ -9,10 +9,17 @@ import {
   validateTranslationShape,
 } from "../utils/jsonExtractor";
 import { QuotaManager } from "../utils/quotaManager";
+import { getRedisClient } from "../utils/redisClient";
 import { TranslationCache } from "./translationCacheService";
 
 const OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models";
+
+const MODELS_CACHE_KEY = "openrouter:free-models";
+const MODELS_CACHE_TTL_SECONDS = 60 * 60; // 1h — the free model catalog barely changes intra-day
+
+// In-memory fallback for when Redis isn't configured, mirroring TranslationCache's pattern.
+let memCachedModels: { data: OpenRouterModel[]; expires: number } | null = null;
 
 const AI_MODEL = env.AI_MODEL;
 
@@ -372,15 +379,55 @@ ${jsonString}
     return await TranslationCache.stats();
   }
 
+  static isConfigured(): boolean {
+    return Boolean(env.OPENROUTER_API_KEY);
+  }
+
   static async listModels(): Promise<OpenRouterModel[]> {
+    const redis = getRedisClient();
+    if (redis) {
+      try {
+        const cached = await redis.get(MODELS_CACHE_KEY);
+        if (cached) return JSON.parse(cached) as OpenRouterModel[];
+      } catch (err) {
+        devDebugger(`Redis get error (models cache): ${(err as Error).message}`, undefined, "warn");
+      }
+    } else if (memCachedModels && Date.now() < memCachedModels.expires) {
+      return memCachedModels.data;
+    }
+
     try {
       const response = await fetch(OPENROUTER_MODELS_URL);
       if (!response.ok) throw new Error(`Erro ao buscar modelos: ${response.statusText}`);
       const data = (await response.json()) as { data: OpenRouterModel[] };
-      return data.data.filter((model) => model.pricing?.prompt === "0");
+      const freeModels = data.data.filter((model) => model.pricing?.prompt === "0");
+
+      if (redis) {
+        try {
+          await redis.set(MODELS_CACHE_KEY, JSON.stringify(freeModels), "EX", MODELS_CACHE_TTL_SECONDS);
+        } catch (err) {
+          devDebugger(`Redis set error (models cache): ${(err as Error).message}`, undefined, "warn");
+        }
+      } else {
+        memCachedModels = { data: freeModels, expires: Date.now() + MODELS_CACHE_TTL_SECONDS * 1000 };
+      }
+
+      return freeModels;
     } catch (error) {
       devDebugger("Erro ao listar modelos do OpenRouter:", error, "error");
       throw new Exception("Não foi possível listar os modelos do OpenRouter", 500);
     }
+  }
+
+  /**
+   * Validates a model id against the real, current OpenRouter free-model
+   * catalog. Required before persisting any owner-supplied model string —
+   * without this, `PATCH /owner/private/ai-config` would let a client write
+   * an arbitrary value straight into the provider's `model` request field.
+   */
+  static async isValidModel(modelId: string): Promise<boolean> {
+    if (!modelId) return false;
+    const models = await TranslationService.listModels();
+    return models.some((model) => model.id === modelId);
   }
 }
