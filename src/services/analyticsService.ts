@@ -11,11 +11,65 @@ import type {
   TrackVisitorRequest,
   TrackVisitorResponse,
 } from "../types/analytics";
+import { devDebugger } from "../utils/devDebugger";
 import { Exception } from "../utils/exception";
+import { getRedisClient } from "../utils/redisClient";
 import { analyticsFiltersSchema, trackPageViewSchema, trackVisitorSchema } from "../validations/analyticsValidation";
+
+const ONLINE_WINDOW_MS = 5 * 60 * 1000;
+
+function analyticsChannel(ownerId: string): string {
+  return `analytics:${ownerId}`;
+}
+
+function onlineSetKey(ownerId: string): string {
+  return `analytics:online:${ownerId}`;
+}
 
 export class AnalyticsService {
   private analyticsRepository = new AnalyticsRepository();
+
+  /**
+   * Marca a sessão como "online" (ZSET com janela de 5min) e publica o
+   * evento no canal Redis do dono, pro handler SSE (`GET /analytics/stream`)
+   * repassar em tempo real. Sem Redis disponível, é um no-op — o endpoint
+   * de streaming cai pra polling nesse caso.
+   */
+  private async publishRealtimeEvent(
+    ownerId: string,
+    event: { type: "visitor" | "pageview"; sessionId: string; page?: string }
+  ): Promise<void> {
+    const redis = getRedisClient();
+    if (!redis) return;
+
+    try {
+      const now = Date.now();
+      await redis.zadd(onlineSetKey(ownerId), now, event.sessionId);
+      await redis.publish(analyticsChannel(ownerId), JSON.stringify({ ...event, timestamp: now }));
+    } catch (error) {
+      devDebugger("Erro ao publicar evento de analytics em tempo real", error, "warn");
+    }
+  }
+
+  /**
+   * Conta visitantes "online agora": sessões com atividade nos últimos 5min,
+   * via ZSET (sem tabela nova no Prisma). Retorna 0 quando Redis não está
+   * disponível — o dashboard cai pro fallback via getRealTimeAnalytics.
+   */
+  async getOnlineVisitorsCount(ownerId: string): Promise<number> {
+    const redis = getRedisClient();
+    if (!redis) return 0;
+
+    try {
+      const key = onlineSetKey(ownerId);
+      const cutoff = Date.now() - ONLINE_WINDOW_MS;
+      await redis.zremrangebyscore(key, 0, cutoff);
+      return await redis.zcard(key);
+    } catch (error) {
+      devDebugger("Erro ao contar visitantes online", error, "warn");
+      return 0;
+    }
+  }
 
   /**
    * Registra um novo visitante
@@ -38,6 +92,7 @@ export class AnalyticsService {
       const existingVisitor = await this.analyticsRepository.findVisitorBySessionId(visitorData.sessionId);
 
       if (existingVisitor) {
+        this.publishRealtimeEvent(ownerId, { type: "visitor", sessionId: existingVisitor.sessionId });
         return {
           id: existingVisitor.id,
           sessionId: existingVisitor.sessionId,
@@ -57,6 +112,7 @@ export class AnalyticsService {
           if (process.env.NODE_ENV === "development") console.warn("Erro ao atualizar métricas diárias:", error);
         });
       });
+      this.publishRealtimeEvent(ownerId, { type: "visitor", sessionId: visitor.sessionId });
 
       return {
         id: visitor.id,
@@ -104,6 +160,11 @@ export class AnalyticsService {
           //biome-ignore lint: using in development
           if (process.env.NODE_ENV === "development") console.warn("Erro ao atualizar métricas diárias:", error);
         });
+      });
+      this.publishRealtimeEvent(ownerId, {
+        type: "pageview",
+        sessionId: visitor.sessionId,
+        page: pageViewData.page,
       });
 
       return pageView;
