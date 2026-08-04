@@ -1,4 +1,5 @@
 import { env } from "../env";
+import { prisma } from "../prisma/prismaClient";
 import type { OpenRouterChatCompletionResponse, OpenRouterModel } from "../types/aiTypes";
 import { devDebugger } from "../utils/devDebugger";
 import { Exception } from "../utils/exception";
@@ -21,14 +22,24 @@ const MODELS_CACHE_TTL_SECONDS = 60 * 60; // 1h — the free model catalog barel
 // In-memory fallback for when Redis isn't configured, mirroring TranslationCache's pattern.
 let memCachedModels: { data: OpenRouterModel[]; expires: number } | null = null;
 
-const AI_MODEL = env.AI_MODEL;
+// ponytail: single-tenant app (one portfolio owner), so "the owner's model"
+// is just `prisma.owner.findFirst()` — no per-owner keying needed. Revisit
+// if this ever becomes multi-tenant.
+const OWNER_MODEL_CACHE_KEY = "owner:ai-model";
+const OWNER_MODEL_CACHE_TTL_SECONDS = 120; // short: owner can change this via PATCH /ai-config anytime
+const OWNER_MODEL_LOOKUP_TIMEOUT_MS = 2000; // bounds a slow/unreachable DB so translation never hangs on it
+let memCachedOwnerModel: { value: string | null; expires: number } | null = null;
+
+const FREE_MODEL_SUFFIX_REGEX = /:free$/i;
 
 // `:free` OpenRouter models routinely ignore `response_format`, so requesting
 // JSON mode from them buys nothing and would give a false sense of safety.
 // `extractJsonFromText` (tolerant text scanning) is the real, primary parser
-// for every model — this flag only adds a best-effort hint for models that
-// might honor it.
-const SUPPORTS_JSON_MODE = !/:free$/i.test(AI_MODEL);
+// for every model — this only adds a best-effort hint for models that might
+// honor it.
+function supportsJsonMode(model: string): boolean {
+  return !FREE_MODEL_SUFFIX_REGEX.test(model);
+}
 
 class OpenRouterError extends Error {
   status: number;
@@ -288,7 +299,7 @@ ${jsonString}
       top_p: 0.1,
       max_tokens: 8192,
     };
-    if (SUPPORTS_JSON_MODE) body.response_format = { type: "json_object" };
+    if (supportsJsonMode(model)) body.response_format = { type: "json_object" };
 
     const response = await fetch(OPENROUTER_CHAT_URL, {
       method: "POST",
@@ -315,14 +326,15 @@ ${jsonString}
   //biome-ignore lint: necessary
   private async translateWithRetry(basePrompt: string, cacheKey: string, originalObj: object): Promise<object> {
     let lastError: unknown;
+    const model = await TranslationService.resolveModel();
 
     for (let attempt = 1; attempt <= TranslationService.MAX_RETRIES; attempt++) {
       try {
         QuotaManager.recordRequest();
 
-        devDebugger(`[OpenRouter Pre Ask]: using model ${AI_MODEL}`);
+        devDebugger(`[OpenRouter Pre Ask]: using model ${model}`);
         //biome-ignore lint: necessary
-        const text = await TranslationService.callOpenRouter(basePrompt, AI_MODEL);
+        const text = await TranslationService.callOpenRouter(basePrompt, model);
 
         if (!text) throw new Error("Resposta vazia do modelo");
 
@@ -381,6 +393,75 @@ ${jsonString}
 
   static isConfigured(): boolean {
     return Boolean(env.OPENROUTER_API_KEY);
+  }
+
+  /**
+   * Resolves which model a translation call should use, in order:
+   * the owner's configured `aiModel` → `env.AI_MODEL` (which itself
+   * defaults to the hardcoded free Gemma model — see env.ts).
+   *
+   * Public translation routes (most of the 8 callers) have no `req.userId`,
+   * so this reads the single owner directly rather than threading an id
+   * through every caller.
+   */
+  static async resolveModel(): Promise<string> {
+    const ownerModel = await TranslationService.getOwnerModel();
+    return ownerModel || env.AI_MODEL;
+  }
+
+  private static async getOwnerModel(): Promise<string | null> {
+    const redis = getRedisClient();
+    if (redis) {
+      try {
+        const cached = await redis.get(OWNER_MODEL_CACHE_KEY);
+        // Empty string is the cached sentinel for "owner has no aiModel set".
+        if (cached !== null) return cached || null;
+      } catch (err) {
+        devDebugger(`Redis get error (owner model cache): ${(err as Error).message}`, undefined, "warn");
+      }
+    } else if (memCachedOwnerModel && Date.now() < memCachedOwnerModel.expires) {
+      return memCachedOwnerModel.value;
+    }
+
+    try {
+      // A slow/unreachable DB must never hang a translation request — bound
+      // the lookup and fall back to env.AI_MODEL if it doesn't answer in time.
+      const owner = await Promise.race([
+        prisma.owner.findFirst({ select: { aiModel: true } }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Timed out resolving owner.aiModel")), OWNER_MODEL_LOOKUP_TIMEOUT_MS),
+        ),
+      ]);
+      const model = owner?.aiModel ?? null;
+
+      if (redis) {
+        try {
+          await redis.set(OWNER_MODEL_CACHE_KEY, model ?? "", "EX", OWNER_MODEL_CACHE_TTL_SECONDS);
+        } catch (err) {
+          devDebugger(`Redis set error (owner model cache): ${(err as Error).message}`, undefined, "warn");
+        }
+      } else {
+        memCachedOwnerModel = { value: model, expires: Date.now() + OWNER_MODEL_CACHE_TTL_SECONDS * 1000 };
+      }
+
+      return model;
+    } catch (error) {
+      // A DB hiccup shouldn't block translation — fall back to env.AI_MODEL.
+      devDebugger("Erro ao buscar aiModel do owner:", error, "warn");
+      return null;
+    }
+  }
+
+  /** Called after `PATCH /owner/private/ai-config` so the new model applies immediately. */
+  static async invalidateOwnerModelCache(): Promise<void> {
+    memCachedOwnerModel = null;
+    const redis = getRedisClient();
+    if (!redis) return;
+    try {
+      await redis.del(OWNER_MODEL_CACHE_KEY);
+    } catch (err) {
+      devDebugger(`Redis del error (owner model cache): ${(err as Error).message}`, undefined, "warn");
+    }
   }
 
   static async listModels(): Promise<OpenRouterModel[]> {

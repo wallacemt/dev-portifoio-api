@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
-import { TranslationService } from "./aiService";
+import { env } from "../env";
 import { QuotaManager } from "../utils/quotaManager";
+import { TranslationService } from "./aiService";
 
 /**
  * Integration tests for the OpenRouter-backed translation flow.
@@ -33,6 +34,10 @@ describe("TranslationService.translateObject (OpenRouter flow)", () => {
     // Rate limiting / daily-cap bookkeeping is QuotaManager's own concern —
     // these tests focus on request/response parsing, so keep the gate open.
     jest.spyOn(QuotaManager, "canMakeRequest").mockResolvedValue(true);
+    // Model resolution (owner.aiModel → env.AI_MODEL) has its own describe
+    // block below; skip the real DB lookup here so these tests stay fast
+    // and focused on parsing.
+    jest.spyOn(TranslationService, "resolveModel").mockResolvedValue(env.AI_MODEL);
     // Every test reuses the same `original` object + language pair; without
     // clearing the cache, only the first test would ever call `fetch`.
     await TranslationService.clearCache();
@@ -188,5 +193,34 @@ describe("TranslationService.isValidModel (security: model validation against th
 
     expect(await TranslationService.isValidModel("")).toBe(false);
     expect(listModelsSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("TranslationService.resolveModel (owner.aiModel → env.AI_MODEL → default)", () => {
+  // `getOwnerModel` is the private, DB-backed lookup (Prisma `owner.findFirst`,
+  // cached). `resolveModel`'s own logic — "the owner's value wins, otherwise
+  // env.AI_MODEL" — is what's under test here; that seam is mocked instead of
+  // going through real Prisma because a Prisma model delegate is a Proxy, and
+  // `bun test`'s jest-compat `spyOn` doesn't intercept methods on it (verified:
+  // the same mock works fine under `npx jest`, so this is a `bun test`-specific
+  // tooling gap, not a code issue). The DB timeout/fallback path itself
+  // (`getOwnerModel`'s try/catch + 2s race) was verified by hand against a
+  // real Mongo connection.
+  const svc = TranslationService as unknown as { getOwnerModel(): Promise<string | null> };
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("uses the owner's configured aiModel when one is set", async () => {
+    jest.spyOn(svc, "getOwnerModel").mockResolvedValue("meta-llama/llama-3.1-405b:free");
+
+    expect(await TranslationService.resolveModel()).toBe("meta-llama/llama-3.1-405b:free");
+  });
+
+  it("falls back to env.AI_MODEL (which itself defaults to the hardcoded free Gemma model) when the owner has no aiModel configured", async () => {
+    jest.spyOn(svc, "getOwnerModel").mockResolvedValue(null);
+
+    expect(await TranslationService.resolveModel()).toBe(env.AI_MODEL);
   });
 });

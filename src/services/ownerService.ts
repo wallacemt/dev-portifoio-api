@@ -85,6 +85,7 @@ export class OwnerService {
       throw new Exception("Modelo inválido ou não disponível gratuitamente no OpenRouter", 400);
     }
     await this.ownerRepository.setAiModel(ownerId, model);
+    await TranslationService.invalidateOwnerModelCache();
     return { available: true, model, defaultModel: env.AI_MODEL };
   }
 
