@@ -11,12 +11,16 @@ import type {
   TrackVisitorRequest,
   TrackVisitorResponse,
 } from "../types/analytics";
+import { isBotUserAgent } from "../utils/botDetector";
 import { devDebugger } from "../utils/devDebugger";
 import { Exception } from "../utils/exception";
+import { normalizeReferrer } from "../utils/normalizeReferrer";
 import { getRedisClient } from "../utils/redisClient";
 import { analyticsFiltersSchema, trackPageViewSchema, trackVisitorSchema } from "../validations/analyticsValidation";
 
 const ONLINE_WINDOW_MS = 5 * 60 * 1000;
+const PAGEVIEW_DEDUPE_WINDOW_MS = 30 * 1000;
+const ANALYTICS_CACHE_TTL_SECONDS = 60;
 
 function analyticsChannel(ownerId: string): string {
   return `analytics:${ownerId}`;
@@ -24,6 +28,11 @@ function analyticsChannel(ownerId: string): string {
 
 function onlineSetKey(ownerId: string): string {
   return `analytics:online:${ownerId}`;
+}
+
+function analyticsCacheKey(ownerId: string, startDate: Date, endDate: Date, filters: AnalyticsFilters): string {
+  const { page = "", device = "", country = "" } = filters;
+  return `analytics:cache:${ownerId}:${startDate.toISOString()}:${endDate.toISOString()}:${page}:${device}:${country}`;
 }
 
 export class AnalyticsService {
@@ -79,6 +88,12 @@ export class AnalyticsService {
     ownerId: string,
     ipAddress: string
   ): Promise<TrackVisitorResponse> {
+    // Crawlers (Googlebot, curl, headless browsers, etc) não são visitas
+    // reais — ignora sem persistir nada e sem contar como erro de validação.
+    if (isBotUserAgent(visitorData.userAgent)) {
+      return { id: "bot", sessionId: visitorData.sessionId, isExisting: true };
+    }
+
     try {
       const visitorDataT: TrackVisitorRequest = {
         ...visitorData,
@@ -102,6 +117,7 @@ export class AnalyticsService {
 
       const visitor = await this.analyticsRepository.upsertVisitor({
         ...visitorData,
+        referrer: normalizeReferrer(visitorDataT.referrer),
         ownerId,
         ipAddress,
       });
@@ -137,15 +153,31 @@ export class AnalyticsService {
     ipAddress: string
   ) {
     try {
-    
       trackPageViewSchema.parse(pageViewData);
       let visitor = await this.analyticsRepository.findVisitorBySessionId(pageViewData.sessionId);
       if (!visitor) {
         visitor = await this.analyticsRepository.upsertVisitor({
           ...visitorData,
+          referrer: normalizeReferrer(visitorData.referrer),
           ownerId,
           ipAddress,
         });
+      }
+
+      // Double-fire do script de tracking (re-render, navegação rápida etc)
+      // não deve contar como duas visualizações da mesma página.
+      const recentDuplicate = await this.analyticsRepository.findRecentPageView(
+        visitor.id,
+        pageViewData.page,
+        new Date(Date.now() - PAGEVIEW_DEDUPE_WINDOW_MS)
+      );
+      if (recentDuplicate) {
+        this.publishRealtimeEvent(ownerId, {
+          type: "pageview",
+          sessionId: visitor.sessionId,
+          page: pageViewData.page,
+        });
+        return recentDuplicate;
       }
 
       const pageView = await this.analyticsRepository.createPageView({
@@ -180,6 +212,28 @@ export class AnalyticsService {
   }
 
   /**
+   * Cache de curta duração (TTL de 1min) pras agregações pesadas do
+   * getAnalytics — dashboard não precisa recalcular tudo do zero a cada
+   * request. Sem Redis disponível, os dois métodos são no-op.
+   */
+  private async getCachedAnalytics(cacheKey: string): Promise<AnalyticsResponse | null> {
+    const redis = getRedisClient();
+    if (!redis) return null;
+
+    const cached = await redis.get(cacheKey).catch(() => null);
+    return cached ? (JSON.parse(cached) as AnalyticsResponse) : null;
+  }
+
+  private cacheAnalytics(cacheKey: string, response: AnalyticsResponse): void {
+    const redis = getRedisClient();
+    if (!redis) return;
+
+    redis
+      .set(cacheKey, JSON.stringify(response), "EX", ANALYTICS_CACHE_TTL_SECONDS)
+      .catch((error) => devDebugger("Erro ao gravar cache de analytics", error, "warn"));
+  }
+
+  /**
    * Busca analytics completas com filtros
    */
   async getAnalytics(ownerId: string, filters: AnalyticsFilters = {}): Promise<AnalyticsResponse> {
@@ -190,6 +244,10 @@ export class AnalyticsService {
       // Define período padrão (últimos 30 dias)
       const endDate = filters.endDate || new Date();
       const startDate = filters.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+      const cacheKey = analyticsCacheKey(ownerId, startDate, endDate, filters);
+      const cached = await this.getCachedAnalytics(cacheKey);
+      if (cached) return cached;
 
       // Busca dados agregados
       const [
@@ -217,7 +275,7 @@ export class AnalyticsService {
         }),
       ]);
 
-      return {
+      const response: AnalyticsResponse = {
         overview: {
           totalVisitors: uniqueVisitors,
           uniqueVisitors,
@@ -255,6 +313,10 @@ export class AnalyticsService {
         topCountries,
         topBrowsers,
       };
+
+      this.cacheAnalytics(cacheKey, response);
+
+      return response;
     } catch (e) {
       if (e instanceof ZodError) {
         throw new Exception(e.issues?.[0]?.message || "Erro ao validar dados", 400);
