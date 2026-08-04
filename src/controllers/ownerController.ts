@@ -1,6 +1,6 @@
 import { type Request, type Response, Router } from 'express';
 import AuthPolice from '../middleware/authPolice';
-import { TranslationService } from '../services/geminiService';
+import { TranslationService } from '../services/aiService';
 import { OwnerService } from '../services/ownerService';
 import type {
  OwnerDataOptionalRequest,

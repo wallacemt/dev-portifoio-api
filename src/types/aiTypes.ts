@@ -1,30 +1,28 @@
-interface GeminiCandidate {
-  content: GeminiContent;
-  finishReason: string;
-  avgLogprobs: number;
+/** OpenRouter chat completion response — OpenAI-compatible shape. */
+export interface OpenRouterChatChoice {
+  message: {
+    role: string;
+    content: string;
+  };
+  finish_reason?: string;
 }
-interface GeminiContent {
-  parts: GeminiPart[];
-  role: string;
-}
-interface GeminiPart {
-  text: string;
-}
-export interface GeminiResponse {
-  response: {
-    candidates?: GeminiCandidate[];
+
+export interface OpenRouterChatCompletionResponse {
+  choices?: OpenRouterChatChoice[];
+  error?: {
+    message: string;
+    code?: number;
   };
 }
 
-export interface GeminiModel {
+/** Entry from GET https://openrouter.ai/api/v1/models */
+export interface OpenRouterModel {
+  id: string;
   name: string;
-  version: string;
-  displayName: string;
-  description: string;
-  inputTokenLimit: number;
-  outputTokenLimit: number;
-  supportedGenerationMethods: string[];
-  temperature?: number;
-  topP?: number;
-  topK?: number;
+  description?: string;
+  context_length?: number;
+  pricing: {
+    prompt: string;
+    completion: string;
+  };
 }

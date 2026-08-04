@@ -14,12 +14,13 @@ const envSchema = z.object({
       return urls.map((url: string) => url.replace(/\/$/, ""));
     }),
   JWT_SECRET: z.string().min(1),
-  GEMINI_API_KEY: z.string().min(1),
+  GEMINI_API_KEY: z.string().optional(),
+  OPENROUTER_API_KEY: z.string().optional(),
   CLOUDINARY_CLOUD_NAME: z.string(),
   CLOUDINARY_API_KEY: z.string(),
   CLOUDINARY_API_SECRET: z.string(),
   SELF_URL: z.string(),
-  AI_MODEL: z.string(),
+  AI_MODEL: z.string().default("google/gemma-4-31b-it:free"),
   REDIS_URL: z.string().optional(),
 });
 

@@ -73,12 +73,31 @@ function findBalancedEnd(text: string, start: number): number {
   return -1;
 }
 
+/**
+ * Yield only *top-level* balanced `{...}`/`[...]` spans, skipping past each
+ * match entirely once found. Scanning every index (including ones inside an
+ * already-matched span) would also yield every nested object/array as its
+ * own "candidate" — e.g. for `{"a":1,"b":{"c":2}}` it would additionally
+ * yield `{"c":2}`. Since `extractJsonFromText` prefers the LAST candidate
+ * that parses, a trailing nested object would then win over the real
+ * top-level answer whenever the model appends prose *after* the JSON
+ * (e.g. "Here you go: {...} let me know if you need anything else").
+ */
 function* balancedJsonCandidates(text: string): Generator<string> {
-  for (let start = 0; start < text.length; start++) {
+  let start = 0;
+  while (start < text.length) {
     const ch = text[start];
-    if (ch !== "{" && ch !== "[") continue;
+    if (ch !== "{" && ch !== "[") {
+      start++;
+      continue;
+    }
     const end = findBalancedEnd(text, start);
-    if (end !== -1) yield text.slice(start, end + 1);
+    if (end === -1) {
+      start++;
+      continue;
+    }
+    yield text.slice(start, end + 1);
+    start = end + 1;
   }
 }
 

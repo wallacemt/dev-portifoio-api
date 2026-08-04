@@ -1,5 +1,5 @@
 import { type Request, type Response, Router } from 'express';
-import { TranslationService } from '../services/geminiService';
+import { TranslationService } from '../services/aiService';
 import { ServicesOwnerService } from '../services/servicesOwnerService';
 import errorFilter from '../utils/isCustomError';
 

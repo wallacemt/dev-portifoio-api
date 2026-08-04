@@ -1,7 +1,7 @@
 import { type Request, type Response, Router } from "express";
 import AuthPolice from "../middleware/authPolice";
 import { FormationService } from "../services/formationService";
-import { TranslationService } from "../services/geminiService";
+import { TranslationService } from "../services/aiService";
 import type { FormationAddRequest, FormationUpdate } from "../types/formation";
 import errorFilter from "../utils/isCustomError";
 
