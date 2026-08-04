@@ -48,6 +48,17 @@ components:
           type: string
           example: "https://exemplo.com/preview.jpg"
           description: "URL da imagem de preview principal do projeto"
+        videos:
+          type: array
+          items:
+            type: string
+          example: ["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]
+          description: "URLs de vídeos do YouTube (watch, youtu.be, /embed/ ou /shorts/), máximo 5"
+        previewVideoUrl:
+          type: string
+          nullable: true
+          example: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+          description: "Deprecated: espelha videos[0]. Mantido apenas para retrocompatibilidade, use videos"
         lastUpdate:
           type: string
           format: date-time
@@ -101,6 +112,12 @@ components:
           type: string
           example: "https://exemplo.com/preview.jpg"
           description: "URL da imagem de preview principal do projeto"
+        videos:
+          type: array
+          items:
+            type: string
+          example: ["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]
+          description: "URLs de vídeos do YouTube (watch, youtu.be, /embed/ ou /shorts/), máximo 5"
 
     UpdateProject:
       type: object
@@ -134,6 +151,12 @@ components:
         previewImage:
           type: string
           example: "https://exemplo.com/new-preview.jpg"
+        videos:
+          type: array
+          items:
+            type: string
+          example: ["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]
+          description: "URLs de vídeos do YouTube, máximo 5"
 
     ProjectFilter:
       type: object

@@ -10,7 +10,7 @@ export interface CreateProject {
   deployment?: string;
   backend?: string;
   frontend?: string;
-  previewVideoUrl?: string;
+  videos?: string[];
   previewImage: string;
   lastUpdate: Date;
   ownerId: string;
@@ -29,6 +29,7 @@ export interface Project {
   deployment?: string | null;
   backend?: string | null;
   frontend?: string | null;
+  videos: string[];
   previewImage: string;
   createdAt: Date;
 }
