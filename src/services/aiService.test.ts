@@ -224,3 +224,22 @@ describe("TranslationService.resolveModel (owner.aiModel → env.AI_MODEL → de
     expect(await TranslationService.resolveModel()).toBe(env.AI_MODEL);
   });
 });
+
+describe("TranslationService.translateObject without OPENROUTER_API_KEY configured", () => {
+  const original = { title: "Olá mundo" };
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("returns the original object without calling fetch — same 'no AI configured' short-circuit GET /ai-config reports via available:false, not a generic 500", async () => {
+    jest.spyOn(TranslationService, "isConfigured").mockReturnValue(false);
+    const fetchSpy = jest.spyOn(global, "fetch");
+
+    const service = new TranslationService();
+    const result = await service.translateObject(original, "en", "pt");
+
+    expect(result).toEqual(original);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});

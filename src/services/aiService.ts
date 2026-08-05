@@ -175,6 +175,16 @@ export class TranslationService {
     aditionalPrompt: string | undefined,
     cacheKey: string,
   ): Promise<object> {
+    // Same short-circuit GET /owner/private/ai-config already reports via
+    // `available: false` — no key means no IA, not a 500. Checked before
+    // the quota gate/chunking/fetch so a missing key never reaches
+    // `callOpenRouter` (whose own check is just defense-in-depth for other
+    // callers) and is never confused with a genuine provider error.
+    if (!TranslationService.isConfigured()) {
+      devDebugger("OPENROUTER_API_KEY não configurada — pulando tradução e retornando objeto original", undefined, "warn");
+      return obj;
+    }
+
     const canMakeRequest = await QuotaManager.canMakeRequest();
     if (!canMakeRequest) {
       devDebugger("Cannot make AI API request due to quota limits. Returning original object.", undefined, "warn");
