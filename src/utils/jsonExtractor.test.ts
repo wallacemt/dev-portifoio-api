@@ -99,6 +99,22 @@ Final answer:
     const text = '```json\nthis is not json\n```\nbut here it is: {"x":1}';
     expect(extractJsonFromText(text)).toEqual({ x: 1 });
   });
+
+  it("throws JsonExtractionError on truncated JSON (cut off mid-response, no balanced close)", () => {
+    const text = '{"welcomeMessage":"Bonjour, je suis Wallace","buttons":{"project":"Voir les proj';
+    expect(() => extractJsonFromText(text)).toThrow(JsonExtractionError);
+  });
+
+  it("prefers the full top-level object over a nested one when prose follows the JSON", () => {
+    const text =
+      'Sure, here is the translation:\n{"title":"Hello world","nested":{"greeting":"Good morning"}}\nLet me know if you need anything else!';
+    expect(extractJsonFromText(text)).toEqual({ title: "Hello world", nested: { greeting: "Good morning" } });
+  });
+
+  it("throws JsonExtractionError on truncated fenced block with no balanced JSON fallback", () => {
+    const text = '```json\n{"welcomeMessage":"Bonjour, je suis Wallace"\n```';
+    expect(() => extractJsonFromText(text)).toThrow(JsonExtractionError);
+  });
 });
 
 describe("validateTranslationShape", () => {

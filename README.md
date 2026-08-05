@@ -1,6 +1,6 @@
 # 🚀 Developer Portfolio Backend API
 
-Uma API RESTful completa para portfólio pessoal, desenvolvida em TypeScript com Node.js, Express e Prisma ORM. A API oferece recursos de autenticação JWT, CRUD completo para projetos, habilidades e formações, além de tradução automática multi-idioma usando Gemini AI.
+Uma API RESTful completa para portfólio pessoal, desenvolvida em TypeScript com Node.js, Express e Prisma ORM. A API oferece recursos de autenticação JWT, CRUD completo para projetos, habilidades e formações, além de tradução automática multi-idioma usando OpenRouter AI.
 
 ## 📋 Índice
 
@@ -36,7 +36,7 @@ Uma API RESTful completa para portfólio pessoal, desenvolvida em TypeScript com
 
 ### 🌍 Tradução Automática
 
-- Tradução automática usando Gemini AI
+- Tradução automática usando OpenRouter AI
 - Cache inteligente de 24 horas para otimização
 - Gerenciamento de quota com rate limiting
 - Fallback para dados originais quando quota esgotada
@@ -71,7 +71,7 @@ Uma API RESTful completa para portfólio pessoal, desenvolvida em TypeScript com
 
 ### IA e Tradução
 
-- **Gemini AI SDK** - Serviço de tradução automática
+- **OpenRouter** - Serviço de tradução automática (via `fetch` nativo, sem SDK)
 - Sistema de cache e quota inteligente
 
 ### Testes e Documentação
@@ -125,8 +125,9 @@ FRONTEND_URL=http://localhost:3000
 # Autenticação
 JWT_SECRET=sua_chave_jwt_super_secreta_aqui
 
-# Gemini AI (para tradução)
-GEMINI_API_KEY=sua_chave_gemini_api_aqui
+# OpenRouter (para tradução) — https://openrouter.ai/keys
+OPENROUTER_API_KEY=sua_chave_openrouter_aqui
+AI_MODEL=google/gemma-4-31b-it:free
 ```
 
 ### 4. Configure o banco de dados
@@ -281,7 +282,7 @@ POST /auth/login
 
 ## 🌍 Tradução Multi-idioma
 
-A API oferece tradução automática usando Gemini AI:
+A API oferece tradução automática usando OpenRouter AI:
 
 ### Como usar:
 
@@ -355,7 +356,7 @@ npm run test:watch
 
 - **Unit tests**: Testam serviços e funções isoladamente
 - **Integration tests**: Testam endpoints da API
-- **Mocks**: Prisma e Gemini AI mockados para testes
+- **Mocks**: Prisma mockado para testes; parsing de IA coberto por testes unitários
 
 ## 📚 Documentação da API
 
@@ -424,7 +425,7 @@ Response ← Controller ← Service ← Repository ← Database
 
 ### Quota Management
 
-- Monitoramento automático de uso da API Gemini
+- Monitoramento automático de uso da API OpenRouter
 - Rate limiting inteligente
 - Logs detalhados de uso de quota
 

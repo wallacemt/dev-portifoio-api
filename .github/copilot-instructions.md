@@ -7,7 +7,7 @@ This is a TypeScript backend API for a portfolio application, organized with cle
 ## Architecture & Data Flow
 
 - **Controllers (`src/controllers/`)**: Handle HTTP requests, delegate to services. Each domain (auth, formation, owner, project, skill, status, utils) has its own controller.
-- **Services (`src/services/`)**: Business logic, orchestrate calls to repositories and external APIs (e.g., `geminiService.ts`).
+- **Services (`src/services/`)**: Business logic, orchestrate calls to repositories and external APIs (e.g., `aiService.ts`).
 - **Repositories (`src/repository/`)**: Direct database access via Prisma. Each domain has a dedicated repository.
 - **Middleware (`src/middleware/`)**: Request logging and authentication policies.
 - **Validations (`src/validations/`)**: Joi-based validation for request payloads, organized by domain.
@@ -29,7 +29,7 @@ This is a TypeScript backend API for a portfolio application, organized with cle
 - **Error Handling**: Centralized in `src/utils/exception.ts` and custom error type guards in `src/utils/isCustomError.ts`.
 - **Authentication**: Managed via middleware (`authPolice.ts`) and controller/service patterns.
 - **Logging**: Request logging via `middleware/requestLogger.ts`.
-- **External APIs**: Gemini AI integration in `services/geminiService.ts` with quota management, caching, and retry logic.
+- **External APIs**: OpenRouter AI integration in `services/aiService.ts` (native `fetch`, no SDK) with quota management, caching, and retry logic.
 - **Quota Management**: `utils/quotaManager.ts` tracks API usage, implements rate limiting, and prevents quota exhaustion.
 - **Translation Caching**: 24-hour cache for translations to minimize API calls and respect quota limits.
 - **Testing**: Use `src/tests/mocks/prismaMock.ts` for mocking Prisma in tests.
@@ -45,7 +45,7 @@ This is a TypeScript backend API for a portfolio application, organized with cle
 - To add a new domain, create corresponding files in `controllers/`, `services/`, `repository/`, `validations/`, and `types/`.
 - For new API endpoints, update the relevant controller and service, add validation, and document in Swagger YAML files.
 - For database changes, update `prisma/schema.prisma` and run Prisma migrations.
-- **Gemini API Usage**: Always use `TranslationService` which includes automatic caching, quota management, and graceful fallbacks. Check quota status via `/api/utils/quota-status` endpoint.
+- **AI API Usage**: Always use `TranslationService` which includes automatic caching, quota management, and graceful fallbacks. Check quota status via `/api/utils/quota-status` endpoint.
 - **Rate Limiting**: The system automatically throttles requests when approaching daily quota limits (180/200 requests) and implements exponential backoff on errors.
 
 ---

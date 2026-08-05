@@ -56,6 +56,13 @@ export class OwnerRepository {
     });
   }
 
+  async setAiModel(ownerId: string, aiModel: string): Promise<void> {
+    await prisma.owner.update({
+      where: { id: ownerId },
+      data: { aiModel },
+    });
+  }
+
   async getOwnerAnalysis(ownerId: string): Promise<OwnerAnalysisResponse> {
     const projectsCount = await prisma.project.count({
       where: { ownerId },

@@ -19,7 +19,10 @@ export class QuotaManager {
     consecutiveFailures: 0,
   };
 
-  private static readonly MAX_DAILY_REQUESTS = 280;
+  // ponytail: OpenRouter's free-tier daily cap is per-account (not per-model)
+  // and depends on account credit (~50/day under $10, ~1000/day above it).
+  // 45 is a conservative default for an unfunded account; raise if credit is added.
+  private static readonly MAX_DAILY_REQUESTS = 45;
   private static readonly MIN_REQUEST_INTERVAL = 2500;
   private static readonly MAX_CONSECUTIVE_FAILURES = 3;
 
@@ -29,7 +32,7 @@ export class QuotaManager {
       QuotaManager.resetDailyMetrics();
     }
     if (QuotaManager.metrics.dailyRequests >= QuotaManager.MAX_DAILY_REQUESTS) {
-      devDebugger('Daily Gemini API quota limit reached. Returning cached/original data only.', undefined, "warn");
+      devDebugger('Daily OpenRouter API quota limit reached. Returning cached/original data only.', undefined, "warn");
       return false;
     }
     if (

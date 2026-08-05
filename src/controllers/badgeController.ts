@@ -1,7 +1,7 @@
 import { type Request, type Response, Router } from "express";
 import AuthPolice from "../middleware/authPolice";
 import { BadgeService } from "../services/badgeService";
-import { TranslationService } from "../services/geminiService";
+import { TranslationService } from "../services/aiService";
 import type { BadgeAddRequest, BadgeUpdate } from "../types/badges";
 import errorFilter from "../utils/isCustomError";
 

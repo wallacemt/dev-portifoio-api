@@ -217,3 +217,91 @@ paths:
                   error:
                     type: string
                     example: "Erro interno do servidor"
+  /owner/private/ai-config:
+    get:
+      tags:
+        - Owner
+      summary: Consultar configuração de IA do owner
+      description: >
+        Retorna o modelo OpenRouter escolhido pelo owner autenticado para a
+        tradução automática, além do modelo padrão da aplicação. `available`
+        é `false` quando `OPENROUTER_API_KEY` não está configurada no
+        ambiente — nesse caso o frontend deve esconder a opção.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Configuração de IA do owner
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  available:
+                    type: boolean
+                    description: "Se a integração com OpenRouter está configurada no ambiente"
+                    example: true
+                  model:
+                    type: string
+                    nullable: true
+                    description: "Modelo escolhido pelo owner (null se nunca configurado, usa o padrão)"
+                    example: "google/gemma-4-31b-it:free"
+                  defaultModel:
+                    type: string
+                    example: "google/gemma-4-31b-it:free"
+        '401':
+          description: Token de autenticação ausente ou inválido
+        '404':
+          description: Owner não encontrado
+        '500':
+          description: Erro interno do servidor
+    patch:
+      tags:
+        - Owner
+      summary: Atualizar o modelo de IA do owner
+      description: >
+        Define o modelo OpenRouter usado nas traduções do owner autenticado.
+        O modelo enviado é validado contra o catálogo real de modelos
+        gratuitos do OpenRouter (`GET /utilis/ai-models`) antes de ser
+        gravado — uma string arbitrária é rejeitada com 400.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - model
+              properties:
+                model:
+                  type: string
+                  example: "google/gemma-4-31b-it:free"
+                  description: "ID de um modelo gratuito presente no catálogo do OpenRouter"
+      responses:
+        '200':
+          description: Modelo de IA atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Modelo de IA atualizado com sucesso"
+                  available:
+                    type: boolean
+                    example: true
+                  model:
+                    type: string
+                    example: "google/gemma-4-31b-it:free"
+                  defaultModel:
+                    type: string
+                    example: "google/gemma-4-31b-it:free"
+        '400':
+          description: Modelo ausente ou não presente no catálogo gratuito do OpenRouter
+        '401':
+          description: Token de autenticação ausente ou inválido
+        '503':
+          description: OPENROUTER_API_KEY não configurada no ambiente
