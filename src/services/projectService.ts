@@ -140,7 +140,9 @@ export class ProjectService {
         deployment: project.deployment?.length ? project.deployment : undefined,
         frontend: project.frontend?.length ? project.frontend : undefined,
       };
-      const validated = projectSchema.parse(projectData);
+      // videos is validated explicitly here (rather than relying on the ...project
+      // spread above) so a future edit to projectData can't silently drop it.
+      const validated = projectSchema.parse({ ...projectData, videos: project.videos });
       const res = await this.projectRepository.createProject({ ...project, videos: validated.videos });
       return this.withLegacyPreviewVideoUrl(res as Project);
     } catch (e) {

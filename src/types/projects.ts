@@ -30,6 +30,8 @@ export interface Project {
   backend?: string | null;
   frontend?: string | null;
   videos: string[];
+  /** Deprecated: mirrors videos[0], kept for API backward compatibility. See ProjectService.withLegacyPreviewVideoUrl. */
+  previewVideoUrl?: string | null;
   previewImage: string;
   createdAt: Date;
 }
