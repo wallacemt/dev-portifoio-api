@@ -9,6 +9,17 @@ import { optimizeCloudinary } from "../utils/cloudinaryTransform";
 export class ProjectService {
   private projectRepository = new ProjectRepository();
 
+  /**
+   * Adds a `previewVideoUrl` field mirroring the first entry of `videos`.
+   *
+   * ponytail: temporary compat shim so frontends still reading the old
+   * single-video field keep working; drop once the frontend consumes
+   * `videos` directly (see dev-portifolio#33).
+   */
+  private withLegacyPreviewVideoUrl<T extends { videos: string[] }>(project: T): T & { previewVideoUrl: string | null } {
+    return { ...project, previewVideoUrl: project.videos[0] ?? null };
+  }
+
   isMostRecent(project: Project): boolean {
     const today = new Date();
     const lastUpdate = project.lastUpdate || project.createdAt;
@@ -58,7 +69,7 @@ export class ProjectService {
         ];
 
         return {
-          ...project,
+          ...this.withLegacyPreviewVideoUrl(project),
           previewImage: optimizeCloudinary(project.previewImage),
           isMostRecent: { isRecent: this.isMostRecent(project), text: "Mais Recente" },
           screenshots: reorderedScreenshots,
@@ -129,9 +140,11 @@ export class ProjectService {
         deployment: project.deployment?.length ? project.deployment : undefined,
         frontend: project.frontend?.length ? project.frontend : undefined,
       };
-      projectSchema.parse(projectData);
-      const res = await this.projectRepository.createProject(project);
-      return res as Project;
+      // videos is validated explicitly here (rather than relying on the ...project
+      // spread above) so a future edit to projectData can't silently drop it.
+      const validated = projectSchema.parse({ ...projectData, videos: project.videos });
+      const res = await this.projectRepository.createProject({ ...project, videos: validated.videos });
+      return this.withLegacyPreviewVideoUrl(res as Project);
     } catch (e) {
       if (e instanceof ZodError) {
         throw new Exception(e.issues?.[0]?.message || "Error for create project", 400);
@@ -151,7 +164,8 @@ export class ProjectService {
         frontend: project.frontend?.length ? project.frontend : undefined,
       };
       projectSchemaOptional.parse(projectData);
-      return await this.projectRepository.updateProject(projectData, projectId);
+      const updated = await this.projectRepository.updateProject(projectData, projectId);
+      return this.withLegacyPreviewVideoUrl(updated as Project);
     } catch (e) {
       if (e instanceof ZodError) {
         throw new Exception(e.issues?.[0]?.message || "Error for update project", 400);

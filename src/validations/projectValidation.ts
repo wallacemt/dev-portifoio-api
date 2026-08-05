@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { isValidYoutubeUrl } from "../utils/youtubeUrl";
+
+const MAX_VIDEOS = 5;
 
 export const projectSchema = z.object({
   title: z
@@ -22,7 +25,15 @@ export const projectSchema = z.object({
   backend: z.string().url({ message: "A URL do backend deve ser valida" }).optional(),
   frontend: z.string().url({ message: "A URL do frontend deve ser valida" }).optional(),
   previewImage: z.string().url({ message: "A URL da imagem de preview deve ser valida" }),
-  previewVideoUrl:z.string().url({message: "A url do video deve ser Valida!"}).optional(),
+  videos: z
+    .array(
+      z.string().refine(isValidYoutubeUrl, {
+        message: "A URL do vídeo deve ser um link válido do YouTube (watch, youtu.be, /embed/ ou /shorts/)",
+      })
+    )
+    .max(MAX_VIDEOS, { message: `O projeto pode ter no máximo ${MAX_VIDEOS} vídeos` })
+    .optional()
+    .default([]),
   lastUpdate: z.date().optional(),
   ownerId: z.string().min(1, { message: "o id do owner deve ser valido" }),
 

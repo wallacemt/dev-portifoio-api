@@ -11,6 +11,7 @@
     "db:generate": "bunx prisma generate",
     "db:studio": "bunx prisma studio",
     "db:seed": "bun run ./src/prisma/seed.ts",
+    "db:migrate-videos": "bun run ./src/prisma/migrateVideos.ts",
     "build": "bun run tsc && bunx prisma generate",
     "start": "bun run ./dist/app.js",
     "test": "bun test",
