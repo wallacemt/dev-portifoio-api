@@ -3,7 +3,7 @@
     "target": "es2016",
     "module": "commonjs",
     "rootDir": "./",
-    "types": ["node", "jest"],
+    "types": ["node", "jest", "bun"],
     "outDir": "./dist",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
