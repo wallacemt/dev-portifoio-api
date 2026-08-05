@@ -50,6 +50,22 @@ export class AnalyticsRepository {
   }
 
   /**
+   * Busca a page view mais recente do mesmo visitante+página dentro de uma
+   * janela de tempo — usado pro dedupe de page views repetidos (double
+   * fire do tracking script, re-render, etc).
+   */
+  async findRecentPageView(visitorId: string, page: string, since: Date) {
+    return await prisma.pageView.findFirst({
+      where: {
+        visitorId,
+        page,
+        timestamp: { gte: since },
+      },
+      orderBy: { timestamp: "desc" },
+    });
+  }
+
+  /**
    * Busca analytics diárias com filtros
    */
   async getDailyAnalytics(ownerId: string, filters: AnalyticsFilters) {

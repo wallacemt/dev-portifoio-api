@@ -230,6 +230,54 @@
                   type: string
                   example: "Token de autenticação necessário"
 
+/api/analytics/stream:
+  get:
+    tags:
+      - Analytics
+    summary: Stream de analytics em tempo real (SSE)
+    description: >
+      Server-Sent Events com snapshot de analytics em tempo real (visitantes
+      online, páginas ativas, visitantes recentes). O servidor envia um
+      evento `analytics` imediatamente na conexão e depois a cada novo
+      evento publicado no Redis (trackVisitor/trackPageView) ou, sem Redis
+      disponível, a cada 10s via polling interno. Um comentário `: ping` é
+      enviado a cada 25s como heartbeat para manter proxies/CDN sem fechar
+      a conexão por timeout.
+
+      Como o `EventSource` nativo do navegador não permite headers
+      customizados, o token JWT também pode ser passado via querystring
+      (`?token=`) além do header `Authorization: Bearer`.
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: query
+        name: token
+        required: false
+        schema:
+          type: string
+        description: Token JWT, alternativa ao header Authorization (necessário para EventSource)
+    responses:
+      "200":
+        description: "Conexão SSE estabelecida (Content-Type: text/event-stream)"
+        content:
+          text/event-stream:
+            schema:
+              type: string
+              example: |
+                event: analytics
+                data: {"online":3,"activeVisitors":3,"topActivePages":[],"recentVisitors":[]}
+
+      "401":
+        description: Token de autenticação inválido ou ausente
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Token de autenticação necessário"
+
 /api/analytics/update-daily:
   post:
     tags:

@@ -1,10 +1,16 @@
 import type { Request, Response } from "express";
 import { Router } from "express";
+import type Redis from "ioredis";
 import { trackingRateLimit } from "../middleware/analyticsRateLimit";
-import AuthPolice from "../middleware/authPolice";
+import AuthPolice, { sseAuthPolice } from "../middleware/authPolice";
 import { AnalyticsService } from "../services/analyticsService";
 import type { AnalyticsFilters, TrackPageViewRequest, TrackVisitorRequest } from "../types/analytics";
+import { devDebugger } from "../utils/devDebugger";
 import errorFilter from "../utils/isCustomError";
+import { getRedisClient } from "../utils/redisClient";
+
+const SSE_HEARTBEAT_MS = 25_000;
+const SSE_POLL_FALLBACK_MS = 10_000;
 
 /**
  * @swagger
@@ -27,6 +33,8 @@ export class AnalyticsController {
   private routesPublic() {
     this.routerPublic.post("/:ownerId/track-visitor", trackingRateLimit, this.trackVisitor.bind(this));
     this.routerPublic.post("/:ownerId/track-pageview", trackingRateLimit, this.trackPageView.bind(this));
+    // Auth própria (aceita token via querystring) porque EventSource não manda headers customizados.
+    this.routerPublic.get("/stream", sseAuthPolice, this.streamAnalytics.bind(this));
   }
 
   private routesPrivate() {
@@ -149,5 +157,96 @@ export class AnalyticsController {
     } catch (error) {
       errorFilter(error, res);
     }
+  }
+
+  /**
+   * @swagger ver src/docs/paths/analytics.yaml (/api/analytics/stream)
+   *
+   * SSE de analytics em tempo real. Assina o canal Redis `analytics:{ownerId}`
+   * (publicado por trackVisitor/trackPageView) com uma conexão ioredis
+   * DEDICADA — a conexão em modo subscribe do ioredis não aceita mais
+   * comandos normais, por isso não dá pra reusar o client compartilhado do
+   * `getRedisClient()`. Sem Redis disponível, cai pra polling interno.
+   */
+  async streamAnalytics(req: Request, res: Response): Promise<void> {
+    const ownerId = req.userId;
+
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+    });
+
+    const send = (event: string, data: unknown) => {
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+
+    const sendSnapshot = async () => {
+      try {
+        const [online, realTime] = await Promise.all([
+          this.analyticsService.getOnlineVisitorsCount(ownerId),
+          this.analyticsService.getRealTimeAnalytics(ownerId),
+        ]);
+        send("analytics", { online, ...realTime });
+      } catch (error) {
+        devDebugger("Erro ao enviar snapshot SSE de analytics", error, "warn");
+      }
+    };
+
+    await sendSnapshot();
+
+    const heartbeat = setInterval(() => res.write(": ping\n\n"), SSE_HEARTBEAT_MS);
+
+    let subscriber: Redis | null = null;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+    // Sem Redis, subscribe falhando na largada ou o subscriber quebrando em
+    // runtime (conexão caindo) devem todos cair pro mesmo polling — nunca
+    // deixar a conexão SSE viva só com heartbeat e sem dado nenhum.
+    const startPolling = () => {
+      if (pollTimer) return;
+      pollTimer = setInterval(() => sendSnapshot(), SSE_POLL_FALLBACK_MS);
+    };
+
+    const stopSubscriber = () => {
+      if (!subscriber) return;
+      const current = subscriber;
+      subscriber = null;
+      current.removeAllListeners();
+      current
+        .unsubscribe()
+        .finally(() => current.quit())
+        .catch((error) => devDebugger("Erro ao encerrar subscriber SSE de analytics", error, "warn"));
+    };
+
+    const redisClient = getRedisClient();
+    if (redisClient) {
+      try {
+        subscriber = redisClient.duplicate();
+        await subscriber.subscribe(`analytics:${ownerId}`);
+        subscriber.on("message", () => {
+          sendSnapshot();
+        });
+        subscriber.on("error", (error) => {
+          devDebugger("Erro no subscriber SSE de analytics, caindo para polling", error, "warn");
+          stopSubscriber();
+          startPolling();
+        });
+      } catch (error) {
+        devDebugger("Erro ao iniciar subscriber SSE de analytics, caindo para polling", error, "warn");
+        stopSubscriber();
+        startPolling();
+      }
+    } else {
+      startPolling();
+    }
+
+    req.on("close", () => {
+      clearInterval(heartbeat);
+      if (pollTimer) clearInterval(pollTimer);
+      stopSubscriber();
+      res.end();
+    });
   }
 }
