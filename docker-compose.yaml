@@ -9,3 +9,19 @@ services:
       - ./src/docs:/app/src/docs
       - ./prisma:/app/prisma
       - ./package.json:/app/package.json
+
+  # Translation worker (RF-05) — same image as `app`, no port exposed. Requires
+  # REDIS_URL at boot (ADR-04): without it, the daily quota counter can't be
+  # shared with `app`, so the worker refuses to start (see worker-entry.ts).
+  worker:
+    build: .
+    container_name: dev-portifolio-ws-worker
+    command: ["bun", "dist/src/worker-entry.js"]
+    environment:
+      - REDIS_URL=${REDIS_URL}
+      - MAX_DAILY_REQUESTS=${MAX_DAILY_REQUESTS}
+      - WORKER_DAILY_BUDGET=${WORKER_DAILY_BUDGET}
+    volumes:
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+      - ./package.json:/app/package.json

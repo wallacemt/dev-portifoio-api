@@ -21,6 +21,27 @@ const envSchema = z.object({
   SELF_URL: z.string(),
   AI_MODEL: z.string().default("google/gemma-4-31b-it:free"),
   REDIS_URL: z.string().optional(),
+  // OpenRouter's free-tier daily cap is per-account (depends on account credit —
+  // ~50/day under $10, ~1000/day above it), so it must be changeable without a
+  // redeploy (ADR-07).
+  MAX_DAILY_REQUESTS: z.coerce.number().int().positive().default(45),
+  // Worker's own sub-ceiling against the same shared counter (ADR-04), so the
+  // on-demand/API path always keeps budget left over.
+  WORKER_DAILY_BUDGET: z.coerce.number().int().positive().default(25),
+  // Target languages for the translation worker/backfill (ADR-01/RF-03). `pt` is
+  // the source language and is never a target.
+  SUPPORTED_LANGUAGES: z.string().default("en,es,fr,ja,ko,zh,it"),
+}).refine((data) => data.WORKER_DAILY_BUDGET < data.MAX_DAILY_REQUESTS, {
+  message:
+    "WORKER_DAILY_BUDGET must be lower than MAX_DAILY_REQUESTS — otherwise the worker's sub-ceiling never protects the on-demand path (ADR-04).",
+  path: ["WORKER_DAILY_BUDGET"],
 });
 
-export const env = envSchema.parse(process.env);
+const parsedEnv = envSchema.parse(process.env);
+
+export const env = {
+  ...parsedEnv,
+  SUPPORTED_LANGUAGES: parsedEnv.SUPPORTED_LANGUAGES.split(",")
+    .map((lang) => lang.trim())
+    .filter(Boolean),
+};
