@@ -149,6 +149,23 @@ model pageView {
   visitor   visitor  @relation(fields: [visitorId], references: [id], onDelete: Cascade)
 }
 
+model translation {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  entity     String // "project" | "skill" | "formation" | "badge" | "certification" | "owner" | "service"
+  entityId   String // id of the source record
+  language   String // "en" | "es" | "fr" | "ja" | "ko" | "zh" | "it"
+  fields     Json // { title: "...", description: "..." } — translatable fields only
+  sourceHash String // sha256 of the translatable subset in pt
+  status     String   @default("pending") // "pending" | "done" | "failed"
+  attempts   Int      @default(0)
+  lastError  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([entity, entityId, language])
+  @@index([status, updatedAt])
+}
+
 model analyticsDaily {
   id             String   @id @default(auto()) @map("_id") @db.ObjectId
   date           DateTime
