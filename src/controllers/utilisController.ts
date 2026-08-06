@@ -51,7 +51,7 @@ export class UtilisController {
   async getQuotaStatus(_req: Request, res: Response) {
     try {
       const [quotaStatus, cacheStats] = await Promise.all([
-        Promise.resolve(QuotaManager.getQuotaStatus()),
+        QuotaManager.getQuotaStatus(),
         TranslationService.getCacheStats(),
       ]);
       res.status(200).json({
@@ -63,9 +63,9 @@ export class UtilisController {
     }
   }
 
-  clearCache(_req: Request, res: Response) {
+  async clearCache(_req: Request, res: Response) {
     try {
-      QuotaManager.clearMetrics();
+      await QuotaManager.clearMetrics();
       res.status(200).json({ success: true, message: "Cache e métricas de quota limpos com sucesso" });
     } catch (error) {
       errorFilter(error, res);
@@ -111,7 +111,7 @@ export class UtilisController {
             chunked: testChunking,
             estimatedTokens: TranslationService.estimateTokens(JSON.stringify(testObject)),
           },
-          quotaStatus: QuotaManager.getQuotaStatus(),
+          quotaStatus: await QuotaManager.getQuotaStatus(),
         },
       });
     } catch (error) {
