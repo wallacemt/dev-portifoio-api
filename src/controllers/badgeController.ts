@@ -40,22 +40,17 @@ export class BadgeController {
     const { language } = req.query as { language?: string };
 
     try {
-      const badges = await this.badgeService.findAllBadges(req.params.ownerId || "");
+      const result = await this.badgeService.findAllBadges(req.params.ownerId || "", language);
 
       if (language && language !== "pt") {
         try {
-          const translated = await this.translationService.translateObject(
-            badges,
-            language,
-            "pt",
-            "Traduza os dados dos badges",
-          );
-          res.status(200).json(translated);
+          const translatedBadges = await this.translationService.translateObject(result.badges, language, "pt");
+          res.status(200).json({ ...result, badges: translatedBadges });
         } catch (e) {
           errorFilter(e, res);
         }
       } else {
-        res.status(200).json(badges);
+        res.status(200).json(result);
       }
     } catch (error) {
       errorFilter(error, res);
@@ -70,12 +65,7 @@ export class BadgeController {
 
       if (language && language !== "pt") {
         try {
-          const translated = await this.translationService.translateObject(
-            badge,
-            language,
-            "pt",
-            "Traduza os dados do badge",
-          );
+          const translated = await this.translationService.translateObject(badge, language, "pt");
           res.status(200).json(translated);
         } catch (e) {
           errorFilter(e, res);

@@ -1,6 +1,5 @@
 import { type Request, type Response, Router } from "express";
 import AuthPolice from "../middleware/authPolice";
-import { TranslationService } from "../services/aiService";
 import { SkillService } from "../services/skillService";
 import type { SkillAddRequest, SkillUpdateRequest } from "../types/skills";
 import errorFilter from "../utils/isCustomError";
@@ -15,7 +14,6 @@ export class SkillController {
   routerPrivate: Router;
   routerPublic: Router;
   private skillService = new SkillService();
-  private translationService = new TranslationService();
   constructor() {
     this.routerPrivate = Router();
     this.routerPublic = Router();
@@ -50,7 +48,7 @@ export class SkillController {
       limit?: string;
       pagination?: boolean;
     };
-   
+
     try {
       const pageNumber = page ? Number.parseInt(page, 10) : 1;
       const limitNumber = limit ? Number.parseInt(limit, 10) : 10;
@@ -59,27 +57,15 @@ export class SkillController {
         req.params.ownerId || "",
         pageNumber,
         limitNumber,
-        pagination
+        pagination,
+        language
       );
 
-      if (language && language !== "pt") {
-        try {
-          const translatedSkills = await this.translationService.translateObject(result.skills, language, "pt");
-          const translatedTexts = await this.translationService.translateObject(result.texts, language, "pt");
-
-          const translatedResult = {
-            skills: translatedSkills,
-            pagination: result.pagination,
-            texts: translatedTexts,
-          };
-
-          res.status(200).json(translatedResult);
-        } catch (e) {
-          errorFilter(e, res);
-        }
-      } else {
-        res.status(200).json(result);
-      }
+      // Skill records only carry proper nouns/enum codes (title, stack, type,
+      // subSkils) — nothing natural-language to translate. `texts` is now
+      // resolved statically via getUiTexts (ADR-01), so this route never
+      // calls the LLM (AC-01).
+      res.status(200).json(result);
     } catch (error) {
       errorFilter(error, res);
     }

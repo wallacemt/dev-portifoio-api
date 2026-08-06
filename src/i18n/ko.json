@@ -1,0 +1,65 @@
+{
+  "project": {
+    "title": "내 프로젝트",
+    "description": "제 경력 동안 개발한 프로젝트들로, 다양한 기술에 대한 역량과 경험을 보여줍니다.",
+    "descriptionLabel": "설명",
+    "techsLabel": "기술 스택",
+    "linksLabel": "프로젝트 링크",
+    "backendLabel": "백엔드",
+    "frontendLabel": "프론트엔드",
+    "deploymentLabel": "배포",
+    "skillsLabel": "사용된 역량",
+    "cta": "프로젝트 보기",
+    "isMostRecentText": "최신",
+    "dateLabel": {
+      "updatedAt": "최종 업데이트",
+      "addedAt": "등록일"
+    }
+  },
+  "formation": {
+    "title": "학력",
+    "description": "강좌, 자격증, 교육 과정을 통한 지속적인 학습 여정이 제 기술 전문성을 형성합니다.",
+    "formationStatsText": {
+      "inProgress": "진행 중",
+      "certificationText": "수료증 보기",
+      "conclude": "완료"
+    },
+    "stats": {
+      "formations": "교육 과정",
+      "studyHours": "학습 시간",
+      "institution": "교육 기관",
+      "certificaos": "수료증"
+    }
+  },
+  "skill": {
+    "chooseText": "스택으로 필터링",
+    "title": "내 역량",
+    "description": "강좌와 개인 프로젝트를 통해 습득하여 실제 프로젝트에서 활용하는 역량입니다."
+  },
+  "badge": {
+    "title": "배지 & 성과",
+    "description": "제 경력을 통해 획득한 인정과 성과"
+  },
+  "certification": {
+    "title": "전문 자격증",
+    "description": "기술 지식과 전문성을 입증하는 검증된 자격증"
+  },
+  "service": {
+    "title": "내 서비스",
+    "description": "구상부터 구현까지, 프로젝트의 모든 부분을 효율적으로 연결하는 완전한 풀스택 개발 솔루션입니다.",
+    "cta": "서비스에 관심이 있으신가요? 프로젝트에 대해 이야기해요!",
+    "ctaBtn": "문의하기"
+  },
+  "utilis": {
+    "navbar": {
+      "items": {
+        "home": "홈",
+        "projects": "프로젝트",
+        "skills": "역량",
+        "services": "서비스",
+        "formation": "학력"
+      },
+      "callText": "신규 프로젝트 가능"
+    }
+  }
+}

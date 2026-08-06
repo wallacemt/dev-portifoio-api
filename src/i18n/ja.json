@@ -1,0 +1,65 @@
+{
+  "project": {
+    "title": "私のプロジェクト",
+    "description": "キャリアを通じて開発してきたプロジェクトです。さまざまな技術におけるスキルと経験を紹介しています。",
+    "descriptionLabel": "説明",
+    "techsLabel": "使用技術",
+    "linksLabel": "プロジェクトリンク",
+    "backendLabel": "バックエンド",
+    "frontendLabel": "フロントエンド",
+    "deploymentLabel": "デプロイ",
+    "skillsLabel": "使用したスキル",
+    "cta": "プロジェクトを見る",
+    "isMostRecentText": "最新",
+    "dateLabel": {
+      "updatedAt": "最終更新日",
+      "addedAt": "追加日"
+    }
+  },
+  "formation": {
+    "title": "学歴",
+    "description": "コース、資格、研修を通じた継続的な学びの歩みが、私の技術的専門性を形作っています。",
+    "formationStatsText": {
+      "inProgress": "受講中",
+      "certificationText": "証明書を見る",
+      "conclude": "修了"
+    },
+    "stats": {
+      "formations": "研修数",
+      "studyHours": "学習時間",
+      "institution": "教育機関",
+      "certificaos": "証明書"
+    }
+  },
+  "skill": {
+    "chooseText": "スタックで絞り込む",
+    "title": "私のスキル",
+    "description": "コースや個人プロジェクトを通じて習得し、実際のプロジェクトで活用しているスキルです。"
+  },
+  "badge": {
+    "title": "バッジ & 実績",
+    "description": "私のキャリアを通じて獲得した表彰や実績"
+  },
+  "certification": {
+    "title": "専門資格",
+    "description": "技術的な知識と専門性を証明する認定資格"
+  },
+  "service": {
+    "title": "私のサービス",
+    "description": "構想から実装まで、プロジェクトのあらゆる部分を効率的につなぐ、フルスタック開発の総合ソリューション。",
+    "cta": "サービスにご興味がありますか？プロジェクトについてお話ししましょう！",
+    "ctaBtn": "お問い合わせ"
+  },
+  "utilis": {
+    "navbar": {
+      "items": {
+        "home": "ホーム",
+        "projects": "プロジェクト",
+        "skills": "スキル",
+        "services": "サービス",
+        "formation": "学歴"
+      },
+      "callText": "新規プロジェクト対応可能"
+    }
+  }
+}

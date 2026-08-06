@@ -1,4 +1,5 @@
 import { ZodError } from "zod";
+import { getUiTexts } from "../i18n";
 import { FormationRepository } from "../repository/formationRepository";
 import { FormationTypeValues, type FormationAddRequest, type FormationUpdate } from "../types/formation";
 import { Exception } from "../utils/exception";
@@ -7,26 +8,11 @@ import { formationSchema, formationSchemaOptional } from "../validations/formati
 export class FormationService {
   private formationRepository = new FormationRepository();
 
-  async findAllFormations(ownerId: string) {
+  async findAllFormations(ownerId: string, language?: string) {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
 
     const formations = await this.formationRepository.findAllFormations(ownerId);
-    const texts = {
-      title: "Formação Acadêmica",
-      description:
-        "Minha jornada de aprendizado contínuo atravéz de cursos, certificações e formações que moldam minha expertise técnica.",
-      formationStatsText: {
-        inProgress: "Cursando",
-        certificationText: "Ver certificado",
-        conclude: "Concluido"
-      },
-      stats: {
-        formations: "Formações",
-        studyHours: "Horas de Estudo",
-        institution: "Instituição",
-        certificaos: "Certificados",
-      },
-    };
+    const texts = getUiTexts("formation", language);
     return { formations, texts };
   }
 

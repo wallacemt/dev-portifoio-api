@@ -27,20 +27,13 @@ export class UtilisController {
     this.routerPublic.get("/ai-models", this.aiModels.bind(this));
   }
 
-  async getNavbarItens(req: Request, res: Response) {
+  getNavbarItens(req: Request, res: Response) {
     const { language } = req.query as { language?: string };
     try {
-      const navbar = this.utilisService.getNavbarItems();
-      if (language && language !== "pt") {
-        try {
-          const translated = await this.translationService.translateObject(navbar, language, "pt");
-          res.status(200).json(translated);
-        } catch (e) {
-          errorFilter(e, res);
-        }
-      } else {
-        res.status(200).json(navbar);
-      }
+      // Navbar labels come from the static i18n dictionary (ADR-01) — no
+      // free-form user content here, so this route never calls the LLM.
+      const navbar = this.utilisService.getNavbarItems(language);
+      res.status(200).json(navbar);
     } catch (error) {
       errorFilter(error, res);
     }

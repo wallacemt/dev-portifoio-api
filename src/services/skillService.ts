@@ -1,4 +1,5 @@
 import { ZodError } from "zod";
+import { getUiTexts } from "../i18n";
 import { SkillRepository } from "../repository/skillRepository";
 import {
   type Skill,
@@ -17,7 +18,8 @@ export class SkillService {
     ownerId: string,
     page = 1,
     limit = 10,
-    pagination = true
+    pagination = true,
+    language?: string
   ): Promise<{
     skills: Skill[];
     pagination: {
@@ -31,13 +33,8 @@ export class SkillService {
     texts: { chooseText: string; title: string; description: string };
   }> {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
-    const texts = {
-      chooseText: "Filtre por uma Stack",
-      title: "Minhas Habilidades",
-      description:
-        " Habilidades que domino e utilizo em meus projetos, que desenvolvi ao mediante a cursos e projetos pessoais.",
-    };
-    
+    const texts = getUiTexts<{ chooseText: string; title: string; description: string }>("skill", language);
+
     if (pagination === true) {
       const validatedPage = Math.max(1, Math.floor(page));
       const validatedLimit = Math.min(Math.max(1, Math.floor(limit)), 100); // Máximo 100 por página

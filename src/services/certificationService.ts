@@ -1,4 +1,5 @@
 import { ZodError } from "zod";
+import { getUiTexts } from "../i18n";
 import { CertificationRepository } from "../repository/certificationRepository";
 import type { CertificationAddRequest, CertificationUpdate } from "../types/badges";
 import { Exception } from "../utils/exception";
@@ -7,14 +8,11 @@ import { certificationSchema, certificationSchemaOptional } from "../validations
 export class CertificationService {
   private certificationRepository = new CertificationRepository();
 
-  async findAllCertifications(ownerId: string) {
+  async findAllCertifications(ownerId: string, language?: string) {
     if (!ownerId || ownerId === ":ownerId") {
       throw new Exception("ID de owner inválido", 400);
     }
-    const texts = {
-      title: "Certificações Profissionais",
-      description: "Certificações validadas que comprovam conhecimento e expertise técnica",
-    };
+    const texts = getUiTexts("certification", language);
     const certifications = await this.certificationRepository.findAllCertifications(ownerId);
 
     return { certifications, texts };
