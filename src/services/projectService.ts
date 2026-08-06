@@ -1,6 +1,8 @@
 import { ZodError } from "zod";
 import { getUiTexts } from "../i18n";
 import { ProjectRepository } from "../repository/projectRepository";
+import { applyTranslations } from "../translation/applyTranslations";
+import { enqueueTranslation, removeTranslations } from "../translation/enqueueTranslation";
 import type { CreateProject, Project, ProjectFilter, ProjectWhere, UpdateProjec } from "../types/projects";
 import { Exception } from "../utils/exception";
 import { projectSchema, projectSchemaOptional } from "../validations/projectValidation";
@@ -63,10 +65,14 @@ export class ProjectService {
       }),
     };
 
-    const [projects, total] = await Promise.all([
+    const [fetchedProjects, total] = await Promise.all([
       this.projectRepository.findAllProjects(where, skip, limit, orderBy),
       this.projectRepository.countProjects(where),
     ]);
+    // Merged here, on the flat entity, before the UI-shaping below turns
+    // `description` into `{ title, content }` — merging any later would
+    // overwrite that shape with a plain translated string (RF-02, ADR-05).
+    const projects = await applyTranslations("project", fetchedProjects, language);
     const projectTexts = getUiTexts<{
       title: string;
       description: string;
@@ -152,6 +158,7 @@ export class ProjectService {
       // spread above) so a future edit to projectData can't silently drop it.
       const validated = projectSchema.parse({ ...projectData, videos: project.videos });
       const res = await this.projectRepository.createProject({ ...project, videos: validated.videos });
+      await enqueueTranslation("project", res.id, res);
       return this.withLegacyPreviewVideoUrl(res as Project);
     } catch (e) {
       if (e instanceof ZodError) {
@@ -173,6 +180,7 @@ export class ProjectService {
       };
       projectSchemaOptional.parse(projectData);
       const updated = await this.projectRepository.updateProject(projectData, projectId);
+      await enqueueTranslation("project", updated.id, updated);
       return this.withLegacyPreviewVideoUrl(updated as Project);
     } catch (e) {
       if (e instanceof ZodError) {
@@ -186,6 +194,7 @@ export class ProjectService {
     if (!projectId || projectId === ":id") throw new Exception("ID do projeto invalido", 400);
     if (!(await this.projectRepository.findProjectById(projectId))) throw new Exception("Projeto não encontrado", 404);
     await this.projectRepository.deleteProject(projectId);
+    await removeTranslations("project", projectId);
   }
 
   async handleActivateOrDesactivateProject(projectId: string): Promise<Project> {

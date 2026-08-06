@@ -1,6 +1,8 @@
 import { ZodError } from "zod";
 import { getUiTexts } from "../i18n";
 import { BadgeRepository } from "../repository/badgeRepository";
+import { applyTranslations } from "../translation/applyTranslations";
+import { enqueueTranslation, removeTranslations } from "../translation/enqueueTranslation";
 import type { BadgeAddRequest, BadgeUpdate } from "../types/badges";
 import { Exception } from "../utils/exception";
 import { badgeSchema, badgeSchemaOptional } from "../validations/badgesValidation";
@@ -13,7 +15,8 @@ export class BadgeService {
       throw new Exception("ID de owner inválido", 400);
     }
     const texts = getUiTexts("badge", language);
-    const badges =  await this.badgeRepository.findAllBadges(ownerId);
+    const fetchedBadges = await this.badgeRepository.findAllBadges(ownerId);
+    const badges = await applyTranslations("badge", fetchedBadges, language);
 
     return {
       badges,
@@ -21,7 +24,7 @@ export class BadgeService {
     }
   }
 
-  async findById(badgeId: string) {
+  async findById(badgeId: string, language?: string) {
     if (!badgeId || badgeId === ":id") {
       throw new Exception("ID do badge inválido", 400);
     }
@@ -29,7 +32,8 @@ export class BadgeService {
     if (!badge) {
       throw new Exception("Badge não encontrado", 404);
     }
-    return badge;
+    const [translated] = await applyTranslations("badge", [badge], language);
+    return translated ?? badge;
   }
 
   async addBadge(badge: BadgeAddRequest) {
@@ -39,7 +43,9 @@ export class BadgeService {
         badgeUrl: badge.badgeUrl?.length ? badge.badgeUrl : undefined,
       };
       badgeSchema.parse(badgeData);
-      return await this.badgeRepository.addBadge(badgeData);
+      const created = await this.badgeRepository.addBadge(badgeData);
+      await enqueueTranslation("badge", created.id, created);
+      return created;
     } catch (e) {
       if (e instanceof ZodError) {
         throw new Exception(e.issues?.[0]?.message || "Erro ao adicionar badge", 400);
@@ -65,7 +71,9 @@ export class BadgeService {
         badgeUrl: badge.badgeUrl?.length ? badge.badgeUrl : undefined,
       };
       badgeSchemaOptional.parse(badgeData);
-      return await this.badgeRepository.updateBadge(badgeData, badgeId);
+      const updated = await this.badgeRepository.updateBadge(badgeData, badgeId);
+      await enqueueTranslation("badge", updated.id, updated);
+      return updated;
     } catch (e) {
       if (e instanceof ZodError) {
         throw new Exception(e.issues?.[0]?.message || "Erro ao atualizar badge", 400);
@@ -84,6 +92,8 @@ export class BadgeService {
       throw new Exception("Badge não encontrado", 404);
     }
 
-    return await this.badgeRepository.deleteBadge(badgeId);
+    const deleted = await this.badgeRepository.deleteBadge(badgeId);
+    await removeTranslations("badge", badgeId);
+    return deleted;
   }
 }

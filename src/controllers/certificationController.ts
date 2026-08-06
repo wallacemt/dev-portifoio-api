@@ -1,7 +1,6 @@
 import { type Request, type Response, Router } from "express";
 import AuthPolice from "../middleware/authPolice";
 import { CertificationService } from "../services/certificationService";
-import { TranslationService } from "../services/aiService";
 import type { CertificationAddRequest, CertificationUpdate } from "../types/badges";
 import errorFilter from "../utils/isCustomError";
 
@@ -15,7 +14,6 @@ export class CertificationController {
   routerPrivate: Router;
   routerPublic: Router;
   private certificationService = new CertificationService();
-  private translationService = new TranslationService();
 
   constructor() {
     this.routerPrivate = Router();
@@ -40,22 +38,11 @@ export class CertificationController {
     const { language } = req.query as { language?: string };
 
     try {
+      // Translated content, when it exists, is already merged in by
+      // CertificationService.findAllCertifications (applyTranslations) —
+      // this route never calls the LLM (ADR-05, AC-15).
       const result = await this.certificationService.findAllCertifications(req.params.ownerId || "", language);
-
-      if (language && language !== "pt") {
-        try {
-          const translatedCertifications = await this.translationService.translateObject(
-            result.certifications,
-            language,
-            "pt",
-          );
-          res.status(200).json({ ...result, certifications: translatedCertifications });
-        } catch (e) {
-          errorFilter(e, res);
-        }
-      } else {
-        res.status(200).json(result);
-      }
+      res.status(200).json(result);
     } catch (error) {
       errorFilter(error, res);
     }
@@ -65,18 +52,8 @@ export class CertificationController {
     const { language } = req.query as { language?: string };
 
     try {
-      const certification = await this.certificationService.findById(req.params.id || "");
-
-      if (language && language !== "pt") {
-        try {
-          const translated = await this.translationService.translateObject(certification, language, "pt");
-          res.status(200).json(translated);
-        } catch (e) {
-          errorFilter(e, res);
-        }
-      } else {
-        res.status(200).json(certification);
-      }
+      const certification = await this.certificationService.findById(req.params.id || "", language);
+      res.status(200).json(certification);
     } catch (error) {
       errorFilter(error, res);
     }
