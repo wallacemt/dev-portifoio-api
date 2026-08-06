@@ -1,6 +1,5 @@
 import { type Request, type Response, Router } from "express";
 import AuthPolice from "../middleware/authPolice";
-import { TranslationService } from "../services/aiService";
 import { ProjectService } from "../services/projectService";
 import type { CreateProject, ProjectFilter, UpdateProjec } from "../types/projects";
 
@@ -18,7 +17,6 @@ export class ProjectController {
   routerPrivate: Router;
   routerPublic: Router;
   private projectService = new ProjectService();
-  private translationService = new TranslationService();
   constructor() {
     this.routerPrivate = Router();
     this.routerPublic = Router();
@@ -47,22 +45,11 @@ export class ProjectController {
     if (parseResult.success) {
       const filters: ProjectFilter = parseResult.data;
       try {
+        // Translated content, when it exists, is already merged in by
+        // ProjectService.findAllProjects (applyTranslations) — this route
+        // never calls the LLM (ADR-05, AC-15).
         const result = await this.projectService.findAllProjects(req.params.ownerId || "", filters, language);
-
-        if (language && language !== "pt") {
-          try {
-            const translatedProjects = await this.translationService.translateObject(
-              result.projects,
-              language,
-              "pt",
-            );
-            res.status(200).json({ ...result, projects: translatedProjects });
-          } catch (e) {
-            errorFilter(e, res);
-          }
-        } else {
-          res.status(200).json(result);
-        }
+        res.status(200).json(result);
       } catch (error) {
         errorFilter(error, res);
       }

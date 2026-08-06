@@ -37,14 +37,14 @@ describe("GET /skills/owner/:ownerId (AC-01)", () => {
 
   it("returns localized labels for a non-pt language without calling OpenRouter or touching the quota counter", async () => {
     await withFakeFindAllSkills(async () => {
-      const quotaBefore = QuotaManager.getQuotaStatus().dailyRequestsUsed;
+      const quotaBefore = (await QuotaManager.getQuotaStatus()).dailyRequestsUsed;
 
       const response = await request(buildApp()).get("/skills/owner/owner-1").query({ language: "ja" });
 
       expect(response.status).toBe(200);
       expect(response.body.texts.title).toBe("私のスキル");
       expect(fetchSpy).not.toHaveBeenCalled();
-      expect(QuotaManager.getQuotaStatus().dailyRequestsUsed).toBe(quotaBefore);
+      expect((await QuotaManager.getQuotaStatus()).dailyRequestsUsed).toBe(quotaBefore);
     });
   });
 });

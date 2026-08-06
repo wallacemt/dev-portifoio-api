@@ -1,6 +1,5 @@
 import { type Request, type Response, Router } from 'express';
 import AuthPolice from '../middleware/authPolice';
-import { TranslationService } from '../services/aiService';
 import { OwnerService } from '../services/ownerService';
 import type {
  OwnerDataOptionalRequest,
@@ -19,7 +18,6 @@ export class OwnerController {
    routerPrivate: Router;
    routerPublic: Router;
   private ownerService: OwnerService = new OwnerService();
-  private translationService = new TranslationService();
 
   constructor() {
     this.routerPrivate = Router();
@@ -47,21 +45,11 @@ export class OwnerController {
    async getOwner(req: Request, res: Response) {
     const { language } = req.query as { language?: string };
     try {
-      const owner = await this.ownerService.getOwner(req.params.ownerId || "");
-      if (language && language !=='pt') {
-        try {
-          const translated = await this.translationService.translateObject(
-            owner,
-            language,
-            'pt'
-          );
-          res.status(200).json(translated);
-        } catch (e) {
-          errorFilter(e, res);
-        }
-      } else {
-        res.status(200).json(owner);
-      }
+      // Translated `about`/`occupation`, when they exist, are already merged
+      // in by OwnerService.getOwner (applyTranslations) — this route never
+      // calls the LLM (ADR-05, AC-15).
+      const owner = await this.ownerService.getOwner(req.params.ownerId || "", language);
+      res.status(200).json(owner);
     } catch (error) {
       errorFilter(error, res);
     }

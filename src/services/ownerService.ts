@@ -2,6 +2,8 @@ import { ZodError } from "zod";
 import { env } from "../env";
 import { AnalyticsRepository } from "../repository/analyticsRepository";
 import { OwnerRepository } from "../repository/ownerRepository";
+import { applyTranslations } from "../translation/applyTranslations";
+import { enqueueTranslation } from "../translation/enqueueTranslation";
 import { TranslationService } from "./aiService";
 import type { AiConfigResponse } from "../types/aiTypes";
 import type { OwnerAnalysisResponse, OwnerDataOptionalRequest, OwnerDataResponse } from "../types/owner";
@@ -22,7 +24,10 @@ const attemptsCache: Record<string, AttemptData> = {};
 export class OwnerService {
   private ownerRepository = new OwnerRepository();
   private analyticsRepository = new AnalyticsRepository();
-  async getOwner(ownerId: string): Promise<
+  async getOwner(
+    ownerId: string,
+    language?: string,
+  ): Promise<
     OwnerDataResponse & {
       welcomeMessage: string;
       buttons: { project: string; curriculo: string };
@@ -31,7 +36,7 @@ export class OwnerService {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
     const owner = await this.ownerRepository.findById(ownerId);
     if (!owner) throw new Exception("Owner não  Encontrado!", 404);
-    return {
+    const ownerResponse = {
       id: owner.id,
       name: owner.name,
       email: owner.email,
@@ -47,12 +52,22 @@ export class OwnerService {
         curriculo: "Curriculo",
       },
     };
+    // Only `about`/`occupation` can ever be overwritten here — applyTranslations
+    // merges exclusively the fields the worker wrote, which are themselves
+    // bound by the TRANSLATABLE allowlist (RF-02, ADR-05).
+    const [translated] = await applyTranslations("owner", [ownerResponse], language);
+    return translated ?? ownerResponse;
   }
 
   async updateOwner(ownerUpdateData: OwnerDataOptionalRequest, ownerId: string) {
     try {
       ownerSchemaOptional.parse(ownerUpdateData);
-      return await this.ownerRepository.updateOwner(ownerUpdateData, ownerId);
+      const updated = await this.ownerRepository.updateOwner(ownerUpdateData, ownerId);
+      // Only `about`/`occupation` are translatable (TRANSLATABLE allowlist) — the
+      // hash step filters out password/secretWord/email before anything ever
+      // reaches the worker or the LLM (AC-13).
+      await enqueueTranslation("owner", updated.id, updated);
+      return updated;
     } catch (e) {
       if (e instanceof ZodError) {
         throw new Exception(e.issues?.[0]?.message || "error for update owner", 400);

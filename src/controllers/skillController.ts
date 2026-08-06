@@ -61,10 +61,9 @@ export class SkillController {
         language
       );
 
-      // Skill records only carry proper nouns/enum codes (title, stack, type,
-      // subSkils) — nothing natural-language to translate. `texts` is now
-      // resolved statically via getUiTexts (ADR-01), so this route never
-      // calls the LLM (AC-01).
+      // `title` is merged in already-translated by SkillService.findAllSkill
+      // (applyTranslations, RF-02); `texts` comes from the static getUiTexts
+      // dictionary (ADR-01). Either way, this route never calls the LLM (AC-01).
       res.status(200).json(result);
     } catch (error) {
       errorFilter(error, res);

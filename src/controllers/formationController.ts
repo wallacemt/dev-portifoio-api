@@ -1,7 +1,6 @@
 import { type Request, type Response, Router } from "express";
 import AuthPolice from "../middleware/authPolice";
 import { FormationService } from "../services/formationService";
-import { TranslationService } from "../services/aiService";
 import type { FormationAddRequest, FormationUpdate } from "../types/formation";
 import errorFilter from "../utils/isCustomError";
 
@@ -15,7 +14,6 @@ export class FormationController {
   routerPrivate: Router;
   routerPublic: Router;
   private formationService = new FormationService();
-  private translationService = new TranslationService();
   constructor() {
     this.routerPrivate = Router();
     this.routerPublic = Router();
@@ -47,21 +45,11 @@ export class FormationController {
     const { language } = req.query as { language?: string };
 
     try {
+      // Translated content, when it exists, is already merged in by
+      // FormationService.findAllFormations (applyTranslations) — this route
+      // never calls the LLM (ADR-05, AC-15).
       const result = await this.formationService.findAllFormations(req.params.ownerId || "", language);
-      if (language && language !== "pt") {
-        try {
-          const translatedFormations = await this.translationService.translateObject(
-            result.formations,
-            language,
-            "pt",
-          );
-          res.status(200).json({ ...result, formations: translatedFormations });
-        } catch (e) {
-          errorFilter(e, res);
-        }
-      } else {
-        res.status(200).json(result);
-      }
+      res.status(200).json(result);
     } catch (error) {
       errorFilter(error, res);
     }
