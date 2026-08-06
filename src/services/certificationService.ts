@@ -1,6 +1,8 @@
 import { ZodError } from "zod";
 import { getUiTexts } from "../i18n";
 import { CertificationRepository } from "../repository/certificationRepository";
+import { applyTranslations } from "../translation/applyTranslations";
+import { enqueueTranslation, removeTranslations } from "../translation/enqueueTranslation";
 import type { CertificationAddRequest, CertificationUpdate } from "../types/badges";
 import { Exception } from "../utils/exception";
 import { certificationSchema, certificationSchemaOptional } from "../validations/badgesValidation";
@@ -13,12 +15,13 @@ export class CertificationService {
       throw new Exception("ID de owner inválido", 400);
     }
     const texts = getUiTexts("certification", language);
-    const certifications = await this.certificationRepository.findAllCertifications(ownerId);
+    const fetchedCertifications = await this.certificationRepository.findAllCertifications(ownerId);
+    const certifications = await applyTranslations("certification", fetchedCertifications, language);
 
     return { certifications, texts };
   }
 
-  async findById(certificationId: string) {
+  async findById(certificationId: string, language?: string) {
     if (!certificationId || certificationId === ":id") {
       throw new Exception("ID da certificação inválido", 400);
     }
@@ -26,7 +29,8 @@ export class CertificationService {
     if (!certification) {
       throw new Exception("Certificação não encontrada", 404);
     }
-    return certification;
+    const [translated] = await applyTranslations("certification", [certification], language);
+    return translated ?? certification;
   }
 
   async addCertification(certification: CertificationAddRequest) {
@@ -39,7 +43,9 @@ export class CertificationService {
         certificateFile: certification.certificateFile?.length ? certification.certificateFile : undefined,
       };
       certificationSchema.parse(certificationData);
-      return await this.certificationRepository.addCertification(certificationData);
+      const created = await this.certificationRepository.addCertification(certificationData);
+      await enqueueTranslation("certification", created.id, created);
+      return created;
     } catch (e) {
       if (e instanceof ZodError) {
         throw new Exception(e.issues?.[0]?.message || "Erro ao adicionar certificação", 400);
@@ -68,7 +74,9 @@ export class CertificationService {
         certificateFile: certification.certificateFile?.length ? certification.certificateFile : undefined,
       };
       certificationSchemaOptional.parse(certificationData);
-      return await this.certificationRepository.updateCertification(certificationData, certificationId);
+      const updated = await this.certificationRepository.updateCertification(certificationData, certificationId);
+      await enqueueTranslation("certification", updated.id, updated);
+      return updated;
     } catch (e) {
       if (e instanceof ZodError) {
         throw new Exception(e.issues?.[0]?.message || "Erro ao atualizar certificação", 400);
@@ -87,6 +95,8 @@ export class CertificationService {
       throw new Exception("Certificação não encontrada", 404);
     }
 
-    return await this.certificationRepository.deleteCertification(certificationId);
+    const deleted = await this.certificationRepository.deleteCertification(certificationId);
+    await removeTranslations("certification", certificationId);
+    return deleted;
   }
 }

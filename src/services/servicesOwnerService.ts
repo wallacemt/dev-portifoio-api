@@ -1,5 +1,6 @@
 import { getUiTexts } from "../i18n";
 import { ServicesRepository } from "../repository/servicesRepository";
+import { applyTranslations } from "../translation/applyTranslations";
 import type { Service } from "../types/services";
 import { Exception } from "../utils/exception";
 
@@ -38,6 +39,7 @@ export class ServicesOwnerService {
     );
 
     const texts = getUiTexts("service", language);
-    return { services: serviceWithTech, connections, texts };
+    const translatedServices = await applyTranslations("service", serviceWithTech, language);
+    return { services: translatedServices, connections, texts };
   }
 }

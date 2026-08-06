@@ -340,7 +340,7 @@ ${jsonString}
 
     for (let attempt = 1; attempt <= TranslationService.MAX_RETRIES; attempt++) {
       try {
-        QuotaManager.recordRequest();
+        await QuotaManager.recordRequest();
 
         devDebugger(`[OpenRouter Pre Ask]: using model ${model}`);
         //biome-ignore lint: necessary

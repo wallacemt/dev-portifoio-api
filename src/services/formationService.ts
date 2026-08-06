@@ -1,6 +1,8 @@
 import { ZodError } from "zod";
 import { getUiTexts } from "../i18n";
 import { FormationRepository } from "../repository/formationRepository";
+import { applyTranslations } from "../translation/applyTranslations";
+import { enqueueTranslation, removeTranslations } from "../translation/enqueueTranslation";
 import { FormationTypeValues, type FormationAddRequest, type FormationUpdate } from "../types/formation";
 import { Exception } from "../utils/exception";
 import { formationSchema, formationSchemaOptional } from "../validations/formationValidation";
@@ -11,7 +13,8 @@ export class FormationService {
   async findAllFormations(ownerId: string, language?: string) {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
 
-    const formations = await this.formationRepository.findAllFormations(ownerId);
+    const fetchedFormations = await this.formationRepository.findAllFormations(ownerId);
+    const formations = await applyTranslations("formation", fetchedFormations, language);
     const texts = getUiTexts("formation", language);
     return { formations, texts };
   }
@@ -23,7 +26,9 @@ export class FormationService {
         certificationUrl: formation.certificationUrl?.length ? formation.certificationUrl : undefined,
       };
       formationSchema.parse(formationData);
-      return await this.formationRepository.addFormation(formationData);
+      const created = await this.formationRepository.addFormation(formationData);
+      await enqueueTranslation("formation", created.id, created);
+      return created;
     } catch (e) {
       if (e instanceof ZodError) {
         throw new Exception(e.issues?.[0]?.message || "error for add formations", 400);
@@ -48,7 +53,9 @@ export class FormationService {
         certificationUrl: formation.certificationUrl?.length ? formation.certificationUrl : undefined,
       };
       formationSchemaOptional.parse(formationData);
-      return await this.formationRepository.updateFormation(formationData, formationId);
+      const updated = await this.formationRepository.updateFormation(formationData, formationId);
+      await enqueueTranslation("formation", updated.id, updated);
+      return updated;
     } catch (e) {
       if (e instanceof ZodError) {
         throw new Exception(e.issues?.[0]?.message || "error for update formations", 400);
@@ -61,7 +68,9 @@ export class FormationService {
     if (!formationId || formationId === ":id") throw new Exception("ID da formação invalida", 400);
     if (!(await this.formationRepository.findById(formationId))) throw new Exception("Formação não encontrado", 404);
 
-    return await this.formationRepository.deleteFormation(formationId);
+    const deleted = await this.formationRepository.deleteFormation(formationId);
+    await removeTranslations("formation", formationId);
+    return deleted;
   }
 
   async concludeFormation(formationId: string) {

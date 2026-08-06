@@ -1,7 +1,6 @@
 import { type Request, type Response, Router } from "express";
 import AuthPolice from "../middleware/authPolice";
 import { BadgeService } from "../services/badgeService";
-import { TranslationService } from "../services/aiService";
 import type { BadgeAddRequest, BadgeUpdate } from "../types/badges";
 import errorFilter from "../utils/isCustomError";
 
@@ -15,7 +14,6 @@ export class BadgeController {
   routerPrivate: Router;
   routerPublic: Router;
   private badgeService = new BadgeService();
-  private translationService = new TranslationService();
 
   constructor() {
     this.routerPrivate = Router();
@@ -40,18 +38,11 @@ export class BadgeController {
     const { language } = req.query as { language?: string };
 
     try {
+      // Translated content, when it exists, is already merged in by
+      // BadgeService.findAllBadges (applyTranslations) — this route never
+      // calls the LLM (ADR-05, AC-15).
       const result = await this.badgeService.findAllBadges(req.params.ownerId || "", language);
-
-      if (language && language !== "pt") {
-        try {
-          const translatedBadges = await this.translationService.translateObject(result.badges, language, "pt");
-          res.status(200).json({ ...result, badges: translatedBadges });
-        } catch (e) {
-          errorFilter(e, res);
-        }
-      } else {
-        res.status(200).json(result);
-      }
+      res.status(200).json(result);
     } catch (error) {
       errorFilter(error, res);
     }
@@ -61,18 +52,8 @@ export class BadgeController {
     const { language } = req.query as { language?: string };
 
     try {
-      const badge = await this.badgeService.findById(req.params.id || "");
-
-      if (language && language !== "pt") {
-        try {
-          const translated = await this.translationService.translateObject(badge, language, "pt");
-          res.status(200).json(translated);
-        } catch (e) {
-          errorFilter(e, res);
-        }
-      } else {
-        res.status(200).json(badge);
-      }
+      const badge = await this.badgeService.findById(req.params.id || "", language);
+      res.status(200).json(badge);
     } catch (error) {
       errorFilter(error, res);
     }

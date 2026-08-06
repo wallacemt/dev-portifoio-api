@@ -13,5 +13,21 @@
       }
     }
   },
+  "overrides": [
+    {
+      // Entrypoint filename mirrors the Docker CMD / npm script it's invoked
+      // from (`dist/src/worker-entry.js`, The-Blueprint-001 section 5/14) —
+      // kept kebab-case rather than renamed, to avoid touching four
+      // Docker/package.json references for a naming-convention nit.
+      "includes": ["src/worker-entry.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": "off"
+          }
+        }
+      }
+    }
+  ],
   "extends": ["ultracite"]
 }
