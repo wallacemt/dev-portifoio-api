@@ -47,14 +47,15 @@ export class FormationController {
     const { language } = req.query as { language?: string };
 
     try {
-      const result = await this.formationService.findAllFormations(req.params.ownerId || "");
+      const result = await this.formationService.findAllFormations(req.params.ownerId || "", language);
       if (language && language !== "pt") {
         try {
-          const [translatedFormations, translatedTexts] = await Promise.all([
-            this.translationService.translateObject(result.formations, language, "pt", "Translate formation type values"),
-            this.translationService.translateObject(result.texts, language, "pt"),
-          ]);
-          res.status(200).json({ ...result, formations: translatedFormations, texts: translatedTexts });
+          const translatedFormations = await this.translationService.translateObject(
+            result.formations,
+            language,
+            "pt",
+          );
+          res.status(200).json({ ...result, formations: translatedFormations });
         } catch (e) {
           errorFilter(e, res);
         }

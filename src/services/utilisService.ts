@@ -1,4 +1,4 @@
-
+import { getUiTexts } from "../i18n";
 import type { LanguageApiResponse } from "../types/utils";
 
 interface NavbarItem {
@@ -9,31 +9,28 @@ interface NavbarItens {
   itens: NavbarItem[];
   callText: string;
 }
-const navbarItems: NavbarItens = {
-  itens: [
-    {
-      name: "Início",
-      path: "/",
-    },
-    {
-      name: "Projetos",
-      path: "/projects",
-    },
-    {
-      name: "Habilidades",
-      path: "/skills",
-    },
-    {
-      name: "Serviços",
-      path: "/services",
-    },
-    {
-      name: "Formação",
-      path: "/formation",
-    },
-  ],
-  callText: "Disponível para novos projetos",
-};
+
+interface NavbarTexts {
+  navbar: {
+    items: {
+      home: string;
+      projects: string;
+      skills: string;
+      services: string;
+      formation: string;
+    };
+    callText: string;
+  };
+}
+
+// Route paths are structural, not translatable — only the labels come from i18n.
+const navbarRoutes: { key: keyof NavbarTexts["navbar"]["items"]; path: string }[] = [
+  { key: "home", path: "/" },
+  { key: "projects", path: "/projects" },
+  { key: "skills", path: "/skills" },
+  { key: "services", path: "/services" },
+  { key: "formation", path: "/formation" },
+];
 
 const defaultLenguages: LanguageApiResponse = {
   translation: [
@@ -82,8 +79,12 @@ const defaultLenguages: LanguageApiResponse = {
   ],
 };
 export class UtilisService {
-  getNavbarItems(): NavbarItens {
-    return navbarItems;
+  getNavbarItems(language?: string): NavbarItens {
+    const texts = getUiTexts<NavbarTexts>("utilis", language);
+    return {
+      itens: navbarRoutes.map(({ key, path }) => ({ name: texts.navbar.items[key], path })),
+      callText: texts.navbar.callText,
+    };
   }
 
   getLeguageApiReferenceUrl(): LanguageApiResponse {

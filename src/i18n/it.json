@@ -1,0 +1,65 @@
+{
+  "project": {
+    "title": "I Miei Progetti",
+    "description": "Progetti che ho sviluppato nel corso della mia carriera, che dimostrano le mie competenze ed esperienze in diverse tecnologie.",
+    "descriptionLabel": "Descrizione",
+    "techsLabel": "Tecnologie",
+    "linksLabel": "Link del Progetto",
+    "backendLabel": "Backend",
+    "frontendLabel": "Frontend",
+    "deploymentLabel": "Deployment",
+    "skillsLabel": "Competenze Utilizzate",
+    "cta": "Vedi Progetto",
+    "isMostRecentText": "Più Recente",
+    "dateLabel": {
+      "updatedAt": "Ultimo Aggiornamento",
+      "addedAt": "Aggiunto Il"
+    }
+  },
+  "formation": {
+    "title": "Formazione Accademica",
+    "description": "Il mio percorso di apprendimento continuo attraverso corsi, certificazioni e formazioni che plasmano la mia competenza tecnica.",
+    "formationStatsText": {
+      "inProgress": "In Corso",
+      "certificationText": "Vedi certificato",
+      "conclude": "Concluso"
+    },
+    "stats": {
+      "formations": "Formazioni",
+      "studyHours": "Ore di Studio",
+      "institution": "Istituzione",
+      "certificaos": "Certificati"
+    }
+  },
+  "skill": {
+    "chooseText": "Filtra per Stack",
+    "title": "Le Mie Competenze",
+    "description": "Competenze che padroneggio e utilizzo nei miei progetti, sviluppate tramite corsi e progetti personali."
+  },
+  "badge": {
+    "title": "Badge & Riconoscimenti",
+    "description": "Riconoscimenti e traguardi ottenuti nel corso del mio percorso professionale"
+  },
+  "certification": {
+    "title": "Certificazioni Professionali",
+    "description": "Certificazioni convalidate che attestano conoscenza ed esperienza tecnica"
+  },
+  "service": {
+    "title": "I Miei Servizi",
+    "description": "Soluzioni complete di sviluppo fullstack, dalla concezione all'implementazione, che collegano in modo efficiente ogni parte del tuo progetto.",
+    "cta": "Interessato a un servizio? Parliamo del tuo progetto!",
+    "ctaBtn": "Contattami"
+  },
+  "utilis": {
+    "navbar": {
+      "items": {
+        "home": "Home",
+        "projects": "Progetti",
+        "skills": "Competenze",
+        "services": "Servizi",
+        "formation": "Formazione"
+      },
+      "callText": "Disponibile per nuovi progetti"
+    }
+  }
+}

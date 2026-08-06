@@ -1,0 +1,65 @@
+{
+  "project": {
+    "title": "My Projects",
+    "description": "Projects I've developed throughout my career, showcasing my skills and experience across a range of technologies.",
+    "descriptionLabel": "Description",
+    "techsLabel": "Technologies",
+    "linksLabel": "Project Links",
+    "backendLabel": "Backend",
+    "frontendLabel": "Frontend",
+    "deploymentLabel": "Deployment",
+    "skillsLabel": "Skills Used",
+    "cta": "View Project",
+    "isMostRecentText": "Most Recent",
+    "dateLabel": {
+      "updatedAt": "Last Updated",
+      "addedAt": "Added On"
+    }
+  },
+  "formation": {
+    "title": "Academic Background",
+    "description": "My continuous learning journey through courses, certifications, and studies that shape my technical expertise.",
+    "formationStatsText": {
+      "inProgress": "In Progress",
+      "certificationText": "View certificate",
+      "conclude": "Completed"
+    },
+    "stats": {
+      "formations": "Courses",
+      "studyHours": "Study Hours",
+      "institution": "Institution",
+      "certificaos": "Certificates"
+    }
+  },
+  "skill": {
+    "chooseText": "Filter by a Stack",
+    "title": "My Skills",
+    "description": "Skills I've mastered and use in my projects, developed through courses and personal projects."
+  },
+  "badge": {
+    "title": "Badges & Achievements",
+    "description": "Recognitions and achievements earned throughout my professional journey"
+  },
+  "certification": {
+    "title": "Professional Certifications",
+    "description": "Validated certifications that prove technical knowledge and expertise"
+  },
+  "service": {
+    "title": "My Services",
+    "description": "Complete fullstack development solutions, from conception to implementation, connecting every part of your project efficiently.",
+    "cta": "Interested in a service? Let's talk about your project!",
+    "ctaBtn": "Get in Touch"
+  },
+  "utilis": {
+    "navbar": {
+      "items": {
+        "home": "Home",
+        "projects": "Projects",
+        "skills": "Skills",
+        "services": "Services",
+        "formation": "Education"
+      },
+      "callText": "Available for new projects"
+    }
+  }
+}

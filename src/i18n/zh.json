@@ -1,0 +1,65 @@
+{
+  "project": {
+    "title": "我的项目",
+    "description": "我在职业生涯中开发的项目，展示了我在多种技术方面的技能和经验。",
+    "descriptionLabel": "描述",
+    "techsLabel": "技术栈",
+    "linksLabel": "项目链接",
+    "backendLabel": "后端",
+    "frontendLabel": "前端",
+    "deploymentLabel": "部署",
+    "skillsLabel": "使用的技能",
+    "cta": "查看项目",
+    "isMostRecentText": "最新",
+    "dateLabel": {
+      "updatedAt": "最后更新",
+      "addedAt": "添加于"
+    }
+  },
+  "formation": {
+    "title": "教育背景",
+    "description": "通过课程、认证和培训不断学习的历程，塑造了我的技术专长。",
+    "formationStatsText": {
+      "inProgress": "进行中",
+      "certificationText": "查看证书",
+      "conclude": "已完成"
+    },
+    "stats": {
+      "formations": "培训数量",
+      "studyHours": "学习时长",
+      "institution": "机构",
+      "certificaos": "证书"
+    }
+  },
+  "skill": {
+    "chooseText": "按技术栈筛选",
+    "title": "我的技能",
+    "description": "通过课程和个人项目掌握并应用于实际项目中的技能。"
+  },
+  "badge": {
+    "title": "徽章与成就",
+    "description": "在我职业生涯中获得的认可与成就"
+  },
+  "certification": {
+    "title": "专业认证",
+    "description": "经过验证的证书，证明技术知识与专业能力"
+  },
+  "service": {
+    "title": "我的服务",
+    "description": "从构思到实施的完整全栈开发解决方案，高效连接项目的各个部分。",
+    "cta": "对某项服务感兴趣吗？让我们聊聊你的项目！",
+    "ctaBtn": "联系我"
+  },
+  "utilis": {
+    "navbar": {
+      "items": {
+        "home": "首页",
+        "projects": "项目",
+        "skills": "技能",
+        "services": "服务",
+        "formation": "教育背景"
+      },
+      "callText": "接受新项目"
+    }
+  }
+}

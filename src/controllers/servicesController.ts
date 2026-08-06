@@ -18,21 +18,21 @@ export class ServicesOwnerController {
     const { language } = req.query as { language?: string };
     const { ownerId } = req.params as { ownerId: string };
     try {
-      const services =
-        await this.servicesOwnerService.getServicesItems(ownerId);
+      const result =
+        await this.servicesOwnerService.getServicesItems(ownerId, language);
       if (language && language !== 'pt') {
         try {
-          const translated = await this.translationService.translateObject(
-            services,
+          const translatedServices = await this.translationService.translateObject(
+            result.services,
             language,
             'pt'
           );
-          res.status(200).json(translated);
+          res.status(200).json({ ...result, services: translatedServices });
         } catch (e) {
           errorFilter(e, res);
         }
       } else {
-        res.status(200).json(services);
+        res.status(200).json(result);
       }
     } catch (error) {
       errorFilter(error, res);

@@ -1,4 +1,5 @@
 import { ZodError } from "zod";
+import { getUiTexts } from "../i18n";
 import { BadgeRepository } from "../repository/badgeRepository";
 import type { BadgeAddRequest, BadgeUpdate } from "../types/badges";
 import { Exception } from "../utils/exception";
@@ -7,14 +8,11 @@ import { badgeSchema, badgeSchemaOptional } from "../validations/badgesValidatio
 export class BadgeService {
   private badgeRepository = new BadgeRepository();
 
-  async findAllBadges(ownerId: string) {
+  async findAllBadges(ownerId: string, language?: string) {
     if (!ownerId || ownerId === ":ownerId") {
       throw new Exception("ID de owner inválido", 400);
     }
-    const texts = {
-      title:"Badges & Conquistas",
-      description:"Reconhecimentos e conquistas obtidas ao longo da minha jornada profissional"
-    }
+    const texts = getUiTexts("badge", language);
     const badges =  await this.badgeRepository.findAllBadges(ownerId);
 
     return {

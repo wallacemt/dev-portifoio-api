@@ -40,22 +40,21 @@ export class CertificationController {
     const { language } = req.query as { language?: string };
 
     try {
-      const certifications = await this.certificationService.findAllCertifications(req.params.ownerId || "");
+      const result = await this.certificationService.findAllCertifications(req.params.ownerId || "", language);
 
       if (language && language !== "pt") {
         try {
-          const translated = await this.translationService.translateObject(
-            certifications,
+          const translatedCertifications = await this.translationService.translateObject(
+            result.certifications,
             language,
             "pt",
-            "Traduza os dados das certificações",
           );
-          res.status(200).json(translated);
+          res.status(200).json({ ...result, certifications: translatedCertifications });
         } catch (e) {
           errorFilter(e, res);
         }
       } else {
-        res.status(200).json(certifications);
+        res.status(200).json(result);
       }
     } catch (error) {
       errorFilter(error, res);
@@ -70,12 +69,7 @@ export class CertificationController {
 
       if (language && language !== "pt") {
         try {
-          const translated = await this.translationService.translateObject(
-            certification,
-            language,
-            "pt",
-            "Traduza os dados da certificação",
-          );
+          const translated = await this.translationService.translateObject(certification, language, "pt");
           res.status(200).json(translated);
         } catch (e) {
           errorFilter(e, res);

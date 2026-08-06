@@ -1,10 +1,11 @@
+import { getUiTexts } from "../i18n";
 import { ServicesRepository } from "../repository/servicesRepository";
 import type { Service } from "../types/services";
 import { Exception } from "../utils/exception";
 
 export class ServicesOwnerService {
   private servicesRepository = new ServicesRepository();
-  async getServicesItems(ownerId: string) {
+  async getServicesItems(ownerId: string, language?: string) {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
     const [services, connections] = await Promise.all([
       this.servicesRepository.getAllServices(ownerId),
@@ -36,13 +37,7 @@ export class ServicesOwnerService {
       }))
     );
 
-    const texts = {
-      title: "Meus Serviços",
-      description:
-        "Soluções completas em desenvolvimento fullstack, desde a concepção até a implementação, conectando todas as partes do seu projeto de forma eficiente.",
-      cta: "Interessado em algum serviço? Vamos conversar sobre seu projeto!",
-      ctaBtn: "Entrar em Contato",
-    };
+    const texts = getUiTexts("service", language);
     return { services: serviceWithTech, connections, texts };
   }
 }

@@ -1,0 +1,65 @@
+{
+  "project": {
+    "title": "Mis Proyectos",
+    "description": "Proyectos que he desarrollado a lo largo de mi carrera, demostrando mis habilidades y experiencia en diversas tecnologías.",
+    "descriptionLabel": "Descripción",
+    "techsLabel": "Tecnologías",
+    "linksLabel": "Enlaces del Proyecto",
+    "backendLabel": "Backend",
+    "frontendLabel": "Frontend",
+    "deploymentLabel": "Despliegue",
+    "skillsLabel": "Habilidades Utilizadas",
+    "cta": "Ver Proyecto",
+    "isMostRecentText": "Más Reciente",
+    "dateLabel": {
+      "updatedAt": "Última Actualización",
+      "addedAt": "Agregado El"
+    }
+  },
+  "formation": {
+    "title": "Formación Académica",
+    "description": "Mi trayectoria de aprendizaje continuo a través de cursos, certificaciones y formaciones que moldean mi experiencia técnica.",
+    "formationStatsText": {
+      "inProgress": "En Curso",
+      "certificationText": "Ver certificado",
+      "conclude": "Concluido"
+    },
+    "stats": {
+      "formations": "Formaciones",
+      "studyHours": "Horas de Estudio",
+      "institution": "Institución",
+      "certificaos": "Certificados"
+    }
+  },
+  "skill": {
+    "chooseText": "Filtrar por una Stack",
+    "title": "Mis Habilidades",
+    "description": "Habilidades que domino y utilizo en mis proyectos, desarrolladas mediante cursos y proyectos personales."
+  },
+  "badge": {
+    "title": "Insignias y Logros",
+    "description": "Reconocimientos y logros obtenidos a lo largo de mi trayectoria profesional"
+  },
+  "certification": {
+    "title": "Certificaciones Profesionales",
+    "description": "Certificaciones validadas que comprueban conocimiento y experiencia técnica"
+  },
+  "service": {
+    "title": "Mis Servicios",
+    "description": "Soluciones completas de desarrollo fullstack, desde la concepción hasta la implementación, conectando todas las partes de tu proyecto de forma eficiente.",
+    "cta": "¿Interesado en algún servicio? ¡Hablemos sobre tu proyecto!",
+    "ctaBtn": "Ponte en Contacto"
+  },
+  "utilis": {
+    "navbar": {
+      "items": {
+        "home": "Inicio",
+        "projects": "Proyectos",
+        "skills": "Habilidades",
+        "services": "Servicios",
+        "formation": "Formación"
+      },
+      "callText": "Disponible para nuevos proyectos"
+    }
+  }
+}
