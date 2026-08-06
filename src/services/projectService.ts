@@ -1,4 +1,5 @@
 import { ZodError } from "zod";
+import { getUiTexts } from "../i18n";
 import { ProjectRepository } from "../repository/projectRepository";
 import type { CreateProject, Project, ProjectFilter, ProjectWhere, UpdateProjec } from "../types/projects";
 import { Exception } from "../utils/exception";
@@ -27,6 +28,17 @@ export class ProjectService {
   }
 
   /**
+   * Discriminates which date label a project's card should show, without
+   * baking any formatted/localized string into the payload (ADR-01, D-02).
+   * The frontend picks the text for this key from its own i18n dictionary.
+   */
+  private dateLabelKey(project: Project): "updatedAt" | "addedAt" {
+    return project.lastUpdate && project.lastUpdate.getDate() !== project.createdAt.getDate()
+      ? "updatedAt"
+      : "addedAt";
+  }
+
+  /**
    * Find all projects for a given owner, with filters
    *
    * @param ownerId - The ID of the owner
@@ -34,7 +46,7 @@ export class ProjectService {
    * @returns A list of projects, and pagination metadata
    * @throws {Exception} If the owner ID is invalid
    */
-  async findAllProjects(ownerId: string, filters: ProjectFilter) {
+  async findAllProjects(ownerId: string, filters: ProjectFilter, language?: string) {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
     const { page, limit, tech, activate, orderBy, search } = filters;
     const skip = (page - 1) * limit;
@@ -55,11 +67,20 @@ export class ProjectService {
       this.projectRepository.findAllProjects(where, skip, limit, orderBy),
       this.projectRepository.countProjects(where),
     ]);
-    const texts = {
-      title: "Meus Projetos",
-      description:
-        "Projetos que desenvolvi ao longo da minha carreira, demonstrando minhas habilidades e experiências em diversas tecnologias.",
-    };
+    const projectTexts = getUiTexts<{
+      title: string;
+      description: string;
+      descriptionLabel: string;
+      techsLabel: string;
+      linksLabel: string;
+      backendLabel: string;
+      frontendLabel: string;
+      deploymentLabel: string;
+      skillsLabel: string;
+      cta: string;
+      isMostRecentText: string;
+    }>("project", language);
+    const texts = { title: projectTexts.title, description: projectTexts.description };
     const projectsFinalForm = await Promise.all(
       projects.map(async (project: Project) => {
         const skills = await this.projectRepository.findHabilitiesWhereProject(project.id, ownerId);
@@ -71,44 +92,31 @@ export class ProjectService {
         return {
           ...this.withLegacyPreviewVideoUrl(project),
           previewImage: optimizeCloudinary(project.previewImage),
-          isMostRecent: { isRecent: this.isMostRecent(project), text: "Mais Recente" },
+          isMostRecent: { isRecent: this.isMostRecent(project), text: projectTexts.isMostRecentText },
           screenshots: reorderedScreenshots,
           description: {
-            title: "Descrição",
+            title: projectTexts.descriptionLabel,
             content: project.description,
           },
           techs: {
-            title: "Tecnologias",
+            title: projectTexts.techsLabel,
             content: project.techs,
           },
           links: {
-            title: "Links do Projeto",
+            title: projectTexts.linksLabel,
             content: {
-              backend: { title: "Backend", url: project.backend },
-              frontend: { title: "Frontend", url: project.frontend },
-              deployment: { title: "Deployment", url: project.deployment },
+              backend: { title: projectTexts.backendLabel, url: project.backend },
+              frontend: { title: projectTexts.frontendLabel, url: project.frontend },
+              deployment: { title: projectTexts.deploymentLabel, url: project.deployment },
             },
           },
           skills: {
-            title: "Habilidades Utilizadas",
+            title: projectTexts.skillsLabel,
             content: skills,
           },
-          cta: "Ver Projeto",
+          cta: projectTexts.cta,
 
-          lastUpdateText:
-            project.lastUpdate && project.lastUpdate.getDate() !== project.createdAt.getDate()
-              ? "Ultima Atualização " +
-                new Date(project.lastUpdate).toLocaleDateString("pt-BR", {
-                  day: "2-digit",
-                  month: "long",
-                  year: "numeric",
-                })
-              : "Adicionado Em " +
-                new Date(project.createdAt).toLocaleDateString("pt-BR", {
-                  day: "2-digit",
-                  month: "long",
-                  year: "numeric",
-                }),
+          dateLabelKey: this.dateLabelKey(project),
         };
       })
     );

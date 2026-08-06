@@ -47,12 +47,16 @@ export class ProjectController {
     if (parseResult.success) {
       const filters: ProjectFilter = parseResult.data;
       try {
-        const result = await this.projectService.findAllProjects(req.params.ownerId || "", filters);
+        const result = await this.projectService.findAllProjects(req.params.ownerId || "", filters, language);
 
         if (language && language !== "pt") {
           try {
-            const translated = await this.translationService.translateObject(result, language, "pt");
-            res.status(200).json(translated);
+            const translatedProjects = await this.translationService.translateObject(
+              result.projects,
+              language,
+              "pt",
+            );
+            res.status(200).json({ ...result, projects: translatedProjects });
           } catch (e) {
             errorFilter(e, res);
           }
