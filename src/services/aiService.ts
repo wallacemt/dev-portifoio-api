@@ -145,7 +145,7 @@ export class TranslationService {
     return await new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  async translateObject(obj: object, lenguage: string, sourceLeng = "pt", aditionalPrompt?: string): Promise<object> {
+  async translateObject(obj: object, lenguage: string, sourceLeng = "pt"): Promise<object> {
     if (!lenguage || lenguage === sourceLeng || !obj) return obj;
 
     const cacheKey = TranslationCache.makeKey(obj, lenguage, sourceLeng);
@@ -162,7 +162,7 @@ export class TranslationService {
       return existing;
     }
 
-    const promise = this._translate(obj, lenguage, sourceLeng, aditionalPrompt, cacheKey);
+    const promise = this._translate(obj, lenguage, sourceLeng,  cacheKey);
     TranslationService.inflight.set(cacheKey, promise);
     promise.finally(() => TranslationService.inflight.delete(cacheKey));
     return promise;
@@ -171,8 +171,7 @@ export class TranslationService {
   private async _translate(
     obj: object,
     lenguage: string,
-    sourceLeng: string,
-    aditionalPrompt: string | undefined,
+    sourceLeng: string, 
     cacheKey: string,
   ): Promise<object> {
     // Same short-circuit GET /owner/private/ai-config already reports via
@@ -193,7 +192,7 @@ export class TranslationService {
 
     if (TranslationService.isObjectTooLarge(obj)) {
       devDebugger(`Object too large, splitting into chunks for translation to ${lenguage}`);
-      return await this.translateLargeObject(obj, lenguage, sourceLeng, aditionalPrompt);
+      return await this.translateLargeObject(obj, lenguage, sourceLeng);
     }
 
     const jsonString = JSON.stringify(obj);
@@ -205,7 +204,6 @@ export class TranslationService {
     obj: object,
     language: string,
     sourceLang: string,
-    additionalPrompt?: string,
   ): Promise<object> {
     try {
       const chunks = TranslationService.chunkObject(obj);

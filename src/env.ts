@@ -14,8 +14,7 @@ const envSchema = z.object({
       return urls.map((url: string) => url.replace(/\/$/, ""));
     }),
   JWT_SECRET: z.string().min(1),
-  GEMINI_API_KEY: z.string().optional(),
-  OPENROUTER_API_KEY: z.string().optional(),
+  OPENROUTER_API_KEY: z.string(),
   CLOUDINARY_CLOUD_NAME: z.string(),
   CLOUDINARY_API_KEY: z.string(),
   CLOUDINARY_API_SECRET: z.string(),
