@@ -335,13 +335,13 @@ ${jsonString}
   private async translateWithRetry(basePrompt: string, cacheKey: string, originalObj: object): Promise<object> {
     let lastError: unknown;
     const model = await TranslationService.resolveModel();
-
     for (let attempt = 1; attempt <= TranslationService.MAX_RETRIES; attempt++) {
       try {
+        //biome-ignore lint: necessary
         await QuotaManager.recordRequest();
 
         devDebugger(`[OpenRouter Pre Ask]: using model ${model}`);
-        //biome-ignore lint: necessary
+      
         const text = await TranslationService.callOpenRouter(basePrompt, model);
 
         if (!text) throw new Error("Resposta vazia do modelo");
