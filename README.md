@@ -171,6 +171,23 @@ npm run prod:down
 
 O servidor estará disponível em `http://localhost:8081`
 
+### Worker de tradução
+
+A tradução automática do conteúdo do owner (Blueprint-001) roda em um **processo
+separado** do servidor HTTP — configurar `REDIS_URL` no `.env` não é suficiente,
+o worker precisa ser efetivamente iniciado:
+
+```bash
+# Local, fora do Docker (precisa de um Redis rodando e alcançável via REDIS_URL)
+bun run worker
+
+# Rodar o backfill uma vez e encerrar (traduz o conteúdo já existente)
+bun run worker:backfill
+```
+
+Via `docker compose up`, os serviços `redis` e `worker` já sobem junto com `app` —
+nenhum passo manual extra é necessário nesse caso.
+
 ## 📡 API Endpoints
 
 ### 🔐 Autenticação (`/auth`)
