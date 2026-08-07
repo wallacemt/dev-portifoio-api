@@ -1,9 +1,23 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: dev-portifolio-ws-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
   app:
     build: .
     container_name: dev-portifolio-ws-backend
     ports:
       - "8081:8081"
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379
     volumes:
       - ./src:/app/src
       - ./src/docs:/app/src/docs
@@ -17,11 +31,16 @@ services:
     build: .
     container_name: dev-portifolio-ws-worker
     command: ["bun", "dist/src/worker-entry.js"]
+    depends_on:
+      - redis
+    env_file:
+      - .env
     environment:
-      - REDIS_URL=${REDIS_URL}
-      - MAX_DAILY_REQUESTS=${MAX_DAILY_REQUESTS}
-      - WORKER_DAILY_BUDGET=${WORKER_DAILY_BUDGET}
+      - REDIS_URL=redis://redis:6379
     volumes:
       - ./src:/app/src
       - ./prisma:/app/prisma
       - ./package.json:/app/package.json
+
+volumes:
+  redis-data:
