@@ -1,7 +1,7 @@
 //@biome-ignore
 
 import { ZodError } from "zod";
-import { AnalyticsRepository } from "../repository/analyticsRepository";
+import { AnalyticsRepository, type AnalyticsQueryFilters } from "../repository/analyticsRepository";
 import type {
   AnalyticsFilters,
   AnalyticsResponse,
@@ -249,6 +249,15 @@ export class AnalyticsService {
       const cached = await this.getCachedAnalytics(cacheKey);
       if (cached) return cached;
 
+      // Filtros de device/country/page já validados por analyticsFiltersSchema
+      // acima — propagados pro repository pra realmente restringir a query
+      // (antes eram aceitos, cacheados na chave, e ignorados).
+      const repoFilters: AnalyticsQueryFilters = {
+        device: filters.device,
+        country: filters.country,
+        page: filters.page,
+      };
+
       // Busca dados agregados
       const [
         uniqueVisitors,
@@ -261,14 +270,14 @@ export class AnalyticsService {
         avgTimeSpent,
         dailyStats,
       ] = await Promise.all([
-        this.analyticsRepository.getUniqueVisitors(ownerId, startDate, endDate),
-        this.analyticsRepository.getTotalPageViews(ownerId, startDate, endDate),
-        this.analyticsRepository.getDeviceBreakdown(ownerId, startDate, endDate),
-        this.analyticsRepository.getTopPages(ownerId, startDate, endDate),
-        this.analyticsRepository.getTopCountries(ownerId, startDate, endDate),
-        this.analyticsRepository.getTopBrowsers(ownerId, startDate, endDate),
-        this.analyticsRepository.getBounceRate(ownerId, startDate, endDate),
-        this.analyticsRepository.getAverageTimeSpent(ownerId, startDate, endDate),
+        this.analyticsRepository.getUniqueVisitors(ownerId, startDate, endDate, repoFilters),
+        this.analyticsRepository.getTotalPageViews(ownerId, startDate, endDate, repoFilters),
+        this.analyticsRepository.getDeviceBreakdown(ownerId, startDate, endDate, repoFilters),
+        this.analyticsRepository.getTopPages(ownerId, startDate, endDate, 10, repoFilters),
+        this.analyticsRepository.getTopCountries(ownerId, startDate, endDate, 10, repoFilters),
+        this.analyticsRepository.getTopBrowsers(ownerId, startDate, endDate, 10, repoFilters),
+        this.analyticsRepository.getBounceRate(ownerId, startDate, endDate, repoFilters),
+        this.analyticsRepository.getAverageTimeSpent(ownerId, startDate, endDate, repoFilters),
         this.analyticsRepository.getDailyAnalytics(ownerId, {
           startDate,
           endDate,
