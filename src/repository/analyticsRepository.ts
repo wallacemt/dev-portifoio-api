@@ -8,6 +8,49 @@ import type {
   VisitorData,
 } from "../types/analytics";
 
+/**
+ * Filtros opcionais aceitos pelas queries de agregação de analytics.
+ * Só entram no `where` quando informados — não alteram o comportamento
+ * das chamadas existentes que não passam filtros.
+ */
+export interface AnalyticsQueryFilters {
+  device?: string;
+  country?: string;
+  page?: string;
+}
+
+/**
+ * `visitor` não tem campo `page` — o filtro de página, quando aplicado a
+ * queries baseadas em `visitor`, restringe a quem tem pelo menos uma
+ * pageView na página informada, via a relation `pageViews`.
+ */
+function visitorWhereFromFilters(filters?: AnalyticsQueryFilters) {
+  return {
+    ...(filters?.device && { device: filters.device }),
+    ...(filters?.country && { country: filters.country }),
+    ...(filters?.page && { pageViews: { some: { page: filters.page } } }),
+  };
+}
+
+/**
+ * `pageView` não tem campos `device`/`country` — esses filtros, quando
+ * aplicados a queries baseadas em `pageView`, restringem via a relation
+ * `visitor`.
+ */
+function pageViewWhereFromFilters(filters?: AnalyticsQueryFilters) {
+  return {
+    ...(filters?.page && { page: filters.page }),
+    ...((filters?.device || filters?.country) && {
+      visitor: {
+        is: {
+          ...(filters?.device && { device: filters.device }),
+          ...(filters?.country && { country: filters.country }),
+        },
+      },
+    }),
+  };
+}
+
 export class AnalyticsRepository {
   /**
    * Cria ou atualiza um visitante
@@ -113,7 +156,7 @@ export class AnalyticsRepository {
   /**
    * Busca visitantes únicos em um período
    */
-  async getUniqueVisitors(ownerId: string, startDate: Date, endDate: Date) {
+  async getUniqueVisitors(ownerId: string, startDate: Date, endDate: Date, filters?: AnalyticsQueryFilters) {
     return await prisma.visitor.count({
       where: {
         ownerId,
@@ -121,6 +164,7 @@ export class AnalyticsRepository {
           gte: startDate,
           lte: endDate,
         },
+        ...visitorWhereFromFilters(filters),
       },
     });
   }
@@ -151,7 +195,7 @@ export class AnalyticsRepository {
   /**
    * Busca total de page views em um período
    */
-  async getTotalPageViews(ownerId: string, startDate: Date, endDate: Date) {
+  async getTotalPageViews(ownerId: string, startDate: Date, endDate: Date, filters?: AnalyticsQueryFilters) {
     return await prisma.pageView.count({
       where: {
         ownerId,
@@ -159,6 +203,7 @@ export class AnalyticsRepository {
           gte: startDate,
           lte: endDate,
         },
+        ...pageViewWhereFromFilters(filters),
       },
     });
   }
@@ -166,7 +211,7 @@ export class AnalyticsRepository {
   /**
    * Busca breakdown por dispositivo
    */
-  async getDeviceBreakdown(ownerId: string, startDate: Date, endDate: Date) {
+  async getDeviceBreakdown(ownerId: string, startDate: Date, endDate: Date, filters?: AnalyticsQueryFilters) {
     const result = await prisma.visitor.groupBy({
       by: ["device"],
       where: {
@@ -175,6 +220,7 @@ export class AnalyticsRepository {
           gte: startDate,
           lte: endDate,
         },
+        ...visitorWhereFromFilters(filters),
       },
       _count: {
         device: true,
@@ -190,7 +236,13 @@ export class AnalyticsRepository {
   /**
    * Busca páginas mais visitadas
    */
-  async getTopPages(ownerId: string, startDate: Date, endDate: Date, limit = 10) {
+  async getTopPages(
+    ownerId: string,
+    startDate: Date,
+    endDate: Date,
+    limit = 10,
+    filters?: AnalyticsQueryFilters
+  ) {
     const result = await prisma.pageView.groupBy({
       by: ["page"],
       where: {
@@ -199,6 +251,7 @@ export class AnalyticsRepository {
           gte: startDate,
           lte: endDate,
         },
+        ...pageViewWhereFromFilters(filters),
       },
       _count: {
         page: true,
@@ -220,7 +273,13 @@ export class AnalyticsRepository {
   /**
    * Busca países com mais visitantes
    */
-  async getTopCountries(ownerId: string, startDate: Date, endDate: Date, limit = 10) {
+  async getTopCountries(
+    ownerId: string,
+    startDate: Date,
+    endDate: Date,
+    limit = 10,
+    filters?: AnalyticsQueryFilters
+  ) {
     const result = await prisma.visitor.groupBy({
       by: ["country"],
       where: {
@@ -230,6 +289,7 @@ export class AnalyticsRepository {
           gte: startDate,
           lte: endDate,
         },
+        ...visitorWhereFromFilters(filters),
       },
       _count: {
         country: true,
@@ -251,7 +311,13 @@ export class AnalyticsRepository {
   /**
    * Busca browsers mais utilizados
    */
-  async getTopBrowsers(ownerId: string, startDate: Date, endDate: Date, limit = 10) {
+  async getTopBrowsers(
+    ownerId: string,
+    startDate: Date,
+    endDate: Date,
+    limit = 10,
+    filters?: AnalyticsQueryFilters
+  ) {
     const result = await prisma.visitor.groupBy({
       by: ["browser"],
       where: {
@@ -261,6 +327,7 @@ export class AnalyticsRepository {
           gte: startDate,
           lte: endDate,
         },
+        ...visitorWhereFromFilters(filters),
       },
       _count: {
         browser: true,
@@ -286,8 +353,13 @@ export class AnalyticsRepository {
    * views are tracking artifacts (middleware registered them before their page
    * view arrived) and must not be counted as bounces.
    */
-  async getBounceRate(ownerId: string, startDate: Date, endDate: Date): Promise<number> {
-    const totalVisitors = await this.getUniqueVisitors(ownerId, startDate, endDate);
+  async getBounceRate(
+    ownerId: string,
+    startDate: Date,
+    endDate: Date,
+    filters?: AnalyticsQueryFilters
+  ): Promise<number> {
+    const totalVisitors = await this.getUniqueVisitors(ownerId, startDate, endDate, filters);
 
     if (totalVisitors === 0) return 0;
 
@@ -296,7 +368,9 @@ export class AnalyticsRepository {
       where: {
         ownerId,
         createdAt: { gte: startDate, lte: endDate },
-        pageViews: { some: {} },
+        pageViews: { some: filters?.page ? { page: filters.page } : {} },
+        ...(filters?.device && { device: filters.device }),
+        ...(filters?.country && { country: filters.country }),
       },
     });
 
@@ -306,6 +380,7 @@ export class AnalyticsRepository {
       where: {
         ownerId,
         timestamp: { gte: startDate, lte: endDate },
+        ...pageViewWhereFromFilters(filters),
       },
       _count: { visitorId: true },
       having: {
@@ -324,7 +399,12 @@ export class AnalyticsRepository {
   /**
    * Calcula tempo médio no site
    */
-  async getAverageTimeSpent(ownerId: string, startDate: Date, endDate: Date): Promise<number> {
+  async getAverageTimeSpent(
+    ownerId: string,
+    startDate: Date,
+    endDate: Date,
+    filters?: AnalyticsQueryFilters
+  ): Promise<number> {
     const result = await prisma.pageView.aggregate({
       where: {
         ownerId,
@@ -333,6 +413,7 @@ export class AnalyticsRepository {
           gte: startDate,
           lte: endDate,
         },
+        ...pageViewWhereFromFilters(filters),
       },
       _avg: {
         timeSpent: true,
