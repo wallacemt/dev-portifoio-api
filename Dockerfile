@@ -2,10 +2,10 @@ FROM oven/bun:canary-alpine AS builder
 WORKDIR /app
 
 COPY bun.lock package.json tsconfig.json ./
+COPY ./prisma ./prisma
 RUN bun install --frozen-lockfile
 
 COPY ./src ./src
-COPY ./prisma ./prisma
 
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
