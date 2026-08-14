@@ -13,7 +13,11 @@
  */
 export const TRANSLATABLE = {
   project: ["title", "description"],
-  skill: ["title"], // `stack`/`type` are enum values used for filtering; `image` is a URL
+  // `title` is the skill's official/proper name (e.g. "MySQL", "React") —
+  // translating it produces nonsense, so it's deliberately excluded.
+  // `subSkils` are free-text descriptions and are translated.
+  // `stack`/`type` are enum values used for filtering; `image` is a URL.
+  skill: ["subSkils"],
   formation: ["title", "institution", "description"],
   badge: ["title", "description", "issuer"],
   certification: ["title", "description", "issuer"],

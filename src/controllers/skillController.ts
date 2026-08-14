@@ -61,9 +61,11 @@ export class SkillController {
         language
       );
 
-      // `title` is merged in already-translated by SkillService.findAllSkill
-      // (applyTranslations, RF-02); `texts` comes from the static getUiTexts
-      // dictionary (ADR-01). Either way, this route never calls the LLM (AC-01).
+      // `subSkils` is merged in already-translated by SkillService.findAllSkill
+      // (applyTranslations, RF-02) — `title` is deliberately never translated
+      // (proper noun, see translatableFields.ts); `texts` comes from the
+      // static getUiTexts dictionary (ADR-01). Either way, this route never
+      // calls the LLM (AC-01).
       res.status(200).json(result);
     } catch (error) {
       errorFilter(error, res);
