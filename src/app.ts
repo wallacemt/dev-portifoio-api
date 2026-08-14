@@ -72,7 +72,7 @@ class App {
       }),
     );
     this.app.use(requestLogger);
-    this.app.use(express.json());
+    this.app.use(express.json({ limit: "15mb" }));
   }
   listen(port: number | string) {
     this.app.listen(port, () => {
