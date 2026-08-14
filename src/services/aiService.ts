@@ -13,7 +13,6 @@ import { QuotaManager } from "../utils/quotaManager";
 import { getRedisClient } from "../utils/redisClient";
 import { TranslationCache } from "./translationCacheService";
 
-const OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models";
 
 const MODELS_CACHE_KEY = "openrouter:free-models";
@@ -32,6 +31,28 @@ let memCachedOwnerModel: { value: string | null; expires: number } | null = null
 
 const FREE_MODEL_SUFFIX_REGEX = /:free$/i;
 
+// translategemma (and siblings) are dedicated translation models, not
+// general instruct models: they expect plain source text (not a JSON blob +
+// instructions) and reply with the bare translation, no structure to
+// preserve. They can't run through the JSON-object prompt built for
+// instruct models, so `_translate` branches to `translatePerField` for them.
+const PER_FIELD_TRANSLATOR_PREFIX = "translategemma";
+
+function isPerFieldTranslator(model: string): boolean {
+  return model.startsWith(PER_FIELD_TRANSLATOR_PREFIX);
+}
+
+const LANGUAGE_NAMES: Record<string, string> = {
+  pt: "Portuguese",
+  en: "English",
+  es: "Spanish",
+  fr: "French",
+  ja: "Japanese",
+  ko: "Korean",
+  zh: "Chinese",
+  it: "Italian",
+};
+
 // `:free` OpenRouter models routinely ignore `response_format`, so requesting
 // JSON mode from them buys nothing and would give a false sense of safety.
 // `extractJsonFromText` (tolerant text scanning) is the real, primary parser
@@ -39,6 +60,18 @@ const FREE_MODEL_SUFFIX_REGEX = /:free$/i;
 // honor it.
 function supportsJsonMode(model: string): boolean {
   return !FREE_MODEL_SUFFIX_REGEX.test(model);
+}
+
+// `succeeded` distinguishes "a translation call actually completed" from
+// "gave up and returned the source untouched" (quota exhausted, unconfigured,
+// exhausted retries). Callers used to infer this by diffing the result
+// against the source, but that breaks for content that's legitimately
+// identical across languages (e.g. `skill.title: "MySQL"`, a proper noun a
+// correct translation leaves unchanged) — worker.ts now reads this flag
+// directly instead of guessing from the output.
+interface TranslateOutcome {
+  result: object;
+  succeeded: boolean;
 }
 
 class OpenRouterError extends Error {
@@ -56,7 +89,7 @@ export class TranslationService {
   private static readonly MAX_TOKENS_PER_REQUEST = 2000;
   private static readonly MAX_CHUNK_SIZE = 6000;
   // Deduplicates concurrent requests for the same translation
-  private static readonly inflight = new Map<string, Promise<object>>();
+  private static readonly inflight = new Map<string, Promise<TranslateOutcome>>();
 
   static estimateTokens(text: string): number {
     return Math.ceil(text.length / 4);
@@ -145,14 +178,14 @@ export class TranslationService {
     return await new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  async translateObject(obj: object, lenguage: string, sourceLeng = "pt"): Promise<object> {
-    if (!lenguage || lenguage === sourceLeng || !obj) return obj;
+  async translateObject(obj: object, lenguage: string, sourceLeng = "pt"): Promise<TranslateOutcome> {
+    if (!lenguage || lenguage === sourceLeng || !obj) return { result: obj, succeeded: false };
 
     const cacheKey = TranslationCache.makeKey(obj, lenguage, sourceLeng);
     const cached = await TranslationCache.get(cacheKey);
     if (cached) {
       devDebugger(`Translation cache hit for: ${lenguage}`);
-      return cached;
+      return { result: cached, succeeded: true };
     }
 
     // Return the same in-progress promise for concurrent identical requests
@@ -171,9 +204,9 @@ export class TranslationService {
   private async _translate(
     obj: object,
     lenguage: string,
-    sourceLeng: string, 
+    sourceLeng: string,
     cacheKey: string,
-  ): Promise<object> {
+  ): Promise<TranslateOutcome> {
     // Same short-circuit GET /owner/private/ai-config already reports via
     // `available: false` — no key means no IA, not a 500. Checked before
     // the quota gate/chunking/fetch so a missing key never reaches
@@ -181,13 +214,18 @@ export class TranslationService {
     // callers) and is never confused with a genuine provider error.
     if (!TranslationService.isConfigured()) {
       devDebugger("OPENROUTER_API_KEY não configurada — pulando tradução e retornando objeto original", undefined, "warn");
-      return obj;
+      return { result: obj, succeeded: false };
     }
 
     const canMakeRequest = await QuotaManager.canMakeRequest();
     if (!canMakeRequest) {
       devDebugger("Cannot make AI API request due to quota limits. Returning original object.", undefined, "warn");
-      return obj;
+      return { result: obj, succeeded: false };
+    }
+
+    const model = await TranslationService.resolveModel();
+    if (isPerFieldTranslator(model)) {
+      return await this.translatePerField(obj as Record<string, unknown>, lenguage, sourceLeng, cacheKey, model);
     }
 
     if (TranslationService.isObjectTooLarge(obj)) {
@@ -204,12 +242,13 @@ export class TranslationService {
     obj: object,
     language: string,
     sourceLang: string,
-  ): Promise<object> {
+  ): Promise<TranslateOutcome> {
     try {
       const chunks = TranslationService.chunkObject(obj);
       devDebugger(`Divided object into ${chunks.length} chunks for translation`);
 
       const translatedChunks: object[] = [];
+      let anySucceeded = false;
 
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
@@ -221,6 +260,7 @@ export class TranslationService {
         if (cachedChunk) {
           devDebugger(`Cache hit for chunk ${i + 1}/${chunks.length}`);
           translatedChunks.push(cachedChunk);
+          anySucceeded = true; // cache only ever holds a prior successful translation
           continue;
         }
 
@@ -236,8 +276,9 @@ export class TranslationService {
         const chunkPrompt = this.buildTranslationPrompt(JSON.stringify(chunk), language, sourceLang);
 
         try {
-          const translatedChunk = await this.translateWithRetry(chunkPrompt, chunkCacheKey, chunk);
+          const { result: translatedChunk, succeeded } = await this.translateWithRetry(chunkPrompt, chunkCacheKey, chunk);
           translatedChunks.push(translatedChunk);
+          anySucceeded ||= succeeded;
         } catch (error) {
           devDebugger(`Failed to translate chunk ${i + 1}, using original:`, error, "warn");
           translatedChunks.push(chunk);
@@ -251,11 +292,136 @@ export class TranslationService {
       await TranslationCache.set(finalCacheKey, mergedResult);
 
       devDebugger(`Successfully translated large object with ${chunks.length} chunks`);
-      return mergedResult;
+      return { result: mergedResult, succeeded: anySucceeded };
     } catch (error) {
       devDebugger("Error translating large object:", error, "error");
-      return obj;
+      return { result: obj, succeeded: false };
     }
+  }
+
+  /**
+   * Translation-specialized models (translategemma & co) take raw source
+   * text per call and reply with the bare translation — no JSON round-trip
+   * to validate, so each string field (and each element of a string-array
+   * field, e.g. `skill.subSkils`) is translated independently and
+   * reassembled here instead of going through translateWithRetry's
+   * JSON-shape machinery. `succeeded` reflects whether at least one field
+   * got a real response — NOT whether any text changed, since a correct
+   * translation of a proper noun (e.g. a subskill name) can legitimately
+   * come back identical.
+   */
+  private async translatePerField(
+    obj: Record<string, unknown>,
+    language: string,
+    sourceLang: string,
+    cacheKey: string,
+    model: string,
+  ): Promise<TranslateOutcome> {
+    const result: Record<string, unknown> = {};
+    let anySucceeded = false;
+
+    for (const [key, value] of Object.entries(obj)) {
+      if (typeof value === "string" && value.trim()) {
+        // biome-ignore lint/nursery/noAwaitInLoop: fields translated sequentially, same reasoning as the chunk loop above
+        const { value: translated, succeeded } = await this.translateField(value, language, sourceLang, model);
+        result[key] = translated;
+        anySucceeded ||= succeeded;
+        continue;
+      }
+
+      if (Array.isArray(value) && value.every((item) => typeof item === "string")) {
+        const translatedArray: string[] = [];
+        for (const item of value) {
+          if (!item.trim()) {
+            translatedArray.push(item);
+            continue;
+          }
+          // biome-ignore lint/nursery/noAwaitInLoop: array elements translated sequentially, same reasoning as the chunk loop above
+          const { value: translated, succeeded } = await this.translateField(item, language, sourceLang, model);
+          translatedArray.push(translated);
+          anySucceeded ||= succeeded;
+        }
+        result[key] = translatedArray;
+        continue;
+      }
+
+      result[key] = value;
+    }
+
+    if (!anySucceeded) return { result: obj, succeeded: false };
+
+    await TranslationCache.set(cacheKey, result);
+    return { result, succeeded: true };
+  }
+
+  private async translateField(
+    text: string,
+    language: string,
+    sourceLang: string,
+    model: string,
+  ): Promise<{ value: string; succeeded: boolean }> {
+    const MAX_FIELD_ATTEMPTS = 2;
+    for (let attempt = 1; attempt <= MAX_FIELD_ATTEMPTS; attempt++) {
+      //biome-ignore lint: this necessary check is the same as the one in translateObject, but we need to check again here because this method can be called independently for each field.
+      const canMakeRequest = await QuotaManager.canMakeRequest();
+      if (!canMakeRequest) {
+        devDebugger("Cannot make AI API request due to quota limits. Keeping original field.", undefined, "warn");
+        return { value: text, succeeded: false };
+      }
+
+      try {
+        await QuotaManager.recordRequest();
+        const translated = await TranslationService.callTranslateModel(text, language, sourceLang, model);
+        if (!translated) throw new Error("Resposta vazia do modelo");
+        QuotaManager.recordSuccess();
+        return { value: translated, succeeded: true };
+      } catch (error) {
+        const isQuotaError = TranslationService.isQuotaError(error as { status?: number; message?: string });
+        QuotaManager.recordFailure(isQuotaError);
+        devDebugger(`Field translation attempt ${attempt} failed`, error, "warn");
+        if (attempt < MAX_FIELD_ATTEMPTS) continue;
+      }
+    }
+    return { value: text, succeeded: false };
+  }
+
+  /**
+   * Calls a dedicated translation model's chat endpoint with its expected
+   * system/user split — plain source text, no JSON wrapper, no instructions
+   * embedded in the text itself (translategemma's documented template).
+   */
+  private static async callTranslateModel(text: string, language: string, sourceLang: string, model: string): Promise<string> {
+    const sourceName = LANGUAGE_NAMES[sourceLang] ?? sourceLang;
+    const targetName = LANGUAGE_NAMES[language] ?? language;
+
+    const response = await fetch(env.AI_BASE_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "system",
+            content: `You are a professional ${sourceName} (${sourceLang}) to ${targetName} (${language}) translator. Output only the ${targetName} translation, with no explanations or commentary.`,
+          },
+          { role: "user", content: text },
+        ],
+        temperature: 0,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text().catch(() => "");
+      throw new OpenRouterError(response.status, `Translate model request failed (${response.status}): ${errorBody}`);
+    }
+
+    const data = (await response.json()) as OpenRouterChatCompletionResponse;
+    if (data.error) throw new OpenRouterError(500, data.error.message);
+
+    return (data.choices?.[0]?.message?.content ?? "").trim();
   }
 
   private buildTranslationPrompt(jsonString: string, language: string, sourceLang: string): string {
@@ -309,7 +475,7 @@ ${jsonString}
     };
     if (supportsJsonMode(model)) body.response_format = { type: "json_object" };
 
-    const response = await fetch(OPENROUTER_CHAT_URL, {
+    const response = await fetch(env.AI_BASE_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
@@ -332,7 +498,7 @@ ${jsonString}
   }
 
   //biome-ignore lint: necessary
-  private async translateWithRetry(basePrompt: string, cacheKey: string, originalObj: object): Promise<object> {
+  private async translateWithRetry(basePrompt: string, cacheKey: string, originalObj: object): Promise<TranslateOutcome> {
     let lastError: unknown;
     const model = await TranslationService.resolveModel();
     for (let attempt = 1; attempt <= TranslationService.MAX_RETRIES; attempt++) {
@@ -341,7 +507,7 @@ ${jsonString}
         await QuotaManager.recordRequest();
 
         devDebugger(`[OpenRouter Pre Ask]: using model ${model}`);
-      
+
         const text = await TranslationService.callOpenRouter(basePrompt, model);
 
         if (!text) throw new Error("Resposta vazia do modelo");
@@ -358,7 +524,7 @@ ${jsonString}
 
         QuotaManager.recordSuccess();
         await TranslationCache.set(cacheKey, parsed);
-        return parsed;
+        return { result: parsed, succeeded: true };
       } catch (error) {
         lastError = error;
         const isQuotaError = TranslationService.isQuotaError(error as { status?: number; message?: string });
@@ -378,7 +544,7 @@ ${jsonString}
 
         if (attempt === TranslationService.MAX_RETRIES) {
           devDebugger("Quota exceeded, returning original object", originalObj, "warn");
-          return originalObj;
+          return { result: originalObj, succeeded: false };
         }
 
         const backoffDelay = TranslationService.BASE_DELAY * 2 ** (attempt - 1);
@@ -388,7 +554,7 @@ ${jsonString}
     }
 
     devDebugger("Erro final após retries, retornando original", lastError, "error");
-    return originalObj;
+    return { result: originalObj, succeeded: false };
   }
 
   static async clearCache(): Promise<void> {

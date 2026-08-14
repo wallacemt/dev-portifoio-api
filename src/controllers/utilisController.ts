@@ -99,13 +99,14 @@ export class UtilisController {
       }
 
       const startTime = Date.now();
-      const result = await this.translationService.translateObject(testObject, targetLanguage, sourceLanguage);
+      const { result, succeeded } = await this.translationService.translateObject(testObject, targetLanguage, sourceLanguage);
 
       res.status(200).json({
         success: true,
         data: {
           original: testObject,
           translated: result,
+          succeeded,
           performance: {
             duration: `${Date.now() - startTime}ms`,
             chunked: testChunking,

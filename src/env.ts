@@ -20,6 +20,12 @@ const envSchema = z.object({
   CLOUDINARY_API_SECRET: z.string(),
   SELF_URL: z.string(),
   AI_MODEL: z.string().default("google/gemma-4-31b-it:free"),
+  // Chat-completions endpoint the translation service calls. Defaults to
+  // OpenRouter; point at a local Ollama instead (e.g.
+  // http://ollama:11434/v1/chat/completions) to run bulk translation against
+  // a local model without touching OPENROUTER_API_KEY/quota — Ollama ignores
+  // the bearer token it's sent. Swap back to the OpenRouter default when done.
+  AI_BASE_URL: z.string().url().default("https://openrouter.ai/api/v1/chat/completions"),
   REDIS_URL: z.string().optional(),
   // OpenRouter's free-tier daily cap is per-account (depends on account credit —
   // ~50/day under $10, ~1000/day above it), so it must be changeable without a

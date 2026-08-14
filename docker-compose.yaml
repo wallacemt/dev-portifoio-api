@@ -42,5 +42,20 @@ services:
       - ./prisma:/app/prisma
       - ./package.json:/app/package.json
 
+  # Local models for bulk/offline translation runs — opt-in via AI_BASE_URL.
+  # Not wired into `app`/`worker` by default; point AI_BASE_URL at
+  # http://ollama:11434/v1/chat/completions and AI_MODEL at translategemma:4b
+  # (after `docker exec <container> ollama pull translategemma:4b`) to route
+  # translation here instead of OpenRouter — aiService.ts routes any
+  # "translategemma"-prefixed model through its dedicated per-field path.
+  ollama:
+    image: ollama/ollama
+    container_name: dev-portifolio-ws-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+
 volumes:
   redis-data:
+  ollama-data:

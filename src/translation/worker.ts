@@ -51,18 +51,18 @@ async function processOne(row: TranslationRow): Promise<"done" | "failed"> {
       return "done";
     }
 
-    const translated = await translationService.translateObject(sourceFields, row.language, "pt");
     // `translateObject` never throws (ADR-06): on quota exhaustion, a missing
-    // key, or exhausted retries it silently returns the *original* object
-    // instead. That's the right contract for the synchronous read-path
-    // fallback it was built for, but it means the worker has to detect a
-    // no-op translation itself — an unchanged payload means nothing was
-    // actually translated, so this job must be treated as a failure (AC-07),
-    // not marked `done` with untranslated pt-BR content.
-    if (JSON.stringify(translated) === JSON.stringify(sourceFields)) {
-      throw new Error("Translation returned unchanged content (quota exhausted, unconfigured, or model failure)");
+    // key, or exhausted retries it returns `succeeded: false` with the
+    // *original* fields instead. That's the signal this job must be treated
+    // as a failure (AC-07), not marked `done` with untranslated pt-BR
+    // content — checked directly rather than diffing the payload, since a
+    // legitimately unchanged translation (e.g. `skill.title: "MySQL"`, a
+    // proper noun) is a real success, not a no-op.
+    const { result, succeeded } = await translationService.translateObject(sourceFields, row.language, "pt");
+    if (!succeeded) {
+      throw new Error("Translation did not succeed (quota exhausted, unconfigured, or model failure)");
     }
-    await translationRepository.markDone(row.id, translated as Record<string, unknown>);
+    await translationRepository.markDone(row.id, result as Record<string, unknown>);
     return "done";
   } catch (error) {
     const attempts = row.attempts + 1;

@@ -1,0 +1,92 @@
+# Explicit project name — both compose files live in this same directory, so
+# without this they'd default to the same Compose project ("portifolio-backend")
+# and running one would recreate/replace the other's same-named services
+# (dev's `app`/`worker`/`ollama` running alongside these). Keeps them fully
+# isolated (separate network, separate volumes) even on the same host.
+name: portifolio-ws-prod
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: prod-portifolio-ws-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+
+  app:
+    build: .
+    container_name: prod-portifolio-ws-backend
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    environment:
+      # NODE_ENV/AI_* hardcoded rather than left to .env: that file is shared
+      # with the dev compose, where NODE_ENV=development (disables rate
+      # limiting — see analyticsRateLimit.ts) and AI_BASE_URL points at
+      # localhost (unreachable from inside this container; must be the
+      # `ollama` service name). Edit here directly if prod ever needs to
+      # point back at OpenRouter.
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - AI_BASE_URL=http://ollama:11434/v1/chat/completions
+      - AI_MODEL=translategemma:4b
+
+  # Translation worker (RF-05) — same image as `app`, no port exposed. Requires
+  # REDIS_URL at boot (ADR-04): without it, the daily quota counter can't be
+  # shared with `app`, so the worker refuses to start (see worker-entry.ts).
+  worker:
+    build: .
+    container_name: prod-portifolio-ws-worker
+    restart: unless-stopped
+    command: ["bun", "dist/src/worker-entry.js"]
+    depends_on:
+      - redis
+      - ollama
+    env_file:
+      - .env
+    environment:
+      # NODE_ENV/AI_* hardcoded rather than left to .env: that file is shared
+      # with the dev compose, where NODE_ENV=development (disables rate
+      # limiting — see analyticsRateLimit.ts) and AI_BASE_URL points at
+      # localhost (unreachable from inside this container; must be the
+      # `ollama` service name). Edit here directly if prod ever needs to
+      # point back at OpenRouter.
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - AI_BASE_URL=http://ollama:11434/v1/chat/completions
+      - AI_MODEL=translategemma:4b
+
+  # Default translation provider in prod (no OpenRouter quota/cost). CPU-only —
+  # add a `deploy.resources.reservations.devices` GPU block here if the host
+  # has an NVIDIA GPU + the NVIDIA Container Toolkit installed.
+  # Not exposed to the host: only `app`/`worker` reach it, over the compose
+  # network at http://ollama:11434.
+  #
+  # ponytail: no healthcheck/depends_on-gating on model readiness — translation
+  # calls already retry (per-field, then the worker's own 30s poll loop), so a
+  # cold-start miss during the first pull just self-heals on the next attempt.
+  # Add a healthcheck + `depends_on: condition: service_healthy` if early
+  # failed attempts after a fresh deploy become a real nuisance.
+  ollama:
+    image: ollama/ollama
+    container_name: prod-portifolio-ws-ollama
+    restart: unless-stopped
+    mem_limit: 6g
+    mem_reservation: 2g
+    volumes:
+      - ollama-data:/root/.ollama
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        ollama serve &
+        until ollama list >/dev/null 2>&1; do sleep 1; done
+        ollama pull translategemma:4b
+        wait
+
+volumes:
+  redis-data:
+  ollama-data:

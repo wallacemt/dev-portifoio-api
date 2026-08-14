@@ -51,7 +51,7 @@ describe("TranslationService.translateObject (OpenRouter flow)", () => {
     mockChatCompletion('```json\n{"title":"Hello world","nested":{"greeting":"Good morning"}}\n```');
 
     const service = new TranslationService();
-    const result = await service.translateObject(original, "en", "pt");
+    const { result } = await service.translateObject(original, "en", "pt");
 
     expect(result).toEqual({ title: "Hello world", nested: { greeting: "Good morning" } });
   });
@@ -60,7 +60,7 @@ describe("TranslationService.translateObject (OpenRouter flow)", () => {
     mockChatCompletion('{"title":"Hello world","nested":{"greeting":"Good morning"}}');
 
     const service = new TranslationService();
-    const result = await service.translateObject(original, "en", "pt");
+    const { result } = await service.translateObject(original, "en", "pt");
 
     expect(result).toEqual({ title: "Hello world", nested: { greeting: "Good morning" } });
   });
@@ -71,7 +71,7 @@ describe("TranslationService.translateObject (OpenRouter flow)", () => {
     );
 
     const service = new TranslationService();
-    const result = await service.translateObject(original, "en", "pt");
+    const { result } = await service.translateObject(original, "en", "pt");
 
     expect(result).toEqual({ title: "Hello world", nested: { greeting: "Good morning" } });
   });
@@ -82,7 +82,7 @@ describe("TranslationService.translateObject (OpenRouter flow)", () => {
       mockChatCompletion('{"title":"Hello world","nested":{"greeting":"Good mor');
 
       const service = new TranslationService();
-      const result = await service.translateObject(original, "en", "pt");
+      const { result } = await service.translateObject(original, "en", "pt");
 
       expect(result).toEqual(original);
     },
@@ -95,7 +95,7 @@ describe("TranslationService.translateObject (OpenRouter flow)", () => {
       mockChatCompletion('{"title":"Hello world"}');
 
       const service = new TranslationService();
-      const result = await service.translateObject(original, "en", "pt");
+      const { result } = await service.translateObject(original, "en", "pt");
 
       expect(result).toEqual(original);
     },
@@ -108,7 +108,7 @@ describe("TranslationService.translateObject (OpenRouter flow)", () => {
       mockChatCompletion("");
 
       const service = new TranslationService();
-      const result = await service.translateObject(original, "en", "pt");
+      const { result } = await service.translateObject(original, "en", "pt");
 
       expect(result).toEqual(original);
     },
@@ -121,7 +121,7 @@ describe("TranslationService.translateObject (OpenRouter flow)", () => {
       mockChatCompletionError(429, "Rate limit exceeded");
 
       const service = new TranslationService();
-      const result = await service.translateObject(original, "en", "pt");
+      const { result } = await service.translateObject(original, "en", "pt");
 
       expect(result).toEqual(original);
     },
@@ -132,7 +132,7 @@ describe("TranslationService.translateObject (OpenRouter flow)", () => {
     const fetchSpy = jest.spyOn(global, "fetch");
 
     const service = new TranslationService();
-    const result = await service.translateObject(original, "pt", "pt");
+    const { result } = await service.translateObject(original, "pt", "pt");
 
     expect(result).toEqual(original);
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -237,9 +237,71 @@ describe("TranslationService.translateObject without OPENROUTER_API_KEY configur
     const fetchSpy = jest.spyOn(global, "fetch");
 
     const service = new TranslationService();
-    const result = await service.translateObject(original, "en", "pt");
+    const { result } = await service.translateObject(original, "en", "pt");
 
     expect(result).toEqual(original);
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("TranslationService.translateObject (translategemma per-field flow)", () => {
+  beforeEach(async () => {
+    jest.spyOn(QuotaManager, "canMakeRequest").mockResolvedValue(true);
+    jest.spyOn(TranslationService, "resolveModel").mockResolvedValue("translategemma:4b");
+    await TranslationService.clearCache();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("reports succeeded: true even when a correct translation leaves the text unchanged (proper noun)", async () => {
+    // A real translation of "MySQL" is "MySQL" in every target language —
+    // this must not be mistaken for a failed/no-op call (the bug this test
+    // guards against: worker.ts used to infer failure from an unchanged
+    // payload, which misfired for exactly this case).
+    jest.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [{ message: { role: "assistant", content: "MySQL" } }] }),
+    } as Response);
+
+    const service = new TranslationService();
+    const { result, succeeded } = await service.translateObject({ title: "MySQL" }, "en", "pt");
+
+    expect(result).toEqual({ title: "MySQL" });
+    expect(succeeded).toBe(true);
+  });
+
+  it("translates each element of a string-array field independently (skill.subSkils)", async () => {
+    let call = 0;
+    const responses = ["SQL queries", "Data modeling"];
+    jest.spyOn(global, "fetch").mockImplementation(async () => {
+      const content = responses[call];
+      call++;
+      return {
+        ok: true,
+        json: async () => ({ choices: [{ message: { role: "assistant", content } }] }),
+      } as Response;
+    });
+
+    const service = new TranslationService();
+    const { result, succeeded } = await service.translateObject(
+      { subSkils: ["Consultas SQL", "Modelagem de dados"] },
+      "en",
+      "pt",
+    );
+
+    expect(result).toEqual({ subSkils: ["SQL queries", "Data modeling"] });
+    expect(succeeded).toBe(true);
+  });
+
+  it("reports succeeded: false when every field call fails", async () => {
+    jest.spyOn(global, "fetch").mockRejectedValue(new Error("network down"));
+
+    const service = new TranslationService();
+    const { result, succeeded } = await service.translateObject({ title: "MySQL" }, "en", "pt");
+
+    expect(result).toEqual({ title: "MySQL" });
+    expect(succeeded).toBe(false);
   });
 });
