@@ -50,6 +50,13 @@
     "cta": "对某项服务感兴趣吗？让我们聊聊你的项目！",
     "ctaBtn": "联系我"
   },
+  "owner": {
+    "welcomeMessage": "你好，我是{name}！",
+    "buttons": {
+      "project": "查看项目",
+      "curriculo": "简历"
+    }
+  },
   "utilis": {
     "navbar": {
       "items": {

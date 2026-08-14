@@ -50,6 +50,13 @@
     "cta": "サービスにご興味がありますか？プロジェクトについてお話ししましょう！",
     "ctaBtn": "お問い合わせ"
   },
+  "owner": {
+    "welcomeMessage": "こんにちは、{name}です！",
+    "buttons": {
+      "project": "プロジェクトを見る",
+      "curriculo": "履歴書"
+    }
+  },
   "utilis": {
     "navbar": {
       "items": {

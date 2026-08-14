@@ -50,6 +50,13 @@
     "cta": "Interested in a service? Let's talk about your project!",
     "ctaBtn": "Get in Touch"
   },
+  "owner": {
+    "welcomeMessage": "Hello, I'm {name}!",
+    "buttons": {
+      "project": "View Projects",
+      "curriculo": "Resume"
+    }
+  },
   "utilis": {
     "navbar": {
       "items": {

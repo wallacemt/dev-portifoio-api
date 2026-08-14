@@ -50,6 +50,13 @@
     "cta": "Interessato a un servizio? Parliamo del tuo progetto!",
     "ctaBtn": "Contattami"
   },
+  "owner": {
+    "welcomeMessage": "Ciao, sono {name}!",
+    "buttons": {
+      "project": "Vedi Progetti",
+      "curriculo": "Curriculum"
+    }
+  },
   "utilis": {
     "navbar": {
       "items": {

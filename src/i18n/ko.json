@@ -50,6 +50,13 @@
     "cta": "서비스에 관심이 있으신가요? 프로젝트에 대해 이야기해요!",
     "ctaBtn": "문의하기"
   },
+  "owner": {
+    "welcomeMessage": "안녕하세요, {name}입니다!",
+    "buttons": {
+      "project": "프로젝트 보기",
+      "curriculo": "이력서"
+    }
+  },
   "utilis": {
     "navbar": {
       "items": {

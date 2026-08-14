@@ -1,5 +1,6 @@
 import { ZodError } from "zod";
 import { env } from "../env";
+import { getUiTexts } from "../i18n";
 import { AnalyticsRepository } from "../repository/analyticsRepository";
 import { OwnerRepository } from "../repository/ownerRepository";
 import { applyTranslations } from "../translation/applyTranslations";
@@ -36,6 +37,14 @@ export class OwnerService {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
     const owner = await this.ownerRepository.findById(ownerId);
     if (!owner) throw new Exception("Owner não  Encontrado!", 404);
+    // Static per-language UI text (ADR-01) — same catalog as skill/project
+    // texts, not the LLM pipeline (RF-02 only covers about/occupation).
+    // `{name}` is interpolated here since the owner's name is real content,
+    // not part of the static dictionary itself.
+    const { welcomeMessage, buttons } = getUiTexts<{
+      welcomeMessage: string;
+      buttons: { project: string; curriculo: string };
+    }>("owner", language);
     const ownerResponse = {
       id: owner.id,
       name: owner.name,
@@ -46,11 +55,8 @@ export class OwnerService {
       birthDate: owner.birthDate,
       cvLinkPT: owner.cvLinkPT || null,
       cvLinkEN: owner.cvLinkEN || null,
-      welcomeMessage: `Olá, eu sou ${owner.name}!`,
-      buttons: {
-        project: "Ver Projetos",
-        curriculo: "Curriculo",
-      },
+      welcomeMessage: welcomeMessage.replace("{name}", owner.name),
+      buttons,
     };
     // Only `about`/`occupation` can ever be overwritten here — applyTranslations
     // merges exclusively the fields the worker wrote, which are themselves
