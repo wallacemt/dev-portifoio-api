@@ -32,7 +32,7 @@ services:
       # point back at OpenRouter.
       - NODE_ENV=production
       - REDIS_URL=redis://redis:6379
-      - AI_BASE_URL=http://ollama:11434/v1/chat/completions
+      - AI_BASE_URL=http://rt-ollama:11434/v1/chat/completions
       - AI_MODEL=translategemma:4b
 
   # Translation worker (RF-05) — same image as `app`, no port exposed. Requires
