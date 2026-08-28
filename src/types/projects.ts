@@ -12,6 +12,7 @@ export interface CreateProject {
   frontend?: string;
   videos?: string[];
   previewImage: string;
+  logoUrl?: string;
   lastUpdate: Date;
   ownerId: string;
 }
@@ -33,6 +34,7 @@ export interface Project {
   /** Deprecated: mirrors videos[0], kept for API backward compatibility. See ProjectService.withLegacyPreviewVideoUrl. */
   previewVideoUrl?: string | null;
   previewImage: string;
+  logoUrl?: string | null;
   createdAt: Date;
 }
 

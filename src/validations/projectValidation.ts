@@ -25,6 +25,7 @@ export const projectSchema = z.object({
   backend: z.string().url({ message: "A URL do backend deve ser valida" }).optional(),
   frontend: z.string().url({ message: "A URL do frontend deve ser valida" }).optional(),
   previewImage: z.string().url({ message: "A URL da imagem de preview deve ser valida" }),
+  logoUrl: z.string().url({ message: "A URL do logo deve ser valida" }).optional(),
   videos: z
     .array(
       z.string().refine(isValidYoutubeUrl, {

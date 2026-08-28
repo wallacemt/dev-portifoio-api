@@ -32,6 +32,7 @@ model project {
   backend         String?
   frontend        String?
   previewImage    String
+  logoUrl         String?
   videos          String[]  @default([])
   activate        Boolean   @default(true)
   lastUpdate      DateTime?

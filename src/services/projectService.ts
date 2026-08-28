@@ -98,6 +98,7 @@ export class ProjectService {
         return {
           ...this.withLegacyPreviewVideoUrl(project),
           previewImage: optimizeCloudinary(project.previewImage),
+          logoUrl: optimizeCloudinary(project.logoUrl ?? null),
           isMostRecent: { isRecent: this.isMostRecent(project), text: projectTexts.isMostRecentText },
           screenshots: reorderedScreenshots,
           description: {

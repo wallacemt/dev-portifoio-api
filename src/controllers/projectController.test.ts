@@ -13,6 +13,7 @@ const fakeProject = {
   techs: ["react"],
   screenshots: ["https://exemplo.com/preview.jpg"],
   previewImage: "https://exemplo.com/preview.jpg",
+  logoUrl: null,
   deployment: null,
   backend: null,
   frontend: null,
