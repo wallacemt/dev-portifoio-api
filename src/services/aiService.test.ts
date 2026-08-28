@@ -275,6 +275,7 @@ describe("TranslationService.translateObject (translategemma per-field flow)", (
   it("translates each element of a string-array field independently (skill.subSkils)", async () => {
     let call = 0;
     const responses = ["SQL queries", "Data modeling"];
+    // biome-ignore lint: await this necessary
     jest.spyOn(global, "fetch").mockImplementation(async () => {
       const content = responses[call];
       call++;

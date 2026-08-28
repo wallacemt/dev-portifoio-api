@@ -68,6 +68,9 @@ export class OwnerService {
   async updateOwner(ownerUpdateData: OwnerDataOptionalRequest, ownerId: string) {
     try {
       ownerSchemaOptional.parse(ownerUpdateData);
+      if (ownerUpdateData.password) {
+        ownerUpdateData.password = await hashPassword(ownerUpdateData.password);
+      }
       const updated = await this.ownerRepository.updateOwner(ownerUpdateData, ownerId);
       // Only `about`/`occupation` are translatable (TRANSLATABLE allowlist) — the
       // hash step filters out password/secretWord/email before anything ever
