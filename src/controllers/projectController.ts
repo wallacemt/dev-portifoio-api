@@ -38,6 +38,7 @@ export class ProjectController {
     this.routerPrivate.delete("/:id/delete", this.delete.bind(this));
     this.routerPrivate.put("/:id/handle-activate", this.handleActivate.bind(this));
     this.routerPrivate.get("/github/repos", this.getGithubRepos.bind(this));
+    this.routerPrivate.get("/github/readme", this.getGithubReadme.bind(this));
     this.routerPrivate.get("/github/suggest", this.getGithubSuggestion.bind(this));
     // this.routerPrivate.post("/upload-images", this.uploadImages.bind(this));
   }
@@ -121,10 +122,21 @@ export class ProjectController {
     }
   }
 
-  async getGithubSuggestion(req: Request, res: Response) {
+  async getGithubReadme(req: Request, res: Response) {
     try {
       const { username, repo } = req.query as { username?: string; repo?: string };
       if (!username || !repo) throw new Exception("Informe o username e o repositório do GitHub", 400);
+      const readme = await this.projectSuggestionService.getReadme(username, repo);
+      res.status(200).json({ readme });
+    } catch (error) {
+      errorFilter(error, res);
+    }
+  }
+
+  async getGithubSuggestion(req: Request, res: Response) {
+    try {
+      const { username, repo } = req.query as { username?: string; repo?: string };
+      if (!(username && repo)) throw new Exception("Informe o username e o repositório do GitHub", 400);
       const suggestion = await this.projectSuggestionService.suggest(username, repo, req.userId);
       res.status(200).json(suggestion);
     } catch (error) {

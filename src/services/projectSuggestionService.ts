@@ -25,15 +25,22 @@ const QUOTA_ERROR_REGEX = /429|quota|Too Many Requests/;
 export class ProjectSuggestionService {
   private skillRepository = new SkillRepository();
 
+  private githubService = GithubService();
+
   async listRepos(username: string): Promise<GithubRepoSummary[]> {
-    const repos = await GithubService.listRepos(username);
+    const repos = await this.githubService.listRepos(username);
     return repos.filter((repo) => !repo.fork);
+  }
+
+  /** Raw README text for the "preview before you fill the form" panel — best-effort, may be null. */
+  async getReadme(username: string, repo: string): Promise<string | null> {
+    return await this.githubService.getReadme(username, repo);
   }
 
   async suggest(username: string, repo: string, ownerId: string): Promise<ProjectSuggestion> {
     const [languages, readme, ownerStacks] = await Promise.all([
-      GithubService.getLanguages(username, repo),
-      GithubService.getReadme(username, repo),
+      this.githubService.getLanguages(username, repo),
+      this.githubService.getReadme(username, repo),
       this.getOwnerStacks(ownerId),
     ]);
 
@@ -53,7 +60,7 @@ export class ProjectSuggestionService {
   private async draftTitleAndDescription(repo: string, readme: string | null): Promise<{ title: string; description: string }> {
     const fallback = { title: this.humanizeRepoName(repo), description: "" };
 
-    if (!TranslationService.isConfigured() || !readme) return fallback;
+    if (!(TranslationService.isConfigured() && readme)) return fallback;
 
     const canMakeRequest = await QuotaManager.canMakeRequest();
     if (!canMakeRequest) return fallback;

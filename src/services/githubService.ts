@@ -10,17 +10,22 @@ const GITHUB_API_URL = "https://api.github.com";
  * owner-projects "AI suggestion" feature: repo list, language breakdown
  * (the real stack, not a guess) and README, used to draft a new project.
  */
-export class GithubService {
-  private static headers(): Record<string, string> {
-    const headers: Record<string, string> = { Accept: "application/vnd.github+json" };
-    if (env.GITHUB_TOKEN) headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
-    return headers;
+export function GithubService() {
+  // No need to instantiate, all methods are static
+
+  function headers(): Record<string, string> {
+    const headers_auth: Record<string, string> = { Accept: "application/vnd.github+json" };
+    if (env.GITHUB_TOKEN) headers_auth.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
+    return headers_auth;
   }
 
-  static async listRepos(username: string): Promise<GithubRepoSummary[]> {
-    const response = await fetch(`${GITHUB_API_URL}/users/${encodeURIComponent(username)}/repos?sort=updated&per_page=100`, {
-      headers: GithubService.headers(),
-    });
+  async function listRepos(username: string): Promise<GithubRepoSummary[]> {
+    const response = await fetch(
+      `${GITHUB_API_URL}/users/${encodeURIComponent(username)}/repos?sort=updated&per_page=100`,
+      {
+        headers: headers(),
+      },
+    );
 
     if (response.status === 404) throw new Exception("Usuário do GitHub não encontrado", 404);
     if (!response.ok) throw new Exception(`Erro ao buscar repositórios do GitHub (${response.status})`, 502);
@@ -39,10 +44,13 @@ export class GithubService {
   }
 
   /** Bytes of code per language, most-used first — GitHub's own detection, not a heuristic. */
-  static async getLanguages(username: string, repo: string): Promise<string[]> {
-    const response = await fetch(`${GITHUB_API_URL}/repos/${encodeURIComponent(username)}/${encodeURIComponent(repo)}/languages`, {
-      headers: GithubService.headers(),
-    });
+  async function getLanguages(username: string, repo: string): Promise<string[]> {
+    const response = await fetch(
+      `${GITHUB_API_URL}/repos/${encodeURIComponent(username)}/${encodeURIComponent(repo)}/languages`,
+      {
+        headers: headers(),
+      },
+    );
 
     if (response.status === 404) throw new Exception("Repositório não encontrado", 404);
     if (!response.ok) throw new Exception(`Erro ao buscar linguagens do repositório (${response.status})`, 502);
@@ -54,12 +62,17 @@ export class GithubService {
   }
 
   /** Best-effort: returns null when the repo has no README instead of throwing. */
-  static async getReadme(username: string, repo: string): Promise<string | null> {
-    const response = await fetch(`${GITHUB_API_URL}/repos/${encodeURIComponent(username)}/${encodeURIComponent(repo)}/readme`, {
-      headers: { ...GithubService.headers(), Accept: "application/vnd.github.raw+json" },
-    });
+  async function getReadme(username: string, repo: string): Promise<string | null> {
+    const response = await fetch(
+      `${GITHUB_API_URL}/repos/${encodeURIComponent(username)}/${encodeURIComponent(repo)}/readme`,
+      {
+        headers: { ...headers(), Accept: "application/vnd.github.raw+json" },
+      },
+    );
 
     if (!response.ok) return null;
     return await response.text();
   }
+
+  return { headers, listRepos, getLanguages, getReadme };
 }
