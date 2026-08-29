@@ -1,8 +1,10 @@
 import { type Request, type Response, Router } from "express";
 import AuthPolice from "../middleware/authPolice";
 import { ProjectService } from "../services/projectService";
+import { ProjectSuggestionService } from "../services/projectSuggestionService";
 import type { CreateProject, ProjectFilter, UpdateProjec } from "../types/projects";
 
+import { Exception } from "../utils/exception";
 import errorFilter from "../utils/isCustomError";
 import { projectFilterSchema } from "../validations/projectValidation";
 
@@ -17,6 +19,7 @@ export class ProjectController {
   routerPrivate: Router;
   routerPublic: Router;
   private projectService = new ProjectService();
+  private projectSuggestionService = new ProjectSuggestionService();
   constructor() {
     this.routerPrivate = Router();
     this.routerPublic = Router();
@@ -34,6 +37,8 @@ export class ProjectController {
     this.routerPrivate.put("/:id/update", this.update.bind(this));
     this.routerPrivate.delete("/:id/delete", this.delete.bind(this));
     this.routerPrivate.put("/:id/handle-activate", this.handleActivate.bind(this));
+    this.routerPrivate.get("/github/repos", this.getGithubRepos.bind(this));
+    this.routerPrivate.get("/github/suggest", this.getGithubSuggestion.bind(this));
     // this.routerPrivate.post("/upload-images", this.uploadImages.bind(this));
   }
 
@@ -100,6 +105,28 @@ export class ProjectController {
     try {
       const result = await this.projectService.getAllTechs(req.params.ownerId || "");
       res.status(200).json(result);
+    } catch (error) {
+      errorFilter(error, res);
+    }
+  }
+
+  async getGithubRepos(req: Request, res: Response) {
+    try {
+      const { username } = req.query as { username?: string };
+      if (!username) throw new Exception("Informe o username do GitHub", 400);
+      const repos = await this.projectSuggestionService.listRepos(username);
+      res.status(200).json(repos);
+    } catch (error) {
+      errorFilter(error, res);
+    }
+  }
+
+  async getGithubSuggestion(req: Request, res: Response) {
+    try {
+      const { username, repo } = req.query as { username?: string; repo?: string };
+      if (!username || !repo) throw new Exception("Informe o username e o repositório do GitHub", 400);
+      const suggestion = await this.projectSuggestionService.suggest(username, repo, req.userId);
+      res.status(200).json(suggestion);
     } catch (error) {
       errorFilter(error, res);
     }
