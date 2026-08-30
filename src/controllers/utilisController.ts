@@ -1,6 +1,7 @@
 import { type Request, type Response, Router } from "express";
 import { TranslationService } from "../services/aiService";
 import { UtilisService } from "../services/utilisService";
+import { YoutubeService } from "../services/youtubeService";
 import errorFilter from "../utils/isCustomError";
 import { QuotaManager } from "../utils/quotaManager";
 
@@ -14,6 +15,7 @@ export class UtilisController {
   routerPublic: Router;
   utilisService = new UtilisService();
   translationService = new TranslationService();
+  youtubeService = YoutubeService();
   constructor() {
     this.routerPublic = Router();
     this.routesPublic();
@@ -25,6 +27,7 @@ export class UtilisController {
     this.routerPublic.post("/clear-cache", this.clearCache.bind(this));
     this.routerPublic.post("/test-translation", this.testTranslation.bind(this));
     this.routerPublic.get("/ai-models", this.aiModels.bind(this));
+    this.routerPublic.get("/youtube-videos", this.getYoutubeVideos.bind(this));
   }
 
   getNavbarItens(req: Request, res: Response) {
@@ -123,6 +126,16 @@ export class UtilisController {
   async aiModels(_req: Request, res: Response) {
     try {
       res.json(await TranslationService.listModels()).status(200);
+    } catch (error) {
+      errorFilter(error, res);
+    }
+  }
+
+  async getYoutubeVideos(req: Request, res: Response) {
+    try {
+      const { limit } = req.query as { limit?: string };
+      const videos = await this.youtubeService.listRecentVideos(limit ? Number(limit) : undefined);
+      res.status(200).json(videos);
     } catch (error) {
       errorFilter(error, res);
     }
