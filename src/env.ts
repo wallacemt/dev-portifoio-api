@@ -27,6 +27,10 @@ const envSchema = z.object({
   // the bearer token it's sent. Swap back to the OpenRouter default when done.
   AI_BASE_URL: z.string().url().default("https://openrouter.ai/api/v1/chat/completions"),
   REDIS_URL: z.string().optional(),
+  // ponytail: single-tenant app, one owner's YouTube channel — hardcoded
+  // default (resolved from https://www.youtube.com/@wallaceodev), override
+  // via env if the channel ever changes.
+  YOUTUBE_CHANNEL_ID: z.string().default("UCc5-Z-P3VOhC8_bR_F3TOkw"),
   // OpenRouter's free-tier daily cap is per-account (depends on account credit —
   // ~50/day under $10, ~1000/day above it), so it must be changeable without a
   // redeploy (ADR-07).
