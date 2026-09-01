@@ -459,9 +459,10 @@ ${jsonString}
 
   /**
    * Calls OpenRouter's OpenAI-compatible chat completions endpoint via
-   * native `fetch` (Bun runtime — no SDK dependency).
+   * native `fetch` (Bun runtime — no SDK dependency). Not private: reused
+   * by ProjectSuggestionService for the owner-projects AI-suggestion feature.
    */
-  private static async callOpenRouter(prompt: string, model: string): Promise<string> {
+  static async callOpenRouter(prompt: string, model: string): Promise<string> {
     if (!env.OPENROUTER_API_KEY) {
       throw new Exception("OPENROUTER_API_KEY não configurada", 500);
     }
