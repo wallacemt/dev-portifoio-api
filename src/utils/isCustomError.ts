@@ -11,7 +11,7 @@ export default function errorFilter(error: unknown, res: Response) {
   } else {
     // Always logged, prod included: devDebugger is a no-op in production,
     // and an unhandled 500 with no trace anywhere is undebuggable.
-    // biome-ignore lint: logging is important here
+    // biome-ignore lint  : logging is important here
     console.error(
       `Unhandled error: ${error instanceof Error ? error.stack : String(error)}`
     );
