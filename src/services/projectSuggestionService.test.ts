@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { SkillRepository } from "../repository/skillRepository";
+import { QuotaManager } from "../utils/quotaManager";
+import { TranslationService } from "./aiService";
 import { ProjectSuggestionService } from "./projectSuggestionService";
 
 function mockGithubAndOpenRouter(opts: {
@@ -58,10 +60,17 @@ describe("ProjectSuggestionService.suggest", () => {
 
   it("uses the model's title/description when the README yields valid JSON", async () => {
     jest.spyOn(SkillRepository.prototype, "findAllSkillsNoFilter").mockResolvedValue([]);
+    jest.spyOn(TranslationService, "isConfigured").mockReturnValue(true);
+    jest.spyOn(TranslationService, "resolveModel").mockResolvedValue("test-model");
+    jest.spyOn(TranslationService, "callOpenRouter").mockResolvedValue(
+      '{"title": "My API", "description": "Uma API que faz coisas legais."}',
+    );
+    jest.spyOn(QuotaManager, "canMakeRequest").mockResolvedValue(true);
+    jest.spyOn(QuotaManager, "recordRequest").mockResolvedValue();
+    jest.spyOn(QuotaManager, "recordSuccess").mockReturnValue(undefined);
     mockGithubAndOpenRouter({
       languages: { Python: 1 },
       readme: "# My API\nDoes cool things.",
-      aiContent: '{"title": "My API", "description": "Uma API que faz coisas legais."}',
     });
 
     const suggestion = await new ProjectSuggestionService().suggest("wallacemt", "my-api", "owner-1");

@@ -39,7 +39,7 @@ export function YoutubeService() {
         const title = entry.match(TITLE_REGEX)?.[1];
         const publishedAt = entry.match(PUBLISHED_REGEX)?.[1];
         const thumbnailUrl = entry.match(THUMBNAIL_REGEX)?.[1];
-        if (!id || !title || !publishedAt || !thumbnailUrl) return null;
+        if (!(id && title && publishedAt && thumbnailUrl)) return null;
 
         return {
           id,

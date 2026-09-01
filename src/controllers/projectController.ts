@@ -125,7 +125,7 @@ export class ProjectController {
   async getGithubReadme(req: Request, res: Response) {
     try {
       const { username, repo } = req.query as { username?: string; repo?: string };
-      if (!username || !repo) throw new Exception("Informe o username e o repositório do GitHub", 400);
+      if (!(username && repo)) throw new Exception("Informe o username e o repositório do GitHub", 400);
       const readme = await this.projectSuggestionService.getReadme(username, repo);
       res.status(200).json({ readme });
     } catch (error) {
