@@ -2,7 +2,7 @@ import { SkillRepository } from "../repository/skillRepository";
 import type { GithubRepoSummary, ProjectSuggestion } from "../types/github";
 import { extractJsonFromText } from "../utils/jsonExtractor";
 import { QuotaManager } from "../utils/quotaManager";
-import { TranslationService } from "./aiService";
+import { OPENROUTER_CHAT_URL, TranslationService } from "./aiService";
 import { GithubService } from "./githubService";
 
 // GitHub reports every language present in a repo (config files, generated
@@ -66,11 +66,14 @@ export class ProjectSuggestionService {
     if (!canMakeRequest) return fallback;
 
     try {
-      const model = await TranslationService.resolveModel();
+      // Always real OpenRouter here, even in prod where AI_BASE_URL/AI_MODEL
+      // are repointed at a local Ollama container for the translation path
+      // (docker-compose.prod.yaml) — that model name isn't an OpenRouter model.
+      const model = await TranslationService.resolveOpenRouterModel();
       const prompt = this.buildPrompt(repo, readme);
 
       await QuotaManager.recordRequest();
-      const text = await TranslationService.callOpenRouter(prompt, model);
+      const text = await TranslationService.callOpenRouter(prompt, model, OPENROUTER_CHAT_URL);
       const parsed = extractJsonFromText(text) as { title?: unknown; description?: unknown };
       QuotaManager.recordSuccess();
 

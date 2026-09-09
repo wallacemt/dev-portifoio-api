@@ -14,6 +14,14 @@ import { getRedisClient } from "../utils/redisClient";
 import { TranslationCache } from "./translationCacheService";
 
 const OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models";
+// Real OpenRouter chat endpoint — used by callers that must always hit
+// OpenRouter regardless of `env.AI_BASE_URL` (which prod repoints at a local
+// Ollama container for the bulk-translation path only; see docker-compose.prod.yaml).
+export const OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions";
+// Default model for non-translation AI calls (e.g. project-suggestion drafting)
+// that must run on OpenRouter even when AI_MODEL has been repointed at a local
+// Ollama model name (which OpenRouter wouldn't recognize).
+export const OPENROUTER_DEFAULT_MODEL = "google/gemma-4-31b-it:free";
 
 const MODELS_CACHE_KEY = "openrouter:free-models";
 const MODELS_CACHE_TTL_SECONDS = 60 * 60; // 1h — the free model catalog barely changes intra-day
@@ -462,7 +470,7 @@ ${jsonString}
    * native `fetch` (Bun runtime — no SDK dependency). Not private: reused
    * by ProjectSuggestionService for the owner-projects AI-suggestion feature.
    */
-  static async callOpenRouter(prompt: string, model: string): Promise<string> {
+  static async callOpenRouter(prompt: string, model: string, baseUrl: string = env.AI_BASE_URL): Promise<string> {
     if (!env.OPENROUTER_API_KEY) {
       throw new Exception("OPENROUTER_API_KEY não configurada", 500);
     }
@@ -476,7 +484,7 @@ ${jsonString}
     };
     if (supportsJsonMode(model)) body.response_format = { type: "json_object" };
 
-    const response = await fetch(env.AI_BASE_URL, {
+    const response = await fetch(baseUrl, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
@@ -582,6 +590,18 @@ ${jsonString}
   static async resolveModel(): Promise<string> {
     const ownerModel = await TranslationService.getOwnerModel();
     return ownerModel || env.AI_MODEL;
+  }
+
+  /**
+   * Same owner-model lookup as `resolveModel`, but falls back to a hardcoded
+   * OpenRouter model instead of `env.AI_MODEL` — which prod repoints at a
+   * local Ollama model name for translation only (see docker-compose.prod.yaml).
+   * Callers that must always run on real OpenRouter (e.g. project-suggestion
+   * drafting) use this instead of `resolveModel`.
+   */
+  static async resolveOpenRouterModel(): Promise<string> {
+    const ownerModel = await TranslationService.getOwnerModel();
+    return ownerModel || OPENROUTER_DEFAULT_MODEL;
   }
 
   private static async getOwnerModel(): Promise<string | null> {
