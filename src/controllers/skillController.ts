@@ -1,3 +1,4 @@
+import { parseOwnerList, skillListSchema, listPagination } from "../validations/ownerListValidation";
 import { type Request, type Response, Router } from "express";
 import AuthPolice from "../middleware/authPolice";
 import { SkillService } from "../services/skillService";
@@ -42,23 +43,12 @@ export class SkillController {
   }
 
   async getAllSkill(req: Request, res: Response) {
-    const { language, page, limit, pagination } = req.query as {
-      language?: string;
-      page?: string;
-      limit?: string;
-      pagination?: boolean;
-    };
-
+    const { language } = req.query as { language?: string };
     try {
-      const pageNumber = page ? Number.parseInt(page, 10) : 1;
-      const limitNumber = limit ? Number.parseInt(limit, 10) : 10;
-
+      const filters = parseOwnerList(skillListSchema, req.query);
+      const pagination = listPagination(filters);
       const result = await this.skillService.findAllSkill(
-        req.params.ownerId || "",
-        pageNumber,
-        limitNumber,
-        pagination,
-        language
+        req.params.ownerId || "", pagination.page, pagination.limit, pagination.enabled, language, filters
       );
 
       // `subSkils` is merged in already-translated by SkillService.findAllSkill

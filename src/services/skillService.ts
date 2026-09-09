@@ -1,3 +1,5 @@
+import type { Prisma } from "@prisma/client";
+import type { SkillListFilters } from "../validations/ownerListValidation";
 import { ZodError } from "zod";
 import { getUiTexts } from "../i18n";
 import { SkillRepository } from "../repository/skillRepository";
@@ -20,10 +22,12 @@ export class SkillService {
     ownerId: string,
     page = 1,
     limit = 10,
-    pagination = true,
-    language?: string
+    pagination = false,
+    language?: string,
+    filters: SkillListFilters = {}
   ): Promise<{
     skills: Skill[];
+    meta?: { page: number; limit: number; total: number; hasNextPage: boolean };
     pagination: {
       total: number;
       page: number;
@@ -37,21 +41,30 @@ export class SkillService {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
     const texts = getUiTexts<{ chooseText: string; title: string; description: string }>("skill", language);
 
+    const where: Prisma.skillWhereInput = {
+      ...(filters.search && { OR: [
+        { title: { contains: filters.search, mode: "insensitive" } },
+        { stack: { contains: filters.search, mode: "insensitive" } },
+      ] }),
+      ...(filters.stack && { stack: filters.stack }),
+      ...(filters.type && { type: filters.type }),
+    };
     if (pagination === true) {
       const validatedPage = Math.max(1, Math.floor(page));
       const validatedLimit = Math.min(Math.max(1, Math.floor(limit)), 100); // Máximo 100 por página
 
-      const result = await this.skillRepository.findAllSkills(ownerId, validatedPage, validatedLimit);
+      const result = await this.skillRepository.findAllSkills(ownerId, validatedPage, validatedLimit, where);
       const skills = await applyTranslations("skill", result.skills, language);
 
       return {
         skills,
         pagination: result.pagination,
+        meta: { page: validatedPage, limit: validatedLimit, total: result.pagination.total, hasNextPage: result.pagination.hasNext },
         texts,
       };
     }
 
-      const fetchedSkills = await this.skillRepository.findAllSkillsNoFilter(ownerId);
+      const fetchedSkills = await this.skillRepository.findAllSkillsNoFilter(ownerId, where);
       const skills = await applyTranslations("skill", fetchedSkills, language);
       return {
         skills,

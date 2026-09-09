@@ -39,7 +39,7 @@ describe("GET /skills/owner/:ownerId (AC-01)", () => {
     await withFakeFindAllSkills(async () => {
       const quotaBefore = (await QuotaManager.getQuotaStatus()).dailyRequestsUsed;
 
-      const response = await request(buildApp()).get("/skills/owner/owner-1").query({ language: "ja" });
+      const response = await request(buildApp()).get("/skills/owner/owner-1").query({ language: "ja", pagination: "true" });
 
       expect(response.status).toBe(200);
       expect(response.body.texts.title).toBe("私のスキル");

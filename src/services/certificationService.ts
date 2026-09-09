@@ -1,3 +1,5 @@
+import type { Prisma } from "@prisma/client";
+import { listPagination, type OwnerListFilters } from "../validations/ownerListValidation";
 import { ZodError } from "zod";
 import { getUiTexts } from "../i18n";
 import { CertificationRepository } from "../repository/certificationRepository";
@@ -10,15 +12,24 @@ import { certificationSchema, certificationSchemaOptional } from "../validations
 export class CertificationService {
   private certificationRepository = new CertificationRepository();
 
-  async findAllCertifications(ownerId: string, language?: string) {
+  async findAllCertifications(ownerId: string, language?: string, filters: OwnerListFilters = {}) {
     if (!ownerId || ownerId === ":ownerId") {
       throw new Exception("ID de owner inválido", 400);
     }
     const texts = getUiTexts("certification", language);
-    const fetchedCertifications = await this.certificationRepository.findAllCertifications(ownerId);
+    const pagination = listPagination(filters);
+    const where: Prisma.certificationWhereInput = {
+      ...(filters.search && { OR: [{ title: { contains: filters.search, mode: "insensitive" } }, { issuer: { contains: filters.search, mode: "insensitive" } }] }),
+    };
+    const [fetchedCertifications, total] = await Promise.all([
+      this.certificationRepository.findAllCertifications(ownerId, where, pagination.skip, pagination.take),
+      pagination.enabled ? this.certificationRepository.countCertifications(ownerId, where) : Promise.resolve(0),
+    ]);
+    const meta = pagination.enabled ? { page: pagination.page, limit: pagination.limit, total,
+      hasNextPage: pagination.page * pagination.limit < total } : undefined;
     const certifications = await applyTranslations("certification", fetchedCertifications, language);
 
-    return { certifications, texts };
+    return { certifications, texts, ...(meta && { meta }) };
   }
 
   async findById(certificationId: string, language?: string) {

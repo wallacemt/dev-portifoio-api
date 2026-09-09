@@ -1,18 +1,19 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../prisma/prismaClient";
 import type { SkillAddRequest, SkillUpdateRequest } from "../types/skills";
 
 export class SkillRepository {
-  async findAllSkills(ownerId: string, page = 1, limit = 10) {
+  async findAllSkills(ownerId: string, page = 1, limit = 10, filters: Prisma.skillWhereInput = {}) {
     const skip = (page - 1) * limit;
 
     const [skills, total] = await Promise.all([
       prisma.skill.findMany({
-        where: { ownerId },
-        orderBy: { createdAt: "desc" },
+        where: { ...filters, ownerId },
+        orderBy: [{ createdAt: "desc" }, { id: "asc" }],
         skip,
         take: limit,
       }),
-      prisma.skill.count({ where: { ownerId } }),
+      prisma.skill.count({ where: { ...filters, ownerId } }),
     ]);
 
     return {
@@ -27,8 +28,8 @@ export class SkillRepository {
       },
     };
   }
-  async findAllSkillsNoFilter(ownerId: string) {
-    return await prisma.skill.findMany({ where: { ownerId }, orderBy: { createdAt: "desc" } });
+  async findAllSkillsNoFilter(ownerId: string, filters: Prisma.skillWhereInput = {}) {
+    return await prisma.skill.findMany({ where: { ...filters, ownerId }, orderBy: [{ createdAt: "desc" }, { id: "asc" }] });
   }
   async findById(skillId: string) {
     return await prisma.skill.findUnique({ where: { id: skillId } });

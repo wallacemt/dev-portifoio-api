@@ -1,3 +1,4 @@
+import { parseOwnerList, formationListSchema } from "../validations/ownerListValidation";
 import { type Request, type Response, Router } from "express";
 import AuthPolice from "../middleware/authPolice";
 import { FormationService } from "../services/formationService";
@@ -48,7 +49,7 @@ export class FormationController {
       // Translated content, when it exists, is already merged in by
       // FormationService.findAllFormations (applyTranslations) — this route
       // never calls the LLM (ADR-05, AC-15).
-      const result = await this.formationService.findAllFormations(req.params.ownerId || "", language);
+      const result = await this.formationService.findAllFormations(req.params.ownerId || "", language, parseOwnerList(formationListSchema, req.query));
       res.status(200).json(result);
     } catch (error) {
       errorFilter(error, res);

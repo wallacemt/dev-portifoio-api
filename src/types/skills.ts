@@ -2,6 +2,7 @@ export const StackTypeValues = {
   Frontend: "frontend" as const,
   Backend: "backend" as const,
   Mobile: "mobile" as const,
+  Desktop: "desktop" as const,
   Design: "design" as const,
   DevOps: "devops" as const,
 
