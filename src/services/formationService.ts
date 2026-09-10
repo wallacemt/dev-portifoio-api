@@ -1,3 +1,5 @@
+import type { Prisma } from "@prisma/client";
+import { listPagination, type FormationListFilters } from "../validations/ownerListValidation";
 import { ZodError } from "zod";
 import { getUiTexts } from "../i18n";
 import { FormationRepository } from "../repository/formationRepository";
@@ -10,13 +12,24 @@ import { formationSchema, formationSchemaOptional } from "../validations/formati
 export class FormationService {
   private formationRepository = new FormationRepository();
 
-  async findAllFormations(ownerId: string, language?: string) {
+  async findAllFormations(ownerId: string, language?: string, filters: FormationListFilters = {}) {
     if (!ownerId || ownerId === ":ownerId") throw new Exception("ID de owner invalido", 400);
 
-    const fetchedFormations = await this.formationRepository.findAllFormations(ownerId);
+    const pagination = listPagination(filters);
+    const where: Prisma.formationWhereInput = {
+      ...(filters.search && { OR: [{ title: { contains: filters.search, mode: "insensitive" } }, { institution: { contains: filters.search, mode: "insensitive" } }] }),
+      ...(filters.type && { type: filters.type }),
+      ...(filters.concluded !== undefined && { concluded: filters.concluded }),
+    };
+    const [fetchedFormations, total] = await Promise.all([
+      this.formationRepository.findAllFormations(ownerId, where, pagination.skip, pagination.take),
+      pagination.enabled ? this.formationRepository.countFormations(ownerId, where) : Promise.resolve(0),
+    ]);
+    const meta = pagination.enabled ? { page: pagination.page, limit: pagination.limit, total,
+      hasNextPage: pagination.page * pagination.limit < total } : undefined;
     const formations = await applyTranslations("formation", fetchedFormations, language);
     const texts = getUiTexts("formation", language);
-    return { formations, texts };
+    return { formations, texts, ...(meta && { meta }) };
   }
 
   async addFormation(formation: FormationAddRequest) {

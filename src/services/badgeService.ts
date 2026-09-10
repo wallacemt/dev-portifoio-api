@@ -1,3 +1,5 @@
+import type { Prisma } from "@prisma/client";
+import { listPagination, type OwnerListFilters } from "../validations/ownerListValidation";
 import { ZodError } from "zod";
 import { getUiTexts } from "../i18n";
 import { BadgeRepository } from "../repository/badgeRepository";
@@ -10,17 +12,27 @@ import { badgeSchema, badgeSchemaOptional } from "../validations/badgesValidatio
 export class BadgeService {
   private badgeRepository = new BadgeRepository();
 
-  async findAllBadges(ownerId: string, language?: string) {
+  async findAllBadges(ownerId: string, language?: string, filters: OwnerListFilters = {}) {
     if (!ownerId || ownerId === ":ownerId") {
       throw new Exception("ID de owner inválido", 400);
     }
     const texts = getUiTexts("badge", language);
-    const fetchedBadges = await this.badgeRepository.findAllBadges(ownerId);
+    const pagination = listPagination(filters);
+    const where: Prisma.badgeWhereInput = {
+      ...(filters.search && { OR: [{ title: { contains: filters.search, mode: "insensitive" } }, { issuer: { contains: filters.search, mode: "insensitive" } }] }),
+    };
+    const [fetchedBadges, total] = await Promise.all([
+      this.badgeRepository.findAllBadges(ownerId, where, pagination.skip, pagination.take),
+      pagination.enabled ? this.badgeRepository.countBadges(ownerId, where) : Promise.resolve(0),
+    ]);
+    const meta = pagination.enabled ? { page: pagination.page, limit: pagination.limit, total,
+      hasNextPage: pagination.page * pagination.limit < total } : undefined;
     const badges = await applyTranslations("badge", fetchedBadges, language);
 
     return {
       badges,
-      texts
+      texts,
+      ...(meta && { meta }),
     }
   }
 

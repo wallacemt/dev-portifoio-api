@@ -1,12 +1,19 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../prisma/prismaClient";
 import type { CertificationAddRequest, CertificationUpdate } from "../types/badges";
 
 export class CertificationRepository {
-  async findAllCertifications(ownerId: string) {
+  async findAllCertifications(ownerId: string, filters: Prisma.certificationWhereInput = {}, skip?: number, take?: number) {
     return await prisma.certification.findMany({
-      where: { ownerId },
-      orderBy: { issueDate: "desc" },
+      where: { ...filters, ownerId },
+      orderBy: [{ issueDate: "desc" }, { id: "asc" }],
+      skip,
+      take,
     });
+  }
+
+  countCertifications(ownerId: string, filters: Prisma.certificationWhereInput) {
+    return prisma.certification.count({ where: { ...filters, ownerId } });
   }
 
   async findById(certificationId: string) {
