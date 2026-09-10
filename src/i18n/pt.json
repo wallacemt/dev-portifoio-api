@@ -68,5 +68,32 @@
       },
       "callText": "Disponível para novos projetos"
     }
+  },
+  "landing": {
+    "projectsTitle": "Últimos projetos",
+    "projectsDescription": "O que venho construindo mais recentemente, com atualizações diretamente do GitHub.",
+    "skillsTitle": "Stack em uso",
+    "skillsDescription": "As tecnologias mais presentes no meu portfólio. Clique em uma delas para ver os projetos.",
+    "latestVideoTitle": "Último vídeo",
+    "latestVideoDescription": "Acompanhe no YouTube o desenvolvimento dos meus projetos.",
+    "viewAll": "Ver todos →",
+    "retry": "Tentar novamente",
+    "projectsError": "Não foi possível carregar os projetos em destaque.",
+    "skillsError": "Não foi possível carregar as habilidades em destaque.",
+    "statsError": "Não foi possível carregar as estatísticas.",
+    "videoError": "Não foi possível carregar o último vídeo.",
+    "sectionError": "Não foi possível carregar esta seção.",
+    "projectSingular": "projeto",
+    "projectPlural": "projetos",
+    "updatedAt": "Atualizado em",
+    "addedAt": "Adicionado em",
+    "updated": "Atualizado"
+  },
+  "videos": {
+    "title": "Vídeos recentes",
+    "description": "Acompanhe o desenvolvimento dos meus projetos diretamente do canal no YouTube.",
+    "error": "Não foi possível carregar os vídeos.",
+    "empty": "Nenhum vídeo encontrado.",
+    "retry": "Tentar novamente"
   }
 }

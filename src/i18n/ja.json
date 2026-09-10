@@ -68,5 +68,32 @@
       },
       "callText": "新規プロジェクト対応可能"
     }
+  },
+  "landing": {
+    "projectsTitle": "最近のプロジェクト",
+    "projectsDescription": "最近取り組んでいるプロジェクトと、GitHubからの最新情報。",
+    "skillsTitle": "使用中の技術",
+    "skillsDescription": "ポートフォリオでよく使う技術です。選択すると関連するプロジェクトを表示します。",
+    "latestVideoTitle": "最新の動画",
+    "latestVideoDescription": "YouTubeでプロジェクトの開発をご覧ください。",
+    "viewAll": "すべて見る →",
+    "retry": "再試行",
+    "projectsError": "注目のプロジェクトを読み込めませんでした。",
+    "skillsError": "注目のスキルを読み込めませんでした。",
+    "statsError": "統計を読み込めませんでした。",
+    "videoError": "最新の動画を読み込めませんでした。",
+    "sectionError": "このセクションを読み込めませんでした。",
+    "projectSingular": "プロジェクト",
+    "projectPlural": "プロジェクト",
+    "updatedAt": "更新日",
+    "addedAt": "追加日",
+    "updated": "更新済み"
+  },
+  "videos": {
+    "title": "最近の動画",
+    "description": "YouTubeチャンネルでプロジェクトの開発をご覧ください。",
+    "error": "動画を読み込めませんでした。",
+    "empty": "動画が見つかりません。",
+    "retry": "再試行"
   }
 }

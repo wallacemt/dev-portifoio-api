@@ -2,6 +2,7 @@ import { type Request, type Response, Router } from "express";
 import { TranslationService } from "../services/aiService";
 import { UtilisService } from "../services/utilisService";
 import { YoutubeService } from "../services/youtubeService";
+import { getUiTexts } from "../i18n";
 import errorFilter from "../utils/isCustomError";
 import { QuotaManager } from "../utils/quotaManager";
 
@@ -21,6 +22,7 @@ export class UtilisController {
     this.routesPublic();
   }
   private routesPublic() {
+    this.routerPublic.get("/ui-texts", this.getUiTexts.bind(this));
     this.routerPublic.get("/navbar", this.getNavbarItens.bind(this));
     this.routerPublic.get("/languages", this.getlanguageOptions.bind(this));
     this.routerPublic.get("/quota-status", this.getQuotaStatus.bind(this));
@@ -28,6 +30,15 @@ export class UtilisController {
     this.routerPublic.post("/test-translation", this.testTranslation.bind(this));
     this.routerPublic.get("/ai-models", this.aiModels.bind(this));
     this.routerPublic.get("/youtube-videos", this.getYoutubeVideos.bind(this));
+  }
+
+  getUiTexts(req: Request, res: Response) {
+    const { context, language } = req.query;
+    if ((context !== "landing" && context !== "videos") || (language !== undefined && typeof language !== "string")) {
+      res.status(400).json({ error: "Invalid UI text context or language" });
+      return;
+    }
+    res.status(200).json(getUiTexts(context, language));
   }
 
   getNavbarItens(req: Request, res: Response) {
