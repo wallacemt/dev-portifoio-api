@@ -89,7 +89,7 @@ export async function processPendingBatch(limit = DEFAULT_BATCH_SIZE): Promise<P
 
   for (const row of batch) {
     // biome-ignore lint/nursery/noAwaitInLoop: quota and jobs must be processed sequentially, same reasoning as aiService's chunk loop
-    const canMakeRequest = await QuotaManager.canMakeRequest(env.WORKER_DAILY_BUDGET);
+    const canMakeRequest = !TranslationService.usesOpenRouter() || await QuotaManager.canMakeRequest(env.WORKER_DAILY_BUDGET);
     if (!canMakeRequest) {
       result.skippedByQuota += batch.length - result.processed - result.failed;
       break;

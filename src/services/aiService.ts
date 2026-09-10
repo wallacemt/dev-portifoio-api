@@ -225,7 +225,7 @@ export class TranslationService {
       return { result: obj, succeeded: false };
     }
 
-    const canMakeRequest = await QuotaManager.canMakeRequest();
+    const canMakeRequest = !TranslationService.usesOpenRouter() || await QuotaManager.canMakeRequest();
     if (!canMakeRequest) {
       devDebugger("Cannot make AI API request due to quota limits. Returning original object.", undefined, "warn");
       return { result: obj, succeeded: false };
@@ -273,7 +273,7 @@ export class TranslationService {
         }
 
         //biome-ignore lint: await is correct
-        const canMakeRequest = await QuotaManager.canMakeRequest();
+        const canMakeRequest = !TranslationService.usesOpenRouter() || await QuotaManager.canMakeRequest();
         if (!canMakeRequest) {
           devDebugger(`Cannot translate chunk ${i + 1}, quota exceeded. Using original chunk.`, undefined, "warn");
           translatedChunks.push(chunk);
@@ -371,14 +371,14 @@ export class TranslationService {
     const MAX_FIELD_ATTEMPTS = 2;
     for (let attempt = 1; attempt <= MAX_FIELD_ATTEMPTS; attempt++) {
       //biome-ignore lint: this necessary check is the same as the one in translateObject, but we need to check again here because this method can be called independently for each field.
-      const canMakeRequest = await QuotaManager.canMakeRequest();
+      const canMakeRequest = !TranslationService.usesOpenRouter() || await QuotaManager.canMakeRequest();
       if (!canMakeRequest) {
         devDebugger("Cannot make AI API request due to quota limits. Keeping original field.", undefined, "warn");
         return { value: text, succeeded: false };
       }
 
       try {
-        await QuotaManager.recordRequest();
+        if (TranslationService.usesOpenRouter()) await QuotaManager.recordRequest();
         const translated = await TranslationService.callTranslateModel(text, language, sourceLang, model);
         if (!translated) throw new Error("Resposta vazia do modelo");
         QuotaManager.recordSuccess();
@@ -471,7 +471,7 @@ ${jsonString}
    * by ProjectSuggestionService for the owner-projects AI-suggestion feature.
    */
   static async callOpenRouter(prompt: string, model: string, baseUrl: string = env.AI_BASE_URL): Promise<string> {
-    if (!env.OPENROUTER_API_KEY) {
+    if (new URL(baseUrl).hostname === "openrouter.ai" && !env.OPENROUTER_API_KEY) {
       throw new Exception("OPENROUTER_API_KEY não configurada", 500);
     }
 
@@ -513,7 +513,7 @@ ${jsonString}
     for (let attempt = 1; attempt <= TranslationService.MAX_RETRIES; attempt++) {
       try {
         //biome-ignore lint: necessary
-        await QuotaManager.recordRequest();
+        if (TranslationService.usesOpenRouter()) await QuotaManager.recordRequest();
 
         devDebugger(`[OpenRouter Pre Ask]: using model ${model}`);
 
@@ -574,8 +574,12 @@ ${jsonString}
     return await TranslationCache.stats();
   }
 
+  static usesOpenRouter(): boolean {
+    return new URL(env.AI_BASE_URL).hostname === "openrouter.ai";
+  }
+
   static isConfigured(): boolean {
-    return Boolean(env.OPENROUTER_API_KEY);
+    return !TranslationService.usesOpenRouter() || Boolean(env.OPENROUTER_API_KEY);
   }
 
   /**
