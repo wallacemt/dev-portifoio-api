@@ -28,6 +28,10 @@ function decodeXmlEntities(text: string): string {
 export function YoutubeService() {
   async function listRecentVideos(limit = 6): Promise<YoutubeVideoSummary[]> {
     const response = await fetch(`${YOUTUBE_RSS_URL}?channel_id=${encodeURIComponent(env.YOUTUBE_CHANNEL_ID)}`);
+    // YouTube retired the public Atom feed (it now returns 404). Treat that
+    // unavailable optional source as an empty result so it cannot break the
+    // portfolio endpoint with a misleading 502.
+    if (response.status === 404) return [];
     if (!response.ok) throw new Exception(`Erro ao buscar vídeos do YouTube (${response.status})`, 502);
 
     const xml = await response.text();

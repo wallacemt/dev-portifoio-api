@@ -63,8 +63,14 @@ describe("YoutubeService.listRecentVideos", () => {
     expect(videos[0]?.id).toBe("abc123");
   });
 
-  it("throws when the feed request fails", async () => {
+  it("returns no videos when YouTube has retired the feed", async () => {
     jest.spyOn(global, "fetch").mockResolvedValue({ ok: false, status: 404 } as Response);
+
+    await expect(YoutubeService().listRecentVideos()).resolves.toEqual([]);
+  });
+
+  it("still throws for transient upstream failures", async () => {
+    jest.spyOn(global, "fetch").mockResolvedValue({ ok: false, status: 503 } as Response);
 
     await expect(YoutubeService().listRecentVideos()).rejects.toThrow();
   });
