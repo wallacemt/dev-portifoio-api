@@ -35,6 +35,8 @@ const envSchema = z.object({
   // default (resolved from https://www.youtube.com/@wallaceodev), override
   // via env if the channel ever changes.
   YOUTUBE_CHANNEL_ID: z.string().default("UCc5-Z-P3VOhC8_bR_F3TOkw"),
+  YOUTUBE_UPLOADS_PLAYLIST_ID: z.string().default("UUc5-Z-P3VOhC8_bR_F3TOkw"),
+  YOUTUBE_API_KEY: z.string().trim().min(1),
   // OpenRouter's free-tier daily cap is per-account (depends on account credit —
   // ~50/day under $10, ~1000/day above it), so it must be changeable without a
   // redeploy (ADR-07).
