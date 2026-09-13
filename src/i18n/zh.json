@@ -68,5 +68,32 @@
       },
       "callText": "接受新项目"
     }
+  },
+  "landing": {
+    "projectsTitle": "最新项目",
+    "projectsDescription": "查看我最近开发的项目，以及来自 GitHub 的最新动态。",
+    "skillsTitle": "正在使用的技术",
+    "skillsDescription": "作品集中最常用的技术。选择一项以查看相关项目。",
+    "latestVideoTitle": "最新视频",
+    "latestVideoDescription": "在 YouTube 上关注我的项目开发过程。",
+    "viewAll": "查看全部 →",
+    "retry": "重试",
+    "projectsError": "无法加载精选项目。",
+    "skillsError": "无法加载精选技能。",
+    "statsError": "无法加载统计数据。",
+    "videoError": "无法加载最新视频。",
+    "sectionError": "无法加载此部分。",
+    "projectSingular": "个项目",
+    "projectPlural": "个项目",
+    "updatedAt": "更新于",
+    "addedAt": "添加于",
+    "updated": "已更新"
+  },
+  "videos": {
+    "title": "近期视频",
+    "description": "在我的 YouTube 频道上关注项目开发过程。",
+    "error": "无法加载视频。",
+    "empty": "未找到视频。",
+    "retry": "重试"
   }
 }

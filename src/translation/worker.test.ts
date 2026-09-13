@@ -1,3 +1,4 @@
+import { TranslationService } from "../services/aiService";
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { prisma } from "../prisma/prismaClient";
 import { env } from "../env";
@@ -102,6 +103,36 @@ describe("processPendingBatch (Fase 5 — RF-05)", () => {
       restoreRepo();
     }
   });
+
+  for (const model of ["local-json", "translategemma:4b"]) {
+    it(`processes local ${model} translations without reading or charging OpenRouter quota`, async () => {
+      const originalUrl = env.AI_BASE_URL;
+      const originalKey = env.OPENROUTER_API_KEY;
+      env.OPENROUTER_API_KEY = "";
+      env.AI_BASE_URL = "http://ollama:11434/v1/chat/completions";
+      await TranslationService.clearCache();
+      const gate = jest.spyOn(QuotaManager, "canMakeRequest").mockResolvedValue(false);
+      const record = jest.spyOn(QuotaManager, "recordRequest").mockResolvedValue(undefined);
+      jest.spyOn(TranslationService, "resolveModel").mockResolvedValue(model);
+      const restoreSource = withFakeProjectSource({ title: "Projeto", description: "Descrição" });
+      const markDone = jest.fn<(id: string, fields: Record<string, unknown>) => Promise<void>>().mockResolvedValue(undefined);
+      const restoreRepo = withFakeRepository({ findPendingBatch: async () => [fakeRow()], markDone });
+      const fetchSpy = mockChatCompletion(model === "local-json" ? '{"title":"Project","description":"Description"}' : 'Translated');
+      try {
+        expect(await processPendingBatch()).toEqual({ processed: 1, failed: 0, skippedByQuota: 0 });
+        expect(gate).not.toHaveBeenCalled();
+        expect(record).not.toHaveBeenCalled();
+        expect(fetchSpy).toHaveBeenCalled();
+        expect(markDone).toHaveBeenCalledTimes(1);
+      } finally {
+        env.AI_BASE_URL = originalUrl;
+        env.OPENROUTER_API_KEY = originalKey;
+        restoreSource();
+        restoreRepo();
+        await TranslationService.clearCache();
+      }
+    });
+  }
 
   it("increments attempts and never calls OpenRouter once the worker's own budget is exhausted (ADR-04/AC-08)", async () => {
     for (let i = 0; i < env.WORKER_DAILY_BUDGET; i++) {

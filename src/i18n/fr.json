@@ -68,5 +68,32 @@
       },
       "callText": "Disponible pour de nouveaux projets"
     }
+  },
+  "landing": {
+    "projectsTitle": "Projets récents",
+    "projectsDescription": "Mes dernières réalisations, avec les mises à jour directement depuis GitHub.",
+    "skillsTitle": "Technologies utilisées",
+    "skillsDescription": "Les technologies les plus utilisées dans mon portfolio. Sélectionnez-en une pour voir les projets associés.",
+    "latestVideoTitle": "Dernière vidéo",
+    "latestVideoDescription": "Suivez le développement de mes projets sur YouTube.",
+    "viewAll": "Tout voir →",
+    "retry": "Réessayer",
+    "projectsError": "Impossible de charger les projets à la une.",
+    "skillsError": "Impossible de charger les compétences à la une.",
+    "statsError": "Impossible de charger les statistiques.",
+    "videoError": "Impossible de charger la dernière vidéo.",
+    "sectionError": "Impossible de charger cette section.",
+    "projectSingular": "projet",
+    "projectPlural": "projets",
+    "updatedAt": "Mis à jour le",
+    "addedAt": "Ajouté le",
+    "updated": "Mis à jour"
+  },
+  "videos": {
+    "title": "Vidéos récentes",
+    "description": "Suivez le développement de mes projets directement sur ma chaîne YouTube.",
+    "error": "Impossible de charger les vidéos.",
+    "empty": "Aucune vidéo trouvée.",
+    "retry": "Réessayer"
   }
 }

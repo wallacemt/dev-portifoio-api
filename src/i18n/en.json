@@ -68,5 +68,32 @@
       },
       "callText": "Available for new projects"
     }
+  },
+  "landing": {
+    "projectsTitle": "Recent projects",
+    "projectsDescription": "What I’ve been building lately, with updates directly from GitHub.",
+    "skillsTitle": "Current stack",
+    "skillsDescription": "The technologies most used in my portfolio. Select one to see its projects.",
+    "latestVideoTitle": "Latest video",
+    "latestVideoDescription": "Follow the development of my projects on YouTube.",
+    "viewAll": "View all →",
+    "retry": "Try again",
+    "projectsError": "Could not load featured projects.",
+    "skillsError": "Could not load skill highlights.",
+    "statsError": "Could not load statistics.",
+    "videoError": "Could not load the latest video.",
+    "sectionError": "Could not load this section.",
+    "projectSingular": "project",
+    "projectPlural": "projects",
+    "updatedAt": "Updated on",
+    "addedAt": "Added on",
+    "updated": "Updated"
+  },
+  "videos": {
+    "title": "Recent videos",
+    "description": "Follow the development of my projects straight from my YouTube channel.",
+    "error": "Could not load videos.",
+    "empty": "No videos found.",
+    "retry": "Try again"
   }
 }

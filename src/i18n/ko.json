@@ -68,5 +68,32 @@
       },
       "callText": "신규 프로젝트 가능"
     }
+  },
+  "landing": {
+    "projectsTitle": "최근 프로젝트",
+    "projectsDescription": "최근 진행 중인 프로젝트와 GitHub에서 제공하는 최신 소식입니다.",
+    "skillsTitle": "사용 중인 기술",
+    "skillsDescription": "포트폴리오에서 가장 많이 사용하는 기술입니다. 선택하면 관련 프로젝트를 볼 수 있습니다.",
+    "latestVideoTitle": "최신 동영상",
+    "latestVideoDescription": "YouTube에서 프로젝트 개발 과정을 확인하세요.",
+    "viewAll": "모두 보기 →",
+    "retry": "다시 시도",
+    "projectsError": "추천 프로젝트를 불러오지 못했습니다.",
+    "skillsError": "주요 기술을 불러오지 못했습니다.",
+    "statsError": "통계를 불러오지 못했습니다.",
+    "videoError": "최신 동영상을 불러오지 못했습니다.",
+    "sectionError": "이 섹션을 불러오지 못했습니다.",
+    "projectSingular": "프로젝트",
+    "projectPlural": "프로젝트",
+    "updatedAt": "업데이트 날짜",
+    "addedAt": "추가 날짜",
+    "updated": "업데이트됨"
+  },
+  "videos": {
+    "title": "최근 동영상",
+    "description": "YouTube 채널에서 프로젝트 개발 과정을 확인하세요.",
+    "error": "동영상을 불러오지 못했습니다.",
+    "empty": "동영상이 없습니다.",
+    "retry": "다시 시도"
   }
 }
