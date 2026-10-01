@@ -1,0 +1,199 @@
+paths:
+  /api/integrations/briefings/{date}:
+    put:
+      tags: [Briefings]
+      summary: Cria ou substitui o briefing da data (idempotente)
+      description: MongoDB é persistido antes do cache. Falhas de Redis não impedem a operação. A data vem exclusivamente do path.
+      security:
+        - ServiceToken: []
+      parameters:
+        - $ref: '#/components/parameters/BriefingDate'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BriefingInput'
+      responses:
+        '200':
+          description: Briefing salvo ou atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Briefing salvo com sucesso
+                  briefing:
+                    $ref: '#/components/schemas/Briefing'
+        '400':
+          description: Data ou payload inválido
+        '401':
+          description: Token de serviço ausente, inválido ou não configurado
+        '500':
+          description: Erro de persistência
+  /api/briefings/current:
+    get:
+      tags: [Briefings]
+      summary: Retorna o último briefing disponível, pela maior data
+      security: []
+      responses:
+        '200':
+          description: Briefing mais recente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Briefing'
+        '404':
+          description: Nenhum briefing disponível
+        '500':
+          description: Erro interno
+  /api/briefings/{date}:
+    get:
+      tags: [Briefings]
+      summary: Consulta privada por data
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/BriefingDate'
+      responses:
+        '200':
+          description: Briefing da data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Briefing'
+        '400':
+          description: Data inválida
+        '401':
+          description: JWT ausente ou inválido
+        '404':
+          description: Briefing não encontrado
+        '500':
+          description: Erro interno
+  /api/briefings:
+    get:
+      tags: [Briefings]
+      summary: Histórico privado paginado, em ordem decrescente de data
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: Página de briefings (lista vazia quando não há resultados)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  briefings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Briefing'
+        '400':
+          description: Paginação inválida
+        '401':
+          description: JWT ausente ou inválido
+        '500':
+          description: Erro interno
+components:
+  parameters:
+    BriefingDate:
+      in: path
+      name: date
+      required: true
+      description: Data real de calendário, normalizada em meia-noite UTC
+      schema:
+        type: string
+        format: date
+        pattern: '^\d{4}-\d{2}-\d{2}$'
+        example: '2026-10-01'
+  schemas:
+    BriefingInput:
+      type: object
+      required: [language, highlights]
+      properties:
+        language:
+          type: string
+          enum: [pt-BR]
+        highlights:
+          type: array
+          minItems: 5
+          maxItems: 5
+          description: Exatamente cinco destaques com posições únicas de 1 a 5. Categorias podem repetir. Os destaques são salvos ordenados por posição.
+          items:
+            $ref: '#/components/schemas/BriefingHighlight'
+    BriefingHighlight:
+      type: object
+      required: [position, category, headline, summary, whyItMatters, source]
+      properties:
+        position:
+          type: integer
+          minimum: 1
+          maximum: 5
+        category:
+          type: string
+          enum: [software-engineering, ai-technology, aws-cloud-devops, international-career, music-violin]
+        headline:
+          type: string
+          minLength: 5
+          maxLength: 200
+        summary:
+          type: string
+          minLength: 20
+          maxLength: 2000
+        whyItMatters:
+          type: string
+          minLength: 10
+          maxLength: 1500
+        source:
+          type: object
+          required: [name, url]
+          properties:
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+            url:
+              type: string
+              format: uri
+              pattern: '^https?://'
+        imageUrl:
+          type: string
+          format: uri
+          pattern: '^https?://'
+          description: Opcional no envio; pode retornar null quando ausente na persistência.
+    Briefing:
+      allOf:
+        - $ref: '#/components/schemas/BriefingInput'
+        - type: object
+          properties:
+            id:
+              type: string
+            date:
+              type: string
+              format: date-time
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time

@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import express, { type Application } from "express";
 import swaggerUi from "swagger-ui-express";
 import { AnalyticsController } from "./controllers/analyticsController";
+import { BriefingController } from "./controllers/briefingController";
 import { AuthController } from "./controllers/authController";
 import { BadgeController } from "./controllers/badgeController";
 import { CertificationController } from "./controllers/certificationController";
@@ -29,6 +30,10 @@ class App {
     this.listen(env.PORT || 3000);
   }
   routes() {
+    const briefing = new BriefingController();
+    this.app.use("/api/briefings", briefing.routerPublic);
+    this.app.use("/api/briefings", briefing.routerPrivate);
+    this.app.use("/api/integrations/briefings", briefing.routerIntegration);
     this.app.get("/", (_req, res) => res.redirect("/docs"));
     this.app.use("/status", new StatusController().router);
     this.app.use("/auth", new AuthController().router);

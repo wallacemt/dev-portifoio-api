@@ -22,6 +22,7 @@ export const swaggerOptions = {
     ],
     components: {
       securitySchemes: {
+        ServiceToken: { type: 'http', scheme: 'bearer' },
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
