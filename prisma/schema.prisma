@@ -187,3 +187,27 @@ model analyticsDaily {
 
   @@unique([ownerId, date])
 }
+type BriefingSource {
+  name String
+  url  String
+}
+
+type BriefingHighlight {
+  position     Int
+  category     String
+  headline     String
+  summary      String
+  whyItMatters String
+  source       BriefingSource
+  imageUrl     String?
+}
+
+model briefing {
+  id         String              @id @default(auto()) @map("_id") @db.ObjectId
+  date       DateTime            @unique
+  language   String              @default("pt-BR")
+  highlights BriefingHighlight[]
+
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+}
