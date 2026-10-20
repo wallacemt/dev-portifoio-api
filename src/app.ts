@@ -51,7 +51,6 @@ class App {
     this.app.use("/certifications", new CertificationController().routerPublic);
     this.app.use("/upload", new UploadController().router);
     this.app.use("/services", new ServicesOwnerController().routerPublic);
-    this.app.use("/analytics", new AnalyticsController().routerPublic);
     this.app.use("/analytics/private", new AnalyticsController().routerPrivate);
     this.app.use("/utilis", new UtilisController().routerPublic);
     this.app.use(

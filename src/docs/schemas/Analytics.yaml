@@ -84,25 +84,3 @@ AnalyticsSummary:
       properties: { visitors: { type: number } }
     realTime:
       $ref: "#/components/schemas/RealTimeAnalytics"
-
-TrackVisitorRequest:
-  type: object
-  required: [sessionId, userAgent, device, landingPage]
-  properties:
-    sessionId: { type: string, maxLength: 255 }
-    userAgent: { type: string, maxLength: 500 }
-    country: { type: string, maxLength: 100 }
-    city: { type: string, maxLength: 100 }
-    device: { type: string, enum: [desktop, mobile, tablet] }
-    browser: { type: string, maxLength: 100 }
-    os: { type: string, maxLength: 100 }
-    referrer: { type: string, format: uri }
-    landingPage: { type: string, maxLength: 500 }
-
-TrackPageViewRequest:
-  type: object
-  required: [sessionId, page]
-  properties:
-    sessionId: { type: string, maxLength: 255 }
-    page: { type: string, maxLength: 500 }
-    timeSpent: { type: number, minimum: 0, maximum: 86400 }

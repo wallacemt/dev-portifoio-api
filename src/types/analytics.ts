@@ -1,50 +1,3 @@
-import type { JsonValue } from "@prisma/client/runtime/library";
-
-export interface VisitorData {
-  sessionId: string;
-  ipAddress: string;
-  userAgent: string;
-  country?: string;
-  city?: string;
-  device: "desktop" | "mobile" | "tablet";
-  browser?: string;
-  os?: string;
-  referrer?: string;
-  landingPage: string;
-  ownerId: string;
-}
-
-export interface PageViewData {
-  visitorId: string;
-  page: string;
-  timeSpent?: number;
-  ownerId: string;
-}
-
-export interface TrackVisitorResponse {
-  id: string;
-  sessionId: string;
-  isExisting?: boolean;
-}
-
-export interface TrackVisitorRequest {
-  sessionId: string;
-  userAgent: string;
-  country?: string;
-  city?: string;
-  device: "desktop" | "mobile" | "tablet";
-  browser?: string;
-  os?: string;
-  referrer?: string;
-  landingPage: string;
-}
-
-export interface TrackPageViewRequest {
-  sessionId: string;
-  page: string;
-  timeSpent?: number;
-}
-
 export interface DailyAnalytics {
   date: string;
   totalVisitors: number;
@@ -99,23 +52,4 @@ export interface AnalyticsSummaryResponse {
   week: { visitors: number };
   month: { visitors: number };
   realTime: RealTimeAnalytics;
-}
-
-export interface Stat {
-  ownerId: string;
-  id: string;
-  createdAt: Date;
-  date: Date;
-  totalVisitors: number;
-  uniqueVisitors: number;
-  pageViews: number;
-  desktop: number;
-  mobile: number;
-  tablet: number;
-  topPages: JsonValue;
-  topCountries: JsonValue;
-  topBrowsers: JsonValue;
-  bounceRate: number;
-  avgTimeSpent: number;
-  updatedAt: Date;
 }
