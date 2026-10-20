@@ -27,6 +27,9 @@ const envSchema = z.object({
   // the bearer token it's sent. Swap back to the OpenRouter default when done.
   AI_BASE_URL: z.string().url().default("https://openrouter.ai/api/v1/chat/completions"),
   REDIS_URL: z.string().optional(),
+  UMAMI_API_URL: z.string().url().optional(),
+  UMAMI_API_KEY: z.string().optional(),
+  UMAMI_WEBSITE_ID: z.string().uuid().optional(),
   // Raises the GitHub REST rate limit from 60/hr (unauthenticated) to 5000/hr.
   // Optional: the owner-projects AI-suggestion feature still works without it,
   // just at the lower unauthenticated ceiling.

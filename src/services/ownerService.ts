@@ -1,7 +1,6 @@
 import { ZodError } from "zod";
 import { env } from "../env";
 import { getUiTexts } from "../i18n";
-import { AnalyticsRepository } from "../repository/analyticsRepository";
 import { OwnerRepository } from "../repository/ownerRepository";
 import { applyTranslations } from "../translation/applyTranslations";
 import { enqueueTranslation } from "../translation/enqueueTranslation";
@@ -11,7 +10,6 @@ import type { OwnerAnalysisResponse, OwnerDataOptionalRequest, OwnerDataResponse
 import { Exception } from "../utils/exception";
 import { hashPassword, verifyPassword } from "../utils/hash";
 import { ownerSchemaOptional } from "../validations/ownerValidations";
-import { devDebugger } from "../utils/devDebugger";
 import { optimizeCloudinary } from "../utils/cloudinaryTransform";
 
 const MAX_ATTEMPTS = 4;
@@ -24,7 +22,6 @@ interface AttemptData {
 const attemptsCache: Record<string, AttemptData> = {};
 export class OwnerService {
   private ownerRepository = new OwnerRepository();
-  private analyticsRepository = new AnalyticsRepository();
   async getOwner(
     ownerId: string,
     language?: string,
@@ -165,69 +162,11 @@ export class OwnerService {
     const analysis = await this.ownerRepository.getOwnerAnalysis(ownerId);
     if (!analysis) throw new Exception("Owner não encontrado", 404);
 
-    // Buscar analytics dos últimos 30 dias
-    try {
-      const endDate = new Date();
-      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      const today = new Date();
-      const lastWeek = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-
-      const [
-        uniqueVisitors,
-        totalPageViews,
-        deviceBreakdown,
-        topPages,
-        bounceRate,
-        avgTimeSpent,
-        todayVisitors,
-        weekAgoVisitors,
-        realTimeData,
-      ] = await Promise.all([
-        this.analyticsRepository.getUniqueVisitors(ownerId, startDate, endDate),
-        this.analyticsRepository.getTotalPageViews(ownerId, startDate, endDate),
-        this.analyticsRepository.getDeviceBreakdown(ownerId, startDate, endDate),
-        this.analyticsRepository.getTopPages(ownerId, startDate, endDate, 5),
-        this.analyticsRepository.getBounceRate(ownerId, startDate, endDate),
-        this.analyticsRepository.getAverageTimeSpent(ownerId, startDate, endDate),
-        this.analyticsRepository.getUniqueVisitors(ownerId, today, today),
-        this.analyticsRepository.getUniqueVisitors(ownerId, lastWeek, lastWeek),
-        this.analyticsRepository.getRealTimeAnalytics(ownerId),
-      ]);
-
-      const weeklyGrowth = weekAgoVisitors > 0 ? ((todayVisitors - weekAgoVisitors) / weekAgoVisitors) * 100 : 0;
-
-      return {
-        projectsCount: analysis.projectsCount,
-        skillsCount: analysis.skillsCount,
-        formationsCount: analysis.formationsCount,
-        servicesCount: analysis.servicesCount,
-        analytics: {
-          totalVisitors: uniqueVisitors,
-          uniqueVisitors,
-          pageViews: totalPageViews,
-          bounceRate,
-          avgTimeSpent,
-          topPages,
-          deviceBreakdown: {
-            desktop: deviceBreakdown.desktop || 0,
-            mobile: deviceBreakdown.mobile || 0,
-            tablet: deviceBreakdown.tablet || 0,
-          },
-          recentActivity: {
-            activeVisitors: realTimeData.activeVisitors,
-            todayVisitors,
-            weeklyGrowth,
-          },
-        },
-      };
-    } catch (analyticsError) {
-      devDebugger("Erro ao buscar analytics:", analyticsError, "error");
-      return {
-        projectsCount: analysis.projectsCount,
-        skillsCount: analysis.skillsCount,
-        formationsCount: analysis.formationsCount,
-        servicesCount: analysis.servicesCount,
-      };
-    }
+    return {
+      projectsCount: analysis.projectsCount,
+      skillsCount: analysis.skillsCount,
+      formationsCount: analysis.formationsCount,
+      servicesCount: analysis.servicesCount,
+    };
   }
 }
