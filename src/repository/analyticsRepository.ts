@@ -479,6 +479,7 @@ export class AnalyticsRepository {
     });
 
     return {
+      online: activeVisitors,
       activeVisitors,
       topActivePages: topActivePages.map((item: { page: string; _count: { page: number } }) => ({
         page: item.page,

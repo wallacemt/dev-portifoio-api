@@ -1,422 +1,236 @@
-//@biome-ignore
-
-import { ZodError } from "zod";
-import { AnalyticsRepository, type AnalyticsQueryFilters } from "../repository/analyticsRepository";
 import type {
   AnalyticsFilters,
   AnalyticsResponse,
+  AnalyticsSummaryResponse,
   RealTimeAnalytics,
-  Stat,
-  TrackPageViewRequest,
-  TrackVisitorRequest,
-  TrackVisitorResponse,
-} from "../types/analytics";
-import { isBotUserAgent } from "../utils/botDetector";
-import { devDebugger } from "../utils/devDebugger";
-import { Exception } from "../utils/exception";
-import { normalizeReferrer } from "../utils/normalizeReferrer";
-import { getRedisClient } from "../utils/redisClient";
-import { analyticsFiltersSchema, trackPageViewSchema, trackVisitorSchema } from "../validations/analyticsValidation";
+} from '../types/analytics';
+import { env } from '../env';
+import { Exception } from '../utils/exception';
+import { devDebugger } from '../utils/devDebugger';
+import { getRedisClient } from '../utils/redisClient';
+import { umamiGet } from './umamiClient';
 
-const ONLINE_WINDOW_MS = 5 * 60 * 1000;
-const PAGEVIEW_DEDUPE_WINDOW_MS = 30 * 1000;
-const ANALYTICS_CACHE_TTL_SECONDS = 60;
-
-function analyticsChannel(ownerId: string): string {
-  return `analytics:${ownerId}`;
-}
-
-function onlineSetKey(ownerId: string): string {
-  return `analytics:online:${ownerId}`;
-}
-
-function analyticsCacheKey(ownerId: string, startDate: Date, endDate: Date, filters: AnalyticsFilters): string {
-  const { page = "", device = "", country = "" } = filters;
-  return `analytics:cache:${ownerId}:${startDate.toISOString()}:${endDate.toISOString()}:${page}:${device}:${country}`;
-}
+const TTL = 60;
+type Metric = { x: string; y: number };
+type Stats = {
+  pageviews: number;
+  visitors: number;
+  visits: number;
+  bounces: number;
+  totaltime: number;
+  comparison: Pick<Stats, 'visitors'>;
+};
+const configured = () =>
+  Boolean(env.UMAMI_API_URL && env.UMAMI_API_KEY && env.UMAMI_WEBSITE_ID);
+const requireConfig = () => {
+  if (!configured()) throw new Exception('Analytics não configurado', 503);
+};
+const getCachedAnalytics = async <T>(key: string): Promise<T | null> => {
+  const redis = getRedisClient();
+  if (!redis) return null;
+  const value = await redis.get(key).catch(() => null);
+  return value ? (JSON.parse(value) as T) : null;
+};
+const cacheAnalytics = (key: string, value: unknown) => {
+  getRedisClient()
+    ?.set(key, JSON.stringify(value), 'EX', TTL)
+    .catch((error) =>
+      devDebugger('Erro ao gravar cache de analytics', error, 'warn')
+    );
+};
+const statsPath = (start: Date, end: Date) => ({
+  startAt: String(start.getTime()),
+  endAt: String(end.getTime()),
+});
+const countryName = new Intl.DisplayNames(['pt-BR'], { type: 'region' });
 
 export class AnalyticsService {
-  private analyticsRepository = new AnalyticsRepository();
-
-  /**
-   * Marca a sessão como "online" (ZSET com janela de 5min) e publica o
-   * evento no canal Redis do dono, pro handler SSE (`GET /analytics/stream`)
-   * repassar em tempo real. Sem Redis disponível, é um no-op — o endpoint
-   * de streaming cai pra polling nesse caso.
-   */
-  private async publishRealtimeEvent(
-    ownerId: string,
-    event: { type: "visitor" | "pageview"; sessionId: string; page?: string }
-  ): Promise<void> {
-    const redis = getRedisClient();
-    if (!redis) return;
-
-    try {
-      const now = Date.now();
-      await redis.zadd(onlineSetKey(ownerId), now, event.sessionId);
-      await redis.publish(analyticsChannel(ownerId), JSON.stringify({ ...event, timestamp: now }));
-    } catch (error) {
-      devDebugger("Erro ao publicar evento de analytics em tempo real", error, "warn");
+  async getAnalytics(
+    _ownerId: string,
+    filters: AnalyticsFilters = {}
+  ): Promise<AnalyticsResponse> {
+    requireConfig();
+    const end =
+      filters.endDate ?? new Date(Math.floor(Date.now() / 60_000) * 60_000);
+    const start =
+      filters.startDate ?? new Date(end.getTime() - 30 * 86_400_000);
+    if (start > end || end.getTime() - start.getTime() > 366 * 86_400_000) {
+      throw new Exception("Intervalo de datas inválido (máximo de 366 dias)", 400);
     }
-  }
-
-  /**
-   * Conta visitantes "online agora": sessões com atividade nos últimos 5min,
-   * via ZSET (sem tabela nova no Prisma). Retorna 0 quando Redis não está
-   * disponível — o dashboard cai pro fallback via getRealTimeAnalytics.
-   */
-  async getOnlineVisitorsCount(ownerId: string): Promise<number> {
-    const redis = getRedisClient();
-    if (!redis) return 0;
-
-    try {
-      const key = onlineSetKey(ownerId);
-      const cutoff = Date.now() - ONLINE_WINDOW_MS;
-      await redis.zremrangebyscore(key, 0, cutoff);
-      return await redis.zcard(key);
-    } catch (error) {
-      devDebugger("Erro ao contar visitantes online", error, "warn");
-      return 0;
-    }
-  }
-
-  /**
-   * Registra um novo visitante
-   */
-  async trackVisitor(
-    visitorData: TrackVisitorRequest,
-    ownerId: string,
-    ipAddress: string
-  ): Promise<TrackVisitorResponse> {
-    // Crawlers (Googlebot, curl, headless browsers, etc) não são visitas
-    // reais — ignora sem persistir nada e sem contar como erro de validação.
-    if (isBotUserAgent(visitorData.userAgent)) {
-      return { id: "bot", sessionId: visitorData.sessionId, isExisting: true };
-    }
-
-    try {
-      const visitorDataT: TrackVisitorRequest = {
-        ...visitorData,
-        referrer: visitorData.referrer?.length ? visitorData.referrer : undefined,
-        browser: visitorData.browser?.length ? visitorData.browser : undefined,
-        os: visitorData.os?.length ? visitorData.os : undefined,
-        city: visitorData.city?.length ? visitorData.city : undefined,
-        country: visitorData.country?.length ? visitorData.country : undefined,
-      };
-      trackVisitorSchema.parse(visitorDataT);
-      const existingVisitor = await this.analyticsRepository.findVisitorBySessionId(visitorData.sessionId);
-
-      if (existingVisitor) {
-        this.publishRealtimeEvent(ownerId, { type: "visitor", sessionId: existingVisitor.sessionId });
-        return {
-          id: existingVisitor.id,
-          sessionId: existingVisitor.sessionId,
-          isExisting: true,
-        };
-      }
-
-      const visitor = await this.analyticsRepository.upsertVisitor({
-        ...visitorData,
-        referrer: normalizeReferrer(visitorDataT.referrer),
-        ownerId,
-        ipAddress,
-      });
-
-      setImmediate(() => {
-        this.updateDailyAnalytics(ownerId, new Date()).catch((error) => {
-          //biome-ignore lint: using in development
-          if (process.env.NODE_ENV === "development") console.warn("Erro ao atualizar métricas diárias:", error);
-        });
-      });
-      this.publishRealtimeEvent(ownerId, { type: "visitor", sessionId: visitor.sessionId });
-
-      return {
-        id: visitor.id,
-        sessionId: visitor.sessionId,
-        isExisting: false,
-      };
-    } catch (e) {
-      if (e instanceof ZodError) {
-        throw new Exception(e.issues?.[0]?.message || "Erro de validação para dados do visitante", 400);
-      }
-      throw new Exception("Dados do visitante inválidos", 400);
-    }
-  }
-
-  /**
-   * Registra uma visualização de página
-   */
-  async trackPageView(
-    pageViewData: TrackPageViewRequest,
-    ownerId: string,
-    visitorData: TrackVisitorRequest,
-    ipAddress: string
-  ) {
-    try {
-      trackPageViewSchema.parse(pageViewData);
-      let visitor = await this.analyticsRepository.findVisitorBySessionId(pageViewData.sessionId);
-      if (!visitor) {
-        visitor = await this.analyticsRepository.upsertVisitor({
-          ...visitorData,
-          referrer: normalizeReferrer(visitorData.referrer),
-          ownerId,
-          ipAddress,
-        });
-      }
-
-      // Double-fire do script de tracking (re-render, navegação rápida etc)
-      // não deve contar como duas visualizações da mesma página.
-      const recentDuplicate = await this.analyticsRepository.findRecentPageView(
-        visitor.id,
-        pageViewData.page,
-        new Date(Date.now() - PAGEVIEW_DEDUPE_WINDOW_MS)
-      );
-      if (recentDuplicate) {
-        this.publishRealtimeEvent(ownerId, {
-          type: "pageview",
-          sessionId: visitor.sessionId,
-          page: pageViewData.page,
-        });
-        return recentDuplicate;
-      }
-
-      const pageView = await this.analyticsRepository.createPageView({
-        visitorId: visitor.id,
-        page: pageViewData.page,
-        timeSpent: pageViewData.timeSpent,
-        ownerId,
-      });
-
-      setImmediate(() => {
-        this.updateDailyAnalytics(ownerId, new Date()).catch((error) => {
-          //biome-ignore lint: using in development
-          if (process.env.NODE_ENV === "development") console.warn("Erro ao atualizar métricas diárias:", error);
-        });
-      });
-      this.publishRealtimeEvent(ownerId, {
-        type: "pageview",
-        sessionId: visitor.sessionId,
-        page: pageViewData.page,
-      });
-
-      return pageView;
-    } catch (e) {
-      if (e instanceof ZodError) {
-        throw new Exception(e.issues?.[0]?.message || "Erro de validação para dados de visualização", 400);
-      }
-      if (e instanceof Exception) {
-        throw e;
-      }
-      throw new Exception(`Dados da visualização inválidos ${e}`, 400);
-    }
-  }
-
-  /**
-   * Cache de curta duração (TTL de 1min) pras agregações pesadas do
-   * getAnalytics — dashboard não precisa recalcular tudo do zero a cada
-   * request. Sem Redis disponível, os dois métodos são no-op.
-   */
-  private async getCachedAnalytics(cacheKey: string): Promise<AnalyticsResponse | null> {
-    const redis = getRedisClient();
-    if (!redis) return null;
-
-    const cached = await redis.get(cacheKey).catch(() => null);
-    return cached ? (JSON.parse(cached) as AnalyticsResponse) : null;
-  }
-
-  private cacheAnalytics(cacheKey: string, response: AnalyticsResponse): void {
-    const redis = getRedisClient();
-    if (!redis) return;
-
-    redis
-      .set(cacheKey, JSON.stringify(response), "EX", ANALYTICS_CACHE_TTL_SECONDS)
-      .catch((error) => devDebugger("Erro ao gravar cache de analytics", error, "warn"));
-  }
-
-  /**
-   * Busca analytics completas com filtros
-   */
-  async getAnalytics(ownerId: string, filters: AnalyticsFilters = {}): Promise<AnalyticsResponse> {
-    try {
-      if (Object.keys(filters).length > 0) {
-        analyticsFiltersSchema.parse(filters);
-      }
-      // Define período padrão (últimos 30 dias)
-      const endDate = filters.endDate || new Date();
-      const startDate = filters.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
-      const cacheKey = analyticsCacheKey(ownerId, startDate, endDate, filters);
-      const cached = await this.getCachedAnalytics(cacheKey);
-      if (cached) return cached;
-
-      // Filtros de device/country/page já validados por analyticsFiltersSchema
-      // acima — propagados pro repository pra realmente restringir a query
-      // (antes eram aceitos, cacheados na chave, e ignorados).
-      const repoFilters: AnalyticsQueryFilters = {
-        device: filters.device,
-        country: filters.country,
-        page: filters.page,
-      };
-
-      // Busca dados agregados
-      const [
-        uniqueVisitors,
-        totalPageViews,
-        deviceBreakdown,
-        topPages,
-        topCountries,
-        topBrowsers,
-        bounceRate,
-        avgTimeSpent,
-        dailyStats,
-      ] = await Promise.all([
-        this.analyticsRepository.getUniqueVisitors(ownerId, startDate, endDate, repoFilters),
-        this.analyticsRepository.getTotalPageViews(ownerId, startDate, endDate, repoFilters),
-        this.analyticsRepository.getDeviceBreakdown(ownerId, startDate, endDate, repoFilters),
-        this.analyticsRepository.getTopPages(ownerId, startDate, endDate, 10, repoFilters),
-        this.analyticsRepository.getTopCountries(ownerId, startDate, endDate, 10, repoFilters),
-        this.analyticsRepository.getTopBrowsers(ownerId, startDate, endDate, 10, repoFilters),
-        this.analyticsRepository.getBounceRate(ownerId, startDate, endDate, repoFilters),
-        this.analyticsRepository.getAverageTimeSpent(ownerId, startDate, endDate, repoFilters),
-        this.analyticsRepository.getDailyAnalytics(ownerId, {
-          startDate,
-          endDate,
+    const key = `analytics:umami:${env.UMAMI_WEBSITE_ID}:${start.toISOString()}:${end.toISOString()}`;
+    const cached = await getCachedAnalytics<AnalyticsResponse>(key);
+    if (cached) return cached;
+    const q = statsPath(start, end);
+    const [stats, devices, pages, countries, browsers, daily] =
+      await Promise.all([
+        umamiGet<Stats>(`/websites/${env.UMAMI_WEBSITE_ID}/stats`, q),
+        umamiGet<Metric[]>(`/websites/${env.UMAMI_WEBSITE_ID}/metrics`, {
+          ...q,
+          type: 'device',
+          limit: '10',
         }),
-      ]);
-
-      const response: AnalyticsResponse = {
-        overview: {
-          totalVisitors: uniqueVisitors,
-          uniqueVisitors,
-          pageViews: totalPageViews,
-          bounceRate,
-          avgTimeSpent,
-        },
-        deviceBreakdown: {
-          desktop: deviceBreakdown.desktop || 0,
-          mobile: deviceBreakdown.mobile || 0,
-          tablet: deviceBreakdown.tablet || 0,
-        },
-        dailyStats: dailyStats.map((stat: Stat) => ({
-          date: stat.date.toISOString().split("T")[0] || new Date().toString(),
-          totalVisitors: stat.totalVisitors,
-          uniqueVisitors: stat.uniqueVisitors,
-          pageViews: stat.pageViews,
-          desktop: stat.desktop,
-          mobile: stat.mobile,
-          tablet: stat.tablet,
-          topPages: Array.isArray(stat.topPages) ? (stat.topPages as Array<{ page: string; views: number }>) : [],
-          topCountries: Array.isArray(stat.topCountries)
-            ? (stat.topCountries as Array<{
-                country: string;
-                visitors: number;
-              }>)
-            : [],
-          topBrowsers: Array.isArray(stat.topBrowsers)
-            ? (stat.topBrowsers as Array<{ browser: string; visitors: number }>)
-            : [],
-          bounceRate: stat.bounceRate,
-          avgTimeSpent: stat.avgTimeSpent,
-        })),
-        topPages,
-        topCountries,
-        topBrowsers,
-      };
-
-      this.cacheAnalytics(cacheKey, response);
-
-      return response;
-    } catch (e) {
-      if (e instanceof ZodError) {
-        throw new Exception(e.issues?.[0]?.message || "Erro ao validar dados", 400);
-      }
-      if (e instanceof Exception) {
-        throw e;
-      }
-      throw new Exception("Erro ao buscar analytics", 500);
-    }
-  }
-
-  /**
-   * Busca analytics em tempo real
-   */
-  async getRealTimeAnalytics(ownerId: string): Promise<RealTimeAnalytics> {
-    try {
-      return await this.analyticsRepository.getRealTimeAnalytics(ownerId);
-    } catch (_e) {
-      throw new Exception("Erro ao buscar analytics em tempo real", 500);
-    }
-  }
-
-  /**
-   * Atualiza as métricas diárias (função privada para otimização)
-   */
-  private async updateDailyAnalytics(ownerId: string, date: Date) {
-    try {
-      const stats = await this.analyticsRepository.getDailyStatsForDate(ownerId, date);
-      await this.analyticsRepository.upsertDailyAnalytics(date, stats, ownerId);
-    } catch (_e) {
-      throw new Exception("Erro ao atualizar analytics diárias", 500);
-    }
-  }
-
-  /**
-   * Força atualização das métricas diárias (endpoint administrativo)
-   */
-  async forceUpdateDailyAnalytics(ownerId: string, date?: Date) {
-    try {
-      const targetDate = date || new Date();
-      await this.updateDailyAnalytics(ownerId, targetDate);
-      return { message: "Métricas diárias atualizadas com sucesso" };
-    } catch (_e) {
-      throw new Exception("Erro ao forçar atualização das métricas diárias", 500);
-    }
-  }
-
-  /**
-   * Busca resumo de analytics para dashboard
-   */
-  async getAnalyticsSummary(ownerId: string) {
-    try {
-      const today = new Date();
-      const [todayVisitors, yesterdayVisitors, weekVisitors, monthVisitors, realTime] = await Promise.all([
-        this.analyticsRepository.getTodayVisitors(ownerId),
-        this.analyticsRepository.getYesterdayVisitors(ownerId),
-        this.analyticsRepository.getUniqueVisitors(
-          ownerId,
-          new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7),
-          today
+        umamiGet<Metric[]>(`/websites/${env.UMAMI_WEBSITE_ID}/metrics`, {
+          ...q,
+          type: 'path',
+          limit: '10',
+        }),
+        umamiGet<Metric[]>(`/websites/${env.UMAMI_WEBSITE_ID}/metrics`, {
+          ...q,
+          type: 'country',
+          limit: '10',
+        }),
+        umamiGet<Metric[]>(`/websites/${env.UMAMI_WEBSITE_ID}/metrics`, {
+          ...q,
+          type: 'browser',
+          limit: '10',
+        }),
+        umamiGet<{ pageviews: Metric[]; sessions: Metric[] }>(
+          `/websites/${env.UMAMI_WEBSITE_ID}/pageviews`,
+          { ...q, unit: 'day', timezone: 'America/Sao_Paulo' }
         ),
-        this.analyticsRepository.getUniqueVisitors(
-          ownerId,
-          new Date(today.getFullYear(), today.getMonth(), today.getDate() - 30),
-          today
-        ),
-        this.analyticsRepository.getRealTimeAnalytics(ownerId),
       ]);
-      let changeData: number | string;
-      if (yesterdayVisitors > todayVisitors) {
-        changeData = Number(((yesterdayVisitors - todayVisitors) / yesterdayVisitors) * -100).toFixed(2);
-      } else if (yesterdayVisitors === 0) {
-        changeData = 0;
-      } else {
-        changeData = Number(((todayVisitors - yesterdayVisitors) / yesterdayVisitors) * 100).toFixed(2);
-      }
-      return {
-        today: {
-          visitors: todayVisitors,
-          change: changeData,
-        },
-        week: {
-          visitors: weekVisitors,
-        },
-        month: {
-          visitors: monthVisitors,
-        },
-        realTime,
-      };
-    } catch (_e) {
-      throw new Exception("Erro ao buscar resumo de analytics", 500);
-    }
+    const sessions = new Map(
+      daily.sessions.map(({ x, y }) => [x, Number(y) || 0])
+    );
+    const views = new Map(
+      daily.pageviews.map(({ x, y }) => [x, Number(y) || 0])
+    );
+    const dates = [...new Set([...sessions.keys(), ...views.keys()])].sort();
+    const metric = (items: Metric[], x: string) =>
+      items
+        .filter((item) => item.x === x)
+        .reduce((sum, item) => sum + (Number(item.y) || 0), 0);
+    const desktop = devices
+      .filter(({ x }) => !['mobile', 'tablet'].includes(x))
+      .reduce((sum, { y }) => sum + (Number(y) || 0), 0);
+    const response: AnalyticsResponse = {
+      overview: {
+        totalVisitors: Number(stats.visitors) || 0,
+        uniqueVisitors: Number(stats.visitors) || 0,
+        pageViews: Number(stats.pageviews) || 0,
+        bounceRate: stats.visits
+          ? Math.round((stats.bounces / stats.visits) * 1000) / 10
+          : 0,
+        avgTimeSpent: stats.visits ? stats.totaltime / stats.visits : 0,
+      },
+      deviceBreakdown: {
+        desktop,
+        mobile: metric(devices, 'mobile'),
+        tablet: metric(devices, 'tablet'),
+      },
+      dailyStats: dates.map((date) => ({
+        date: date.slice(0, 10),
+        totalVisitors: sessions.get(date) ?? 0,
+        uniqueVisitors: sessions.get(date) ?? 0,
+        pageViews: views.get(date) ?? 0,
+      })),
+      topPages: pages.map(({ x, y }) => ({ page: x, views: Number(y) || 0 })),
+      topCountries: countries.map(({ x, y }) => ({
+        country: countryName.of(x) ?? x,
+        visitors: Number(y) || 0,
+      })),
+      topBrowsers: browsers.map(({ x, y }) => ({
+        browser: x,
+        visitors: Number(y) || 0,
+      })),
+    };
+    cacheAnalytics(key, response);
+    return response;
+  }
+
+  async getAnalyticsSummary(
+    _ownerId?: string
+  ): Promise<AnalyticsSummaryResponse> {
+    requireConfig();
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(now);
+    const part = (type: string) =>
+      Number(parts.find((item) => item.type === type)?.value);
+    const start = new Date(
+      Date.UTC(part('year'), part('month') - 1, part('day')) + 3 * 3_600_000
+    );
+    const qToday = statsPath(start, now);
+    const qWeek = statsPath(new Date(now.getTime() - 7 * 86_400_000), now);
+    const qMonth = statsPath(new Date(now.getTime() - 30 * 86_400_000), now);
+    const key = `analytics:umami:${env.UMAMI_WEBSITE_ID}:summary:${start.toISOString().slice(0, 10)}`;
+    const cached = await getCachedAnalytics<AnalyticsSummaryResponse>(key);
+    if (cached) return cached;
+    const [todayStats, week, month, realtime] = await Promise.all([
+      umamiGet<Stats>(`/websites/${env.UMAMI_WEBSITE_ID}/stats`, qToday),
+      umamiGet<Stats>(`/websites/${env.UMAMI_WEBSITE_ID}/stats`, qWeek),
+      umamiGet<Stats>(`/websites/${env.UMAMI_WEBSITE_ID}/stats`, qMonth),
+      this.getRealTimeAnalytics(),
+    ]);
+    // Umami's comparison is the previous period, including for the partial current day.
+    const comparisonVisitors = Number(todayStats.comparison?.visitors) || 0;
+    const todayVisitors = Number(todayStats.visitors) || 0;
+    const result = {
+      today: {
+        visitors: todayVisitors,
+        change: comparisonVisitors
+          ? ((todayVisitors - comparisonVisitors) / comparisonVisitors) * 100
+          : 0,
+      },
+      week: { visitors: Number(week.visitors) || 0 },
+      month: { visitors: Number(month.visitors) || 0 },
+      realTime: realtime,
+    };
+    cacheAnalytics(key, result);
+    return result;
+  }
+
+  async getRealTimeAnalytics(_ownerId?: string): Promise<RealTimeAnalytics> {
+    requireConfig();
+    const [active, realtime] = await Promise.all([
+      umamiGet<{ visitors: number | string }>(
+        `/websites/${env.UMAMI_WEBSITE_ID}/active`
+      ),
+      umamiGet<{
+        urls?: Record<string, number>;
+        events?: Record<string, unknown>[];
+        totals?: unknown;
+        countries?: unknown;
+        referrers?: unknown;
+      }>(`/realtime/${env.UMAMI_WEBSITE_ID}`),
+    ]);
+    const count = Number(active.visitors) || 0;
+    return {
+      online: count,
+      activeVisitors: count,
+      topActivePages: Object.entries(realtime.urls ?? {})
+        .map(([page, activeUsers]) => ({
+          page,
+          activeUsers: Number(activeUsers) || 0,
+        }))
+        .sort((a, b) => b.activeUsers - a.activeUsers)
+        .slice(0, 5),
+      recentVisitors: (Array.isArray(realtime.events) ? realtime.events : [])
+        .filter((event) => event?.__type === 'session')
+        .slice(0, 10)
+        .map((event) => {
+          const timestamp = new Date(
+            typeof event.createdAt === 'string' ||
+              typeof event.createdAt === 'number'
+              ? event.createdAt
+              : Date.now()
+          );
+          return {
+            country: String(event.country ?? ''),
+            device: String(event.device ?? ''),
+            page: String(event.urlPath ?? ''),
+            timestamp: Number.isNaN(timestamp.getTime())
+              ? new Date()
+              : timestamp,
+          };
+        }),
+      ...(realtime.totals ? { totals: realtime.totals } : {}),
+      ...(realtime.countries ? { countries: realtime.countries } : {}),
+      ...(realtime.referrers ? { referrers: realtime.referrers } : {}),
+    };
   }
 }

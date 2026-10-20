@@ -50,14 +50,6 @@ export interface DailyAnalytics {
   totalVisitors: number;
   uniqueVisitors: number;
   pageViews: number;
-  desktop: number;
-  mobile: number;
-  tablet: number;
-  topPages: Array<{ page: string; views: number }>;
-  topCountries: Array<{ country: string; visitors: number }>;
-  topBrowsers: Array<{ browser: string; visitors: number }>;
-  bounceRate: number;
-  avgTimeSpent: number;
 }
 
 export interface AnalyticsResponse {
@@ -88,6 +80,7 @@ export interface AnalyticsFilters {
 }
 
 export interface RealTimeAnalytics {
+  online: number;
   activeVisitors: number;
   topActivePages: Array<{ page: string; activeUsers: number }>;
   recentVisitors: Array<{
@@ -96,6 +89,16 @@ export interface RealTimeAnalytics {
     page: string;
     timestamp: Date;
   }>;
+  totals?: unknown;
+  countries?: unknown;
+  referrers?: unknown;
+}
+
+export interface AnalyticsSummaryResponse {
+  today: { visitors: number; change: number };
+  week: { visitors: number };
+  month: { visitors: number };
+  realTime: RealTimeAnalytics;
 }
 
 export interface Stat {
