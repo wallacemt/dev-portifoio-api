@@ -84,8 +84,6 @@ AnalyticsSummary:
       properties: { visitors: { type: number } }
     realTime:
       $ref: "#/components/schemas/RealTimeAnalytics"
-    realTime:
-      $ref: "#/components/schemas/RealTimeAnalytics"
 
 TrackVisitorRequest:
   type: object
